@@ -279,7 +279,7 @@
         return;
       }
       const q = calendarSearch.toLowerCase();
-      const matches = records().filter(e => [
+      const matches = records().filter(e => (calendarType === 'all' || e.kind === calendarType) && [
         e.title, e.caseNo, e.clientName, e.court, e.stage, e.purpose, e.location, e.subject
       ].some(v => String(v || '').toLowerCase().includes(q)));
       if (!matches.length) {
