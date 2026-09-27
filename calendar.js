@@ -183,7 +183,7 @@
     const upcoming = allRecords
       .filter(e => {
         const d = String(e.date || '').slice(0,10);
-        if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(d)) return false;
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return false;
         const dt = new Date(d + 'T00:00:00');
         const diff = Math.round((dt - todayDate) / 86400000);
         return diff >= 0 && diff <= 7 && (calendarType === 'all' || e.kind === calendarType);
