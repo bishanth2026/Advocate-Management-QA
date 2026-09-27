@@ -285,7 +285,12 @@
         selectedRecordKey = match.key;
         suppressAutoSelect = true;
         render();
-        window.scrollTo({top: 0, behavior: 'smooth'});
+        requestAnimationFrame(() => {
+          const calendarLayout = root.querySelector('.court-calendar-layout');
+          if (calendarLayout) {
+            calendarLayout.scrollIntoView({behavior: 'smooth', block: 'start'});
+          }
+        });
       });
     });
 
