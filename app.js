@@ -613,6 +613,22 @@ window.refreshPaymentInvoices=function(){
  const invoices=(Array.isArray(state.invoices)?state.invoices:[]).filter(i=>norm(i.client)===client && (Number(i.amount||0)-Number(i.paid||0))>0);
  invoiceEl.innerHTML=invoices.length?invoices.map(i=>{const due=Math.max(0,Number(i.amount||0)-Number(i.paid||0));return `<option value="${esc(i.id)}">${esc(i.id)} — ₹${due.toLocaleString("en-IN")} outstanding</option>`;}).join(""): '<option value="">No outstanding invoices for this client</option>';
 };
+function hearingTimeInputValue(value){
+ const raw=String(value||'').trim();
+ if(!raw) return '';
+ const parts=raw.split(/[: ]+/); const ap=String(parts[2]||'').toUpperCase();
+ let h=Number(parts[0]); const mins=parts[1]||'00';
+ if(!Number.isFinite(h)) return '';
+ if(ap==='AM' && h===12) h=0;
+ if(ap==='PM' && h<12) h+=12;
+ if(h>=0 && h<=23 && /^\\d{2}$/.test(mins)) return String(h).padStart(2,'0')+':'+mins;
+ return raw;
+}
+function hearingTimeDisplayValue(value){
+ const input=hearingTimeInputValue(value); if(!input) return String(value||'').trim();
+ const parts=input.split(':'); const h=Number(parts[0]); const mins=parts[1];
+ return ((h%12)||12)+':'+mins+' '+(h>=12?'PM':'AM');
+}
 function openEditModal(type,index){
  const key=type==='case'?'cases':type==='client'?'clients':type==='hearing'?'hearings':type==='task'?'tasks':type==='discussion'?'discussions':type==='meeting'?'meetings':'invoices';
  const item=state[key][index];
@@ -630,7 +646,7 @@ function openEditModal(type,index){
  } else if(type==='hearing'){
   const relatedCase=state.cases.find(c=>c.number===item.case || c.id===item.case || c.id===item.caseId);
   const caseId=relatedCase?relatedCase.id:'';
-  form=`<div class="form-grid"><div class="field"><label>Date</label><input id="f1" type="date" value="${esc(item.date)}"></div><div class="field"><label>Time</label><input id="f2" type="text" value="${esc(item.time)}" placeholder="10:30 AM"></div><div class="field"><label>Case Number</label><input id="f3" type="text" list="hearingCaseOptions" autocomplete="off" value="${esc(relatedCase?((relatedCase.number||"")+" — "+(relatedCase.title||relatedCase.client||"Untitled case")):item.case||"")}" onchange="syncHearingCase()" oninput="clearHearingCaseSelection()"><datalist id="hearingCaseOptions">${state.cases.map(c=>`<option value="${esc(c.number)} — ${esc(c.title||c.client||"Untitled case")}"></option>`).join("")}</datalist><input id="f3CaseId" type="hidden" value="${esc(caseId)}"></div><div class="field"><label>Case Title</label><input id="f4" readonly value="${esc(item.title)}"></div><div class="field"><label>Client</label><input id="fClient" readonly></div><div class="field full"><label>Court</label><input id="f5" value="${esc(item.court)}"></div><div class="field"><label>Stage</label><input id="f6" value="${esc(item.stage)}"></div></div>`;
+  form=`<div class="form-grid"><div class="field"><label>Date</label><input id="f1" type="date" value="${esc(item.date)}"></div><div class="field"><label>Time</label><input id="f2" type="time" step="60" value="${hearingTimeInputValue(item.time)}"></div><div class="field"><label>Case Number</label><input id="f3" type="text" list="hearingCaseOptions" autocomplete="off" value="${esc(relatedCase?((relatedCase.number||"")+" — "+(relatedCase.title||relatedCase.client||"Untitled case")):item.case||"")}" onchange="syncHearingCase()" oninput="clearHearingCaseSelection()"><datalist id="hearingCaseOptions">${state.cases.map(c=>`<option value="${esc(c.number)} — ${esc(c.title||c.client||"Untitled case")}"></option>`).join("")}</datalist><input id="f3CaseId" type="hidden" value="${esc(caseId)}"></div><div class="field"><label>Case Title</label><input id="f4" readonly value="${esc(item.title)}"></div><div class="field"><label>Client</label><input id="fClient" readonly></div><div class="field full"><label>Court</label><input id="f5" value="${esc(item.court)}"></div><div class="field"><label>Stage</label><input id="f6" value="${esc(item.stage)}"></div></div>`;
  } else if(type==='task'){
   form=`<div class="form-grid"><div class="field full"><label>Task</label><input id="f1" value="${esc(item.title)}"></div><div class="field"><label>Case</label><input id="f2" value="${esc(item.case)}"></div><div class="field"><label>Due Date</label><input id="f3" type="date" value="${esc(item.due)}"></div><div class="field"><label>Priority</label><select id="f4">${['High','Medium','Low'].map(x=>`<option ${x===item.priority?'selected':''}>${x}</option>`).join('')}</select></div><div class="field"><label>Status</label><select id="f5">${['Pending','In Progress','Completed'].map(x=>`<option ${x===item.status?'selected':''}>${x}</option>`).join('')}</select></div></div>`;
  } else if(type==='discussion'){
@@ -684,7 +700,7 @@ function updateRecord(type,index){
   const selectedCaseId=(document.getElementById('f3CaseId')||{}).value||"";
   const relatedCase=state.cases.find(c=>c.id===selectedCaseId); if(!relatedCase){alert('Please select a case.');return;}
   const client=getHearingClient({clientId:relatedCase.clientId,case:relatedCase.number}); if(!client){alert('The selected case is not linked to a client.');return;}
-  item.date=document.getElementById('f1').value||item.date; item.time=document.getElementById('f2').value||item.time; item.case=relatedCase.number; item.caseNumber=relatedCase.number; item.caseId=relatedCase.id; item.title=relatedCase.title; item.court=document.getElementById('f5').value.trim()||relatedCase.court||'Court'; item.stage=document.getElementById('f6').value.trim()||'Hearing'; item.clientId=client.id;
+  item.date=document.getElementById('f1').value||item.date; const editedTime=document.getElementById('f2').value; if(editedTime) item.time=hearingTimeDisplayValue(editedTime); item.case=relatedCase.number; item.caseNumber=relatedCase.number; item.caseId=relatedCase.id; item.title=relatedCase.title; item.court=document.getElementById('f5').value.trim()||relatedCase.court||'Court'; item.stage=document.getElementById('f6').value.trim()||'Hearing'; item.clientId=client.id;
  } else if(type==='task'){
   const typedCase=document.getElementById('f2').value.trim();
   const relatedCase=state.cases.find(c=>String(c.id)===typedCase||String(c.number)===typedCase||String(c.title)===typedCase||String(c.number+" — "+c.title)===typedCase);
