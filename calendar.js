@@ -277,18 +277,36 @@
         searchResult.textContent = 'No matching records found.';
         return;
       }
-      const firstMatch = matches[0];
-      const d = String(firstMatch.date || '').slice(0,10);
-      if (/^\d{4}-\d{2}-\d{2}$/.test(d)) {
-        const dt = new Date(d + 'T00:00:00');
-        window.calendarYear = dt.getFullYear();
-        window.calendarMonth = dt.getMonth();
-        selectedDate = d;
-        selectedRecordKey = firstMatch.key;
-        render();
-        const resultBox = document.getElementById('calendarSearchResult');
-        if (resultBox) resultBox.textContent = matches.length + ' matching record' + (matches.length === 1 ? '' : 's') + '. Showing the first match.';
+      const resultBox = document.getElementById('calendarSearchResult');
+      if (resultBox) {
+        resultBox.innerHTML = matches.map(e => {
+          const safeKey = esc(e.key);
+          const safeDate = esc(e.date || '');
+          const safeTitle = esc(e.title || '');
+          const safeTime = esc(displayTime(e.time || ''));
+          const safeType = esc(e.kind === 'hearing' ? 'Hearing' : e.kind === 'task' ? 'Task' : 'Client Meeting');
+          return '<button type="button" class="calendar-search-result" data-search-record="' + safeKey + '" style="display:block;width:100%;text-align:left;margin:4px 0;padding:7px 9px;border:1px solid #dbe3ef;border-radius:6px;background:#fff;cursor:pointer">' +
+            '<strong>' + safeDate + '</strong> — ' + safeTitle + ' <span style="opacity:.7">(' + safeType + (safeTime ? ', ' + safeTime : '') + ')</span></button>';
+        }).join('');
       }
+
+      root.querySelectorAll('[data-search-record]').forEach(btn => {
+        btn.onclick = () => {
+          const match = matches.find(e => e.key === btn.dataset.searchRecord);
+          if (!match) return;
+          const d = String(match.date || '').slice(0,10);
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return;
+          const dt = new Date(d + 'T00:00:00');
+          window.calendarYear = dt.getFullYear();
+          window.calendarMonth = dt.getMonth();
+          selectedDate = d;
+          selectedRecordKey = match.key;
+          suppressAutoSelect = false;
+          render();
+          const box = document.getElementById('calendarSearchResult');
+          if (box) box.innerHTML = '<span>' + matches.length + ' matching record' + (matches.length === 1 ? '' : 's') + '. Selected: ' + esc(match.title || '') + ' on ' + esc(match.date || '') + '.</span>';
+        };
+      });
     };
 
     if (searchBtn) searchBtn.onclick = runCalendarSearch;
