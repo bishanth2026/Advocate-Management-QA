@@ -203,7 +203,7 @@
             const subject = e.kind === 'meeting'
               ? ((e.clientName ? e.clientName + ' — ' : '') + (e.title || 'Client Meeting'))
               : (e.title || e.court || 'Record');
-            return '<button type="button" data-alert-record="' + esc(e.key) + '" style="display:block;width:100%;text-align:left;border:0;border-top:1px solid #eef2f7;background:transparent;padding:8px 2px;cursor:pointer">' +
+            return '<button type="button" data-alert-record="' + esc(e.key) + '" data-alert-date="' + esc(String(e.date).slice(0,10)) + '" data-alert-kind="' + esc(e.kind) + '" style="display:block;width:100%;text-align:left;border:0;border-top:1px solid #eef2f7;background:transparent;padding:8px 2px;cursor:pointer">' +
               '<strong>' + esc(label) + '</strong> · ' + esc(formattedDate) + ' · ' + esc(type) + ' · ' + esc(subject) +
               (e.time ? ' · ' + esc(displayTime(e.time)) : '') + '</button>';
           }).join('')
@@ -272,19 +272,21 @@
       '</div>';
 
     root.querySelectorAll('[data-alert-record]').forEach(btn => {
-      btn.onclick = () => {
-        const match = allRecords.find(e => e.key === btn.dataset.alertRecord);
-        if (!match) return;
-        const d = String(match.date || '').slice(0,10);
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return;
+      btn.addEventListener('click', function () {
+        const key = this.getAttribute('data-alert-record');
+        const d = this.getAttribute('data-alert-date');
+        const kind = this.getAttribute('data-alert-kind');
+        const match = allRecords.find(e => String(e.key) === String(key) && e.kind === kind && String(e.date).slice(0,10) === d);
+        if (!match || !/^\d{4}-\d{2}-\d{2}$/.test(d)) return;
         const dt = new Date(d + 'T00:00:00');
         window.calendarYear = dt.getFullYear();
         window.calendarMonth = dt.getMonth();
         selectedDate = d;
         selectedRecordKey = match.key;
-        suppressAutoSelect = false;
+        suppressAutoSelect = true;
         render();
-      };
+        window.scrollTo({top: 0, behavior: 'smooth'});
+      });
     });
 
     root.querySelector('#calPrev').onclick = () => {
