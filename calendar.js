@@ -9,7 +9,7 @@
   const pad = n => String(n).padStart(2, '0');
   function displayTime(value){
     const s = String(value || '').trim();
-    const m = s.match(/^(\\d{1,2}):(\\d{2})(?:\\s*([AaPp][Mm]))?$/);
+    const m = s.match(/^(\d{1,2}):(\d{2})(?:\s*([AaPp][Mm]))?$/);
     if(!m) return s;
     let h = Number(m[1]); const min = m[2];
     const ap = m[3] ? m[3].toUpperCase() : (h >= 12 ? 'PM' : 'AM');
