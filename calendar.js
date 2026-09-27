@@ -172,10 +172,10 @@
           '</span><strong>' + esc(chosen.title) + '</strong></div>' +
           detailRows(chosen) +
           (chosen.kind === 'hearing'
-            ? '<div style="margin-top:16px"><button class="primary" id="calendarEditHearing">Edit Hearing</button></div>'
+            ? '<div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap"><button class="primary" id="calendarEditHearing">Edit Hearing</button><button class="secondary" id="calendarDeleteRecord" style="border-color:#ef4444;color:#b91c1c">Delete</button></div>'
             : chosen.kind === 'task'
-              ? '<div style="margin-top:16px"><button class="primary" id="calendarEditTask">Edit Task</button></div>'
-              : '<div style="margin-top:16px"><button class="primary" id="calendarEditMeeting">Edit Client Meeting</button></div>') +
+              ? '<div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap"><button class="primary" id="calendarEditTask">Edit Task</button><button class="secondary" id="calendarDeleteRecord" style="border-color:#ef4444;color:#b91c1c">Delete</button></div>'
+              : '<div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap"><button class="primary" id="calendarEditMeeting">Edit Client Meeting</button><button class="secondary" id="calendarDeleteRecord" style="border-color:#ef4444;color:#b91c1c">Delete</button></div>') +
           '</div>'
       : '<div class="empty">Select a court, task subject or client meeting from the left.</div>';
 
@@ -384,6 +384,23 @@
     root.querySelectorAll('[data-record]').forEach(b => {
       b.onclick = () => { selectedRecordKey = b.dataset.record; render(); };
     });
+
+    const deleteRecordBtn = root.querySelector('#calendarDeleteRecord');
+    if (deleteRecordBtn && chosen) {
+      deleteRecordBtn.onclick = () => {
+        const typeLabel = chosen.kind === 'hearing' ? 'hearing' : chosen.kind === 'task' ? 'task' : 'client meeting';
+        if (!window.confirm('Delete this ' + typeLabel + '?\n\n' + (chosen.title || 'This record') + '\n' + chosen.date + (chosen.time ? ' · ' + displayTime(chosen.time) : '') + '\n\nThis action cannot be undone.')) return;
+        const keyParts = String(chosen.key).split('-');
+        const collection = chosen.kind === 'hearing' ? 'hearings' : chosen.kind === 'task' ? 'tasks' : 'meetings';
+        const index = Number(keyParts[1]);
+        const state = window.appState;
+        if (!state || !Array.isArray(state[collection]) || !Number.isInteger(index) || !state[collection][index]) return;
+        state[collection].splice(index, 1);
+        localStorage.setItem('advocateDeskData', JSON.stringify(state));
+        selectedRecordKey = null;
+        render();
+      };
+    }
 
     const editHearingBtn = root.querySelector('#calendarEditHearing');
     if (editHearingBtn && chosen && chosen.kind === 'hearing') {
