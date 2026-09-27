@@ -165,7 +165,11 @@
           '<div class="selected-record-head"><span class="record-type">' +
           esc(chosen.kind === 'hearing' ? 'HEARING' : chosen.kind === 'task' ? 'TASK' : 'MEETING') +
           '</span><strong>' + esc(chosen.title) + '</strong></div>' +
-          detailRows(chosen) + '</div>'
+          detailRows(chosen) +
+          (chosen.kind === 'hearing'
+            ? '<div style="margin-top:16px"><button class="primary" id="calendarEditHearing">Edit Hearing</button></div>'
+            : '') +
+          '</div>'
       : '<div class="empty">Select a court, task subject or client meeting from the left.</div>';
 
     const selectedLabel = new Date(selectedDate + 'T00:00:00')
@@ -243,6 +247,16 @@
     root.querySelectorAll('[data-record]').forEach(b => {
       b.onclick = () => { selectedRecordKey = b.dataset.record; render(); };
     });
+
+    const editHearingBtn = root.querySelector('#calendarEditHearing');
+    if (editHearingBtn && chosen && chosen.kind === 'hearing') {
+      const hearingIndex = Number(String(chosen.key).replace('hearing-', ''));
+      editHearingBtn.onclick = () => {
+        if (Number.isInteger(hearingIndex) && typeof window.openEditModal === 'function') {
+          window.openEditModal('hearing', hearingIndex);
+        }
+      };
+    }
   }
 
   window.calendar = () => render();
