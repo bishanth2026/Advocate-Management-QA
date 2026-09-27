@@ -32,6 +32,7 @@
   let selectedDate = null;
   let selectedRecordKey = null;
   let calendarSearch = '';
+  let calendarType = 'all';
 
   function records() {
     const d = readData();
@@ -105,7 +106,8 @@
     const days = new Date(year, month + 1, 0).getDate();
     const start = (first.getDay() + 6) % 7;
 
-    const all = records();
+    const allRecords = records();
+    const all = allRecords.filter(e => calendarType === 'all' || e.kind === calendarType);
     const by = {};
     all.forEach(e => (by[e.date] || (by[e.date] = [])).push(e));
 
@@ -248,6 +250,9 @@
       selectedRecordKey = null;
       render();
     };
+
+    const typeFilter = root.querySelector('#calendarTypeFilter');
+    if (typeFilter) { typeFilter.value = calendarType; typeFilter.onchange = () => { calendarType = typeFilter.value || 'all'; selectedRecordKey = null; render(); }; }
 
     const searchInput = root.querySelector('#calendarSearch');
     const searchBtn = root.querySelector('#calendarSearchBtn');
