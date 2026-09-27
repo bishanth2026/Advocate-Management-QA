@@ -7,6 +7,16 @@
   'use strict';
 
   const pad = n => String(n).padStart(2, '0');
+  function displayTime(value){
+    const s = String(value || '').trim();
+    const m = s.match(/^(\\d{1,2}):(\\d{2})(?:\\s*([AaPp][Mm]))?$/);
+    if(!m) return s;
+    let h = Number(m[1]); const min = m[2];
+    const ap = m[3] ? m[3].toUpperCase() : (h >= 12 ? 'PM' : 'AM');
+    if(h > 12) h -= 12;
+    if(h === 0) h = 12;
+    return h + ':' + min + ' ' + ap;
+  }
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({
     '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
   }[c]));
@@ -56,7 +66,7 @@
       ['Type', e.kind === 'hearing' ? 'Court Hearing' : e.kind === 'task' ? 'Task' : 'Client Meeting'],
       ['Date', e.date]
     ];
-    if (e.time) rows.push(['Time', e.time]);
+    if (e.time) rows.push(['Time', displayTime(e.time)]);
 
     if (e.kind === 'hearing') {
       rows.push(['Case Number', e.caseNo], ['Case Title', e.title],
@@ -142,10 +152,10 @@
             (e.kind === 'hearing' ? 'COURT' : e.kind === 'task' ? 'TASK' : 'MEETING') +
             '</span><strong>' + esc(label || '—') + '</strong>' +
             (e.kind === 'hearing'
-              ? '<small>' + esc(e.time || '') + ' • ' + esc(e.caseNo) + '</small>'
+              ? '<small>' + esc(displayTime(e.time || '')) + ' • ' + esc(e.caseNo) + '</small>'
               : e.kind === 'task'
                 ? '<small>' + esc(e.priority || '') + ' • ' + esc(e.status || '') + '</small>'
-                : '<small>' + esc(e.time || '') + ' • ' + esc(e.title) + '</small>') +
+                : '<small>' + esc(displayTime(e.time || '')) + ' • ' + esc(e.title) + '</small>') +
             '</button>';
         }).join('')
       : '<div class="empty">No records on this date.</div>';
