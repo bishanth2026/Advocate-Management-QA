@@ -223,7 +223,7 @@
         '<button class="secondary" onclick="navigate(\'dashboard\')">Back to Dashboard</button>' +
         '<button class="primary" onclick="openModal(\'hearing\')">＋ New Hearing</button>' +
         '</div></div>') +
-      alertPanel +
+      (target ? '' : alertPanel) +
       '<div class="court-calendar-layout">' +
         '<section class="court-calendar-card">' +
           '<div class="calendar-summary">' +
