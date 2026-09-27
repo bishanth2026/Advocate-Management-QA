@@ -217,6 +217,15 @@
               '<button class="secondary" id="calendarSearchClear">Clear</button>' +
             '</div>' +
             '<div id="calendarSearchResult" style="font-size:13px;margin-bottom:8px"></div>' +
+            '<div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap">' +
+              '<label for="calendarTypeFilter" style="font-size:13px;font-weight:600">Show:</label>' +
+              '<select id="calendarTypeFilter" style="min-width:160px;padding:8px;border:1px solid #dbe3ef;border-radius:6px">' +
+                '<option value="all">All records</option>' +
+                '<option value="hearing">Hearings</option>' +
+                '<option value="task">Tasks</option>' +
+                '<option value="meeting">Client meetings</option>' +
+              '</select>' +
+            '</div>' +
             '<div class="calendar-weekdays">' +
               ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(x => '<div>' + x + '</div>').join('') +
             '</div>' +
