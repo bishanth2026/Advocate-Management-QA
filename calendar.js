@@ -168,7 +168,9 @@
           detailRows(chosen) +
           (chosen.kind === 'hearing'
             ? '<div style="margin-top:16px"><button class="primary" id="calendarEditHearing">Edit Hearing</button></div>'
-            : '') +
+            : chosen.kind === 'task'
+              ? '<div style="margin-top:16px"><button class="primary" id="calendarEditTask">Edit Task</button></div>'
+              : '<div style="margin-top:16px"><button class="primary" id="calendarEditMeeting">Edit Client Meeting</button></div>') +
           '</div>'
       : '<div class="empty">Select a court, task subject or client meeting from the left.</div>';
 
@@ -254,6 +256,26 @@
       editHearingBtn.onclick = () => {
         if (Number.isInteger(hearingIndex) && typeof window.openEditModal === 'function') {
           window.openEditModal('hearing', hearingIndex);
+        }
+      };
+    }
+
+    const editTaskBtn = root.querySelector('#calendarEditTask');
+    if (editTaskBtn && chosen && chosen.kind === 'task') {
+      const taskIndex = Number(String(chosen.key).replace('task-', ''));
+      editTaskBtn.onclick = () => {
+        if (Number.isInteger(taskIndex) && typeof window.openEditModal === 'function') {
+          window.openEditModal('task', taskIndex);
+        }
+      };
+    }
+
+    const editMeetingBtn = root.querySelector('#calendarEditMeeting');
+    if (editMeetingBtn && chosen && chosen.kind === 'meeting') {
+      const meetingIndex = Number(String(chosen.key).replace('meeting-', ''));
+      editMeetingBtn.onclick = () => {
+        if (Number.isInteger(meetingIndex) && typeof window.openEditModal === 'function') {
+          window.openEditModal('meeting', meetingIndex);
         }
       };
     }
