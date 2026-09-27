@@ -199,8 +199,12 @@
             const diff = Math.round((dt - todayDate) / 86400000);
             const label = diff === 0 ? 'Today' : diff === 1 ? 'Tomorrow' : diff + ' days';
             const type = e.kind === 'hearing' ? 'Hearing' : e.kind === 'task' ? 'Task' : 'Meeting';
+            const formattedDate = dt.toLocaleDateString('en-IN', {day:'numeric', month:'long', year:'numeric'});
+            const subject = e.kind === 'meeting'
+              ? ((e.clientName ? e.clientName + ' — ' : '') + (e.title || 'Client Meeting'))
+              : (e.title || e.court || 'Record');
             return '<button type="button" data-alert-record="' + esc(e.key) + '" style="display:block;width:100%;text-align:left;border:0;border-top:1px solid #eef2f7;background:transparent;padding:8px 2px;cursor:pointer">' +
-              '<strong>' + esc(label) + '</strong> · ' + esc(e.date) + ' · ' + esc(type) + ' · ' + esc(e.title || e.court || 'Record') +
+              '<strong>' + esc(label) + '</strong> · ' + esc(formattedDate) + ' · ' + esc(type) + ' · ' + esc(subject) +
               (e.time ? ' · ' + esc(displayTime(e.time)) : '') + '</button>';
           }).join('')
         : '<span style="font-size:13px;opacity:.7">No records due in the next 7 days.</span>') +
