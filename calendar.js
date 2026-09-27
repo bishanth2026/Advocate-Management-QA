@@ -33,6 +33,7 @@
   let selectedRecordKey = null;
   let calendarSearch = '';
   let calendarType = 'all';
+  let suppressAutoSelect = false;
 
   function records() {
     const d = readData();
@@ -117,9 +118,10 @@
     }
 
     const selected = by[selectedDate] || [];
-    if (!selected.some(e => e.key === selectedRecordKey)) {
+    if (!selected.some(e => e.key === selectedRecordKey) && !suppressAutoSelect) {
       selectedRecordKey = selected[0]?.key || null;
     }
+    suppressAutoSelect = false;
 
     const chosen = selected.find(e => e.key === selectedRecordKey) || null;
 
@@ -263,6 +265,7 @@
       calendarSearch = String(searchInput?.value || '').trim();
       if (!calendarSearch) {
         selectedRecordKey = null;
+        suppressAutoSelect = true;
         render();
         return;
       }
@@ -290,7 +293,7 @@
 
     if (searchBtn) searchBtn.onclick = runCalendarSearch;
     if (searchInput) searchInput.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); runCalendarSearch(); } };
-    if (clearBtn) clearBtn.onclick = () => { calendarSearch = ''; selectedRecordKey = null; render(); };
+    if (clearBtn) clearBtn.onclick = () => { calendarSearch = ''; selectedRecordKey = null; suppressAutoSelect = true; render(); };
 
     root.querySelectorAll('[data-date]').forEach(b => {
       b.onclick = () => { selectedDate = b.dataset.date; selectedRecordKey = null; render(); };
