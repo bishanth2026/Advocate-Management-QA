@@ -31,6 +31,7 @@
 
   let selectedDate = null;
   let selectedRecordKey = null;
+  let calendarSearch = '';
 
   function records() {
     const d = readData();
@@ -206,6 +207,12 @@
               '<button class="secondary" id="calNext">›</button>' +
               '<button class="secondary" id="calToday">Today</button>' +
             '</div>' +
+            '<div class="calendar-search-bar" style="display:flex;gap:8px;align-items:center;margin:12px 0;flex-wrap:wrap">' +
+              '<input id="calendarSearch" type="search" value="' + esc(calendarSearch) + '" placeholder="Search case, client, court, task or meeting..." autocomplete="off" style="flex:1;min-width:220px">' +
+              '<button class="secondary" id="calendarSearchBtn">Find</button>' +
+              '<button class="secondary" id="calendarSearchClear">Clear</button>' +
+            '</div>' +
+            '<div id="calendarSearchResult" style="font-size:13px;margin-bottom:8px"></div>' +
             '<div class="calendar-weekdays">' +
               ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(x => '<div>' + x + '</div>').join('') +
             '</div>' +
@@ -241,6 +248,44 @@
       selectedRecordKey = null;
       render();
     };
+
+    const searchInput = root.querySelector('#calendarSearch');
+    const searchBtn = root.querySelector('#calendarSearchBtn');
+    const clearBtn = root.querySelector('#calendarSearchClear');
+    const searchResult = root.querySelector('#calendarSearchResult');
+
+    const runCalendarSearch = () => {
+      calendarSearch = String(searchInput?.value || '').trim();
+      if (!calendarSearch) {
+        selectedRecordKey = null;
+        render();
+        return;
+      }
+      const q = calendarSearch.toLowerCase();
+      const matches = records().filter(e => [
+        e.title, e.caseNo, e.clientName, e.court, e.stage, e.purpose, e.location, e.subject
+      ].some(v => String(v || '').toLowerCase().includes(q)));
+      if (!matches.length) {
+        searchResult.textContent = 'No matching records found.';
+        return;
+      }
+      const firstMatch = matches[0];
+      const d = String(firstMatch.date || '').slice(0,10);
+      if (/^\d{4}-\d{2}-\d{2}$/.test(d)) {
+        const dt = new Date(d + 'T00:00:00');
+        window.calendarYear = dt.getFullYear();
+        window.calendarMonth = dt.getMonth();
+        selectedDate = d;
+        selectedRecordKey = firstMatch.key;
+        render();
+        const resultBox = document.getElementById('calendarSearchResult');
+        if (resultBox) resultBox.textContent = matches.length + ' matching record' + (matches.length === 1 ? '' : 's') + '. Showing the first match.';
+      }
+    };
+
+    if (searchBtn) searchBtn.onclick = runCalendarSearch;
+    if (searchInput) searchInput.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); runCalendarSearch(); } };
+    if (clearBtn) clearBtn.onclick = () => { calendarSearch = ''; selectedRecordKey = null; render(); };
 
     root.querySelectorAll('[data-date]').forEach(b => {
       b.onclick = () => { selectedDate = b.dataset.date; selectedRecordKey = null; render(); };
