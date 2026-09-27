@@ -179,6 +179,33 @@
           '</div>'
       : '<div class="empty">Select a court, task subject or client meeting from the left.</div>';
 
+    const todayDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const upcoming = allRecords
+      .filter(e => {
+        const d = String(e.date || '').slice(0,10);
+        if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(d)) return false;
+        const dt = new Date(d + 'T00:00:00');
+        const diff = Math.round((dt - todayDate) / 86400000);
+        return diff >= 0 && diff <= 7 && (calendarType === 'all' || e.kind === calendarType);
+      })
+      .sort((a,b) => (String(a.date).localeCompare(String(b.date)) || String(a.time || '').localeCompare(String(b.time || ''))))
+      .slice(0, 8);
+
+    const alertPanel = '<div class="calendar-alert-panel" style="margin:0 0 16px;padding:12px 14px;border:1px solid #dbe3ef;border-radius:10px;background:#fff">' +
+      '<div style="font-weight:700;margin-bottom:8px">Upcoming — next 7 days</div>' +
+      (upcoming.length
+        ? upcoming.map(e => {
+            const dt = new Date(String(e.date).slice(0,10) + 'T00:00:00');
+            const diff = Math.round((dt - todayDate) / 86400000);
+            const label = diff === 0 ? 'Today' : diff === 1 ? 'Tomorrow' : diff + ' days';
+            const type = e.kind === 'hearing' ? 'Hearing' : e.kind === 'task' ? 'Task' : 'Meeting';
+            return '<button type="button" data-alert-record="' + esc(e.key) + '" style="display:block;width:100%;text-align:left;border:0;border-top:1px solid #eef2f7;background:transparent;padding:8px 2px;cursor:pointer">' +
+              '<strong>' + esc(label) + '</strong> · ' + esc(e.date) + ' · ' + esc(type) + ' · ' + esc(e.title || e.court || 'Record') +
+              (e.time ? ' · ' + esc(displayTime(e.time)) : '') + '</button>';
+          }).join('')
+        : '<span style="font-size:13px;opacity:.7">No records due in the next 7 days.</span>') +
+      '</div>';
+
     const selectedLabel = new Date(selectedDate + 'T00:00:00')
       .toLocaleDateString('en-IN', {day:'numeric', month:'long', year:'numeric'});
     const weekday = new Date(selectedDate + 'T00:00:00')
@@ -192,6 +219,7 @@
         '<button class="secondary" onclick="navigate(\'dashboard\')">Back to Dashboard</button>' +
         '<button class="primary" onclick="openModal(\'hearing\')">＋ New Hearing</button>' +
         '</div></div>') +
+      alertPanel +
       '<div class="court-calendar-layout">' +
         '<section class="court-calendar-card">' +
           '<div class="calendar-summary">' +
@@ -238,6 +266,22 @@
           '<div class="selected-details">' + chosenDetails + '</div>' +
         '</section>' +
       '</div>';
+
+    root.querySelectorAll('[data-alert-record]').forEach(btn => {
+      btn.onclick = () => {
+        const match = allRecords.find(e => e.key === btn.dataset.alertRecord);
+        if (!match) return;
+        const d = String(match.date || '').slice(0,10);
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return;
+        const dt = new Date(d + 'T00:00:00');
+        window.calendarYear = dt.getFullYear();
+        window.calendarMonth = dt.getMonth();
+        selectedDate = d;
+        selectedRecordKey = match.key;
+        suppressAutoSelect = false;
+        render();
+      };
+    });
 
     root.querySelector('#calPrev').onclick = () => {
       window.calendarMonth--;
