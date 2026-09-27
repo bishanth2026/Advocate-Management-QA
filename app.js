@@ -621,7 +621,7 @@ function hearingTimeInputValue(value){
  if(!Number.isFinite(h)) return '';
  if(ap==='AM' && h===12) h=0;
  if(ap==='PM' && h<12) h+=12;
- if(h>=0 && h<=23 && /^\\d{2}$/.test(mins)) return String(h).padStart(2,'0')+':'+mins;
+ if(h>=0 && h<=23 && /^\d{2}$/.test(mins)) return String(h).padStart(2,'0')+':'+mins;
  return raw;
 }
 function hearingTimeDisplayValue(value){
