@@ -36,7 +36,29 @@ state.invoices = Array.isArray(state.invoices) ? state.invoices : [
   {id:"INV-101",date:"2026-09-13",client:"ABC Traders",clientId:"CL-003",case:"WP 422/2026",caseId:"CS-2026-003",caseNumber:"WP 422/2026",amount:1000,paid:500,status:"Partial"},
   {id:"INV-001",date:"2026-09-13",client:"ABC Traders",clientId:"CL-003",case:"WP 422/2026",caseId:"CS-2026-003",caseNumber:"WP 422/2026",amount:25000,paid:15000,status:"Partial"}
 ];
+let stateChangedByDemoMigration=false;
+// Migrate only the known legacy demo invoices. Genuine user-created invoices are not rewritten.
+if(Array.isArray(state.invoices)){
+  state.invoices.forEach(inv=>{
+    if(inv && (inv.id==="INV-101"||inv.id==="INV-001") && (
+      inv.client==="ABC Industries" ||
+      inv.case==="WP 422/2026" ||
+      inv.caseId==="CS-2026-003" ||
+      inv.clientId==="CL-003"
+    )){
+      inv.client="ABC Traders";
+      inv.clientId="CL-003";
+      inv.case="WP 422/2026";
+      inv.caseNumber="WP 422/2026";
+      inv.caseId="CS-2026-003";
+      const amount=Number(inv.amount||0), paid=Number(inv.paid||0);
+      inv.status=paid>=amount && amount>0 ? "Paid" : paid>0 ? "Partial" : "Pending";
+      stateChangedByDemoMigration=true;
+    }
+  });
+}
 const save=()=>localStorage.setItem("advocateDeskData",JSON.stringify(state));
+if(stateChangedByDemoMigration) save();
 window.appState=state;
 if(storedData===null) save();
 const fmtDate=d=>new Date(d+"T00:00:00").toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"});
