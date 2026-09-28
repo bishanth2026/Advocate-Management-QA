@@ -534,9 +534,9 @@
 
   const style = document.createElement('style');
   style.textContent =
-    '.court-calendar-layout{scroll-margin-top:84px;display:grid;grid-template-columns:minmax(0,1.5fr) minmax(320px,1fr);gap:20px}' +
+    '.court-calendar-layout{scroll-margin-top:84px;display:grid;grid-template-columns:minmax(760px,1.65fr) minmax(300px,.85fr);gap:20px}' +
     '.court-calendar-card,.next-cases-card{background:var(--card,#fff);border:1px solid var(--border,#e2e8f0);border-radius:18px;overflow:hidden}' +
-    '.court-calendar-card{display:grid;grid-template-columns:240px minmax(0,1fr)}' +
+    '.court-calendar-card{display:grid;grid-template-columns:220px minmax(0,1fr)}' +
     '.calendar-summary{background:linear-gradient(160deg,#93c5fd,#60a5fa);color:#fff;padding:28px}' +
     '.summary-date{font-size:20px;font-weight:800;line-height:1.45}.summary-total{font-size:30px;font-weight:800;margin-top:28px}' +
     '.summary-total span{display:block;font-size:12px;font-weight:600;margin-top:4px}.summary-rule{height:1px;background:rgba(255,255,255,.45);margin:20px 0}' +
@@ -545,7 +545,7 @@
     '.calendar-record-link.active{background:#fff;color:#1e3a8a;border-color:#fff}.calendar-record-link strong,.calendar-record-link small,.record-link-kind{display:block}' +
     '.calendar-record-link strong{font-size:12px;line-height:1.4;margin:3px 0}.calendar-record-link small{font-size:10px;opacity:.9}.record-link-kind{font-size:9px;font-weight:800;letter-spacing:.08em}' +
     '.calendar-main{padding:20px 18px}.calendar-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:18px}.calendar-toolbar h2{flex:1;text-align:center;font-size:20px;margin:0}' +
-    '.calendar-weekdays,.court-cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}.calendar-weekdays>div{text-align:center;font-weight:700;color:var(--muted,#64748b);font-size:12px;padding:8px 0;min-width:0}' +
+    '.calendar-weekdays,.court-cal-grid{display:grid;grid-template-columns:repeat(7,minmax(82px,1fr));gap:6px}.calendar-weekdays>div{text-align:center;font-weight:700;color:var(--muted,#64748b);font-size:12px;padding:8px 0;min-width:0}' +
     '.court-cal-cell{position:relative;display:block;width:100%;min-width:0;min-height:86px;border:2px solid #dbeafe;border-radius:12px;background:#fff;padding:7px;text-align:left;cursor:pointer;overflow:hidden;transition:transform .15s,box-shadow .15s,border-color .15s}' +
     '.court-cal-cell:hover{transform:translateY(-2px);box-shadow:0 7px 18px rgba(30,64,175,.12);border-color:#6366f1}' +
     '.court-cal-cell.selected{background:linear-gradient(145deg,#dbeafe,#eff6ff);border:2px solid #2563eb;box-shadow:0 5px 14px rgba(37,99,235,.16)}' +
@@ -574,7 +574,7 @@
     '.dashboard-today-record.task .dashboard-today-icon{background:#fee2e2;color:#dc2626}.dashboard-today-record.meeting .dashboard-today-icon{background:#dbeafe;color:#2563eb}' +
     '.dashboard-today-record h3{margin:3px 0 2px;font-size:15px}.dashboard-today-record p{margin:0;color:var(--muted,#64748b);font-size:12px}.dashboard-today-details{margin-top:12px}.dashboard-today-details .calendar-detail-row{background:transparent}' +
     '@media(max-width:1050px){.court-calendar-card{grid-template-columns:1fr}.calendar-summary{padding:20px}.summary-total{margin-top:15px}}' +
-    '@media(max-width:700px){.court-calendar-layout{grid-template-columns:1fr}.calendar-main{padding:12px}.court-cal-cell{min-height:58px;padding:5px}.cal-cell-top{min-height:26px}.cal-number{height:24px}.cal-count{top:4px!important;right:4px!important;font-size:8px;min-width:16px;height:14px;padding:2px 4px}.cal-dots{bottom:6px}.next-cases-card{padding:16px}.dashboard-today-head{padding:18px;align-items:flex-start;flex-direction:column}.dashboard-today-list{padding:14px}.dashboard-today-count{padding:14px 18px}}';
+    '@media(max-width:1000px){.court-calendar-layout{grid-template-columns:minmax(0,1fr)}.court-calendar-card{grid-template-columns:220px minmax(0,1fr)}}@media(max-width:700px){.court-calendar-layout{grid-template-columns:1fr}.calendar-main{padding:12px}.court-cal-cell{min-height:58px;padding:5px}.cal-cell-top{min-height:26px}.cal-number{height:24px}.cal-count{top:4px!important;right:4px!important;font-size:8px;min-width:16px;height:14px;padding:2px 4px}.cal-dots{bottom:6px}.next-cases-card{padding:16px}.dashboard-today-head{padding:18px;align-items:flex-start;flex-direction:column}.dashboard-today-list{padding:14px}.dashboard-today-count{padding:14px 18px}}';
 
   document.head.appendChild(style);
 })();
