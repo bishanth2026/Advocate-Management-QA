@@ -533,7 +533,7 @@
 
   const style = document.createElement('style');
   style.textContent =
-    '.court-calendar-layout{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(320px,1fr);gap:20px}' +
+    '.court-calendar-layout{scroll-margin-top:84px;display:grid;grid-template-columns:minmax(0,1.5fr) minmax(320px,1fr);gap:20px}' +
     '.court-calendar-card,.next-cases-card{background:var(--card,#fff);border:1px solid var(--border,#e2e8f0);border-radius:18px;overflow:hidden}' +
     '.court-calendar-card{display:grid;grid-template-columns:260px minmax(0,1fr)}' +
     '.calendar-summary{background:linear-gradient(160deg,#93c5fd,#60a5fa);color:#fff;padding:28px}' +
