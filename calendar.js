@@ -140,9 +140,10 @@
 
       cells += '<button class="court-cal-cell ' +
         (isToday ? 'today ' : '') + (active ? 'selected ' : '') +
-        '" data-date="' + key + '"><span class="cal-number">' + day + '</span>' +
+        '" data-date="' + key + '"><div class="cal-cell-top"><span class="cal-number">' + day + '</span>' +
         (list.length ? '<span class="cal-count">' + list.length + '</span>' : '') +
-        list.slice(0, 3).map(e => '<span class="cal-dot ' + e.kind + '"></span>').join('') +
+        '</div><div class="cal-dots">' +
+        list.slice(0, 3).map(e => '<span class="cal-dot ' + e.kind + '"></span>').join('') + '</div>' +
         '</button>';
     }
 
@@ -549,9 +550,9 @@
     '.court-cal-cell:hover{transform:translateY(-2px);box-shadow:0 7px 18px rgba(30,64,175,.12);border-color:#6366f1}' +
     '.court-cal-cell.selected{background:linear-gradient(145deg,#dbeafe,#eff6ff);border:2px solid #2563eb;box-shadow:0 5px 14px rgba(37,99,235,.16)}' +
     '.court-cal-cell.today{background:linear-gradient(145deg,#ede9fe,#dbeafe);border:2px solid #8b5cf6;box-shadow:0 5px 16px rgba(124,58,237,.14)}' +
-    '.court-cal-cell.today .cal-number{background:linear-gradient(135deg,#7c3aed,#2563eb);color:#fff;border-radius:50%;width:29px;height:29px;display:grid;place-items:center;box-shadow:0 3px 8px rgba(37,99,235,.25)}' +
-    '.muted-cell{opacity:.3;cursor:default}.cal-number{font-weight:800;font-size:13px;color:#172554}.cal-count{position:absolute;right:7px;top:7px;font-size:10px;font-weight:800;color:#fff;background:linear-gradient(135deg,#2563eb,#7c3aed);padding:3px 6px;border-radius:999px;box-shadow:0 2px 6px rgba(37,99,235,.18)}' +
-    '.cal-dot{display:inline-block!important;width:8px;height:8px;border-radius:50%;margin:20px 3px 0 0;vertical-align:middle;opacity:1!important;box-shadow:0 1px 4px rgba(15,23,42,.16)}' +
+    '.court-cal-cell.today .cal-number{background:linear-gradient(135deg,#7c3aed,#2563eb);color:#fff;border-radius:50%;width:29px;height:29px;min-width:29px;display:inline-flex;place-items:center;box-shadow:0 3px 8px rgba(37,99,235,.25)}' +
+    '.muted-cell{opacity:.3;cursor:default}.cal-cell-top{display:flex;align-items:center;justify-content:space-between;gap:4px;min-height:29px}.cal-number{font-weight:800;font-size:13px;color:#172554;display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:26px}.cal-count{position:static;flex:0 0 auto;font-size:9px;line-height:1;font-weight:800;color:#fff;background:linear-gradient(135deg,#2563eb,#7c3aed);padding:4px 6px;border-radius:999px;box-shadow:0 2px 6px rgba(37,99,235,.18)}' +
+    '.cal-dots{display:flex;align-items:center;gap:4px;min-height:24px;padding-top:8px}.cal-dot{display:inline-block!important;width:8px;height:8px;border-radius:50%;margin:0;vertical-align:middle;opacity:1!important;box-shadow:0 1px 4px rgba(15,23,42,.16)}' +
     '.court-cal-cell .cal-dot.hearing{background:#16a34a!important}.court-cal-cell .cal-dot.task{background:#f97316!important}.court-cal-cell .cal-dot.meeting{background:#2563eb!important}' +
     '.court-cal-cell:has(.cal-dot.hearing){background:linear-gradient(145deg,#f0fdf4,#fff);border-color:#86efac}.court-cal-cell:has(.cal-dot.task){background:linear-gradient(145deg,#fff7ed,#fff);border-color:#fdba74}.court-cal-cell:has(.cal-dot.meeting){background:linear-gradient(145deg,#eff6ff,#fff);border-color:#93c5fd}' +
     '.court-cal-cell:has(.cal-dot.hearing):has(.cal-dot.task){background:linear-gradient(145deg,#f0fdf4,#fff7ed)}.court-cal-cell:has(.cal-dot.hearing):has(.cal-dot.meeting){background:linear-gradient(145deg,#f0fdf4,#eff6ff)}.court-cal-cell:has(.cal-dot.task):has(.cal-dot.meeting){background:linear-gradient(145deg,#fff7ed,#eff6ff)}' +
@@ -573,7 +574,7 @@
     '.dashboard-today-record.task .dashboard-today-icon{background:#fee2e2;color:#dc2626}.dashboard-today-record.meeting .dashboard-today-icon{background:#dbeafe;color:#2563eb}' +
     '.dashboard-today-record h3{margin:3px 0 2px;font-size:15px}.dashboard-today-record p{margin:0;color:var(--muted,#64748b);font-size:12px}.dashboard-today-details{margin-top:12px}.dashboard-today-details .calendar-detail-row{background:transparent}' +
     '@media(max-width:1050px){.court-calendar-card{grid-template-columns:1fr}.calendar-summary{padding:20px}.summary-total{margin-top:15px}}' +
-    '@media(max-width:700px){.court-calendar-layout{grid-template-columns:1fr}.calendar-main{padding:12px}.court-cal-cell{min-height:48px;padding:5px}.cal-dot{margin-top:10px}.next-cases-card{padding:16px}.dashboard-today-head{padding:18px;align-items:flex-start;flex-direction:column}.dashboard-today-list{padding:14px}.dashboard-today-count{padding:14px 18px}}';
+    '@media(max-width:700px){.court-calendar-layout{grid-template-columns:1fr}.calendar-main{padding:12px}.court-cal-cell{min-height:48px;padding:5px}.cal-cell-top{min-height:25px}.cal-count{font-size:8px;padding:3px 5px}.cal-dots{padding-top:5px;min-height:18px}.next-cases-card{padding:16px}.dashboard-today-head{padding:18px;align-items:flex-start;flex-direction:column}.dashboard-today-list{padding:14px}.dashboard-today-count{padding:14px 18px}}';
 
   document.head.appendChild(style);
 })();
