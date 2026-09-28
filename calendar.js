@@ -545,12 +545,18 @@
     '.calendar-record-link strong{font-size:12px;line-height:1.4;margin:3px 0}.calendar-record-link small{font-size:10px;opacity:.9}.record-link-kind{font-size:9px;font-weight:800;letter-spacing:.08em}' +
     '.calendar-main{padding:22px}.calendar-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:18px}.calendar-toolbar h2{flex:1;text-align:center;font-size:20px;margin:0}' +
     '.calendar-weekdays,.court-cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}.calendar-weekdays>div{text-align:center;font-weight:700;color:var(--muted,#64748b);font-size:12px;padding:8px 0}' +
-    '.court-cal-cell{position:relative;min-height:66px;border:1px solid var(--border,#e2e8f0);border-radius:9px;background:var(--card,#fff);padding:8px;text-align:left;cursor:pointer}' +
-    '.court-cal-cell.selected{background:#dbeafe;border:2px solid #60a5fa}.court-cal-cell.today .cal-number{background:#2563eb;color:#fff;border-radius:50%;width:27px;height:27px;display:grid;place-items:center}' +
-    '.muted-cell{opacity:.3;cursor:default}.cal-number{font-weight:700;font-size:13px}.cal-count{position:absolute;right:6px;top:6px;font-size:10px;color:#2563eb}' +
-    '.cal-dot{display:inline-block!important;width:7px;height:7px;border-radius:50%;margin:18px 3px 0 0;vertical-align:middle;opacity:1!important}.court-cal-cell .cal-dot.hearing{background:#16a34a!important}.court-cal-cell .cal-dot.task{background:#dc2626!important}.court-cal-cell .cal-dot.meeting{background:#2563eb!important}' +
-    '.calendar-legend{display:flex;gap:15px;flex-wrap:wrap;margin-top:17px;font-size:12px}.legend-hearing:before,.legend-task:before,.legend-meeting:before{content:"● "}' +
-    '.legend-hearing{color:#16a34a}.legend-task{color:#dc2626}.legend-meeting{color:#2563eb}.next-cases-card{padding:24px}' +
+    '.court-cal-cell{position:relative;min-height:74px;border:1px solid #e2e8f0;border-radius:12px;background:#fff;padding:8px;text-align:left;cursor:pointer;transition:transform .15s,box-shadow .15s,border-color .15s}' +
+    '.court-cal-cell:hover{transform:translateY(-2px);box-shadow:0 7px 18px rgba(30,64,175,.12);border-color:#bfdbfe}' +
+    '.court-cal-cell.selected{background:linear-gradient(145deg,#dbeafe,#eff6ff);border:2px solid #60a5fa;box-shadow:0 5px 14px rgba(37,99,235,.16)}' +
+    '.court-cal-cell.today{background:linear-gradient(145deg,#ede9fe,#dbeafe);border-color:#8b5cf6;box-shadow:0 5px 16px rgba(124,58,237,.14)}' +
+    '.court-cal-cell.today .cal-number{background:linear-gradient(135deg,#7c3aed,#2563eb);color:#fff;border-radius:50%;width:29px;height:29px;display:grid;place-items:center;box-shadow:0 3px 8px rgba(37,99,235,.25)}' +
+    '.muted-cell{opacity:.3;cursor:default}.cal-number{font-weight:800;font-size:13px;color:#172554}.cal-count{position:absolute;right:7px;top:7px;font-size:10px;font-weight:800;color:#fff;background:linear-gradient(135deg,#2563eb,#7c3aed);padding:3px 6px;border-radius:999px;box-shadow:0 2px 6px rgba(37,99,235,.18)}' +
+    '.cal-dot{display:inline-block!important;width:8px;height:8px;border-radius:50%;margin:20px 3px 0 0;vertical-align:middle;opacity:1!important;box-shadow:0 1px 4px rgba(15,23,42,.16)}' +
+    '.court-cal-cell .cal-dot.hearing{background:#16a34a!important}.court-cal-cell .cal-dot.task{background:#f97316!important}.court-cal-cell .cal-dot.meeting{background:#2563eb!important}' +
+    '.court-cal-cell:has(.cal-dot.hearing){background:linear-gradient(145deg,#f0fdf4,#fff)}.court-cal-cell:has(.cal-dot.task){background:linear-gradient(145deg,#fff7ed,#fff)}.court-cal-cell:has(.cal-dot.meeting){background:linear-gradient(145deg,#eff6ff,#fff)}' +
+    '.court-cal-cell:has(.cal-dot.hearing):has(.cal-dot.task){background:linear-gradient(145deg,#f0fdf4,#fff7ed)}.court-cal-cell:has(.cal-dot.hearing):has(.cal-dot.meeting){background:linear-gradient(145deg,#f0fdf4,#eff6ff)}.court-cal-cell:has(.cal-dot.task):has(.cal-dot.meeting){background:linear-gradient(145deg,#fff7ed,#eff6ff)}' +
+    '.calendar-legend{display:flex;gap:15px;flex-wrap:wrap;margin-top:17px;font-size:12px;font-weight:700}.legend-hearing:before,.legend-task:before,.legend-meeting:before{content:"● "}' +
+    '.legend-hearing{color:#16a34a}.legend-task{color:#f97316}.legend-meeting{color:#2563eb}.next-cases-card{padding:24px}' +
     '.selected-details{display:flex;flex-direction:column;gap:12px}.selected-record{border:1px solid var(--border,#e2e8f0);border-left:4px solid #16a34a;border-radius:12px;padding:14px;background:var(--surface,#f8fafc)}' +
     '.selected-record.task{border-left-color:#dc2626}.selected-record.meeting{border-left-color:#2563eb}.selected-record-head{display:flex;flex-direction:column;gap:5px;margin-bottom:10px}' +
     '.record-type{font-size:10px;font-weight:800;letter-spacing:.08em;color:var(--muted,#64748b)}.selected-record-head strong{font-size:15px;line-height:1.4}' +
