@@ -143,7 +143,7 @@
         '" data-date="' + key + '"><div class="cal-cell-top"><span class="cal-number">' + day + '</span>' +
         (list.length ? '<span class="cal-count">' + list.length + '</span>' : '') +
         '</div><div class="cal-dots">' +
-        list.slice(0, 3).map(e => '<span class="cal-dot ' + e.kind + '"></span>').join('') + '</div>' +
+        list.slice(0, 5).map(e => '<span class="cal-dot ' + e.kind + '"></span>').join('') + '</div>' +
         '</button>';
     }
 
