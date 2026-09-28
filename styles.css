@@ -569,3 +569,56 @@ th{background:linear-gradient(90deg,#f1f5ff,#f7fbff);color:#526174}
 .case360-suggestion strong{display:block;color:#172033;font-size:13px}
 .case360-suggestion span{display:block;margin-top:3px;color:#64748b;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .case360-suggestion-empty{padding:12px 14px;color:#64748b;font-size:12px}
+
+/* ===== Final mobile layout pass — alignment only, no functional changes ===== */
+@media (max-width:720px){
+  html,body{overflow-x:hidden!important}
+  #app{width:100%!important;min-width:0!important}
+  .main{width:100%!important;min-width:0!important;margin-left:0!important}
+  .topbar{width:100%!important;min-width:0!important;padding:9px 10px!important;gap:7px!important}
+  .topbar .search{min-width:0!important;flex:1 1 auto!important;width:auto!important}
+  .top-actions{min-width:0!important}
+  .content{width:100%!important;max-width:100%!important;min-width:0!important;padding:14px 10px 24px!important}
+  .page-title{width:100%!important;min-width:0!important}
+  .page-title>div{min-width:0!important}
+  .cards,.grid-2,.quick-grid,.admin-grid,.admin-control-grid{width:100%!important;min-width:0!important}
+  .grid-2{grid-template-columns:minmax(0,1fr)!important}
+  .panel{width:100%!important;min-width:0!important;max-width:100%!important}
+  .panel-head{width:100%!important;min-width:0!important}
+  .panel-head .secondary{flex:0 0 auto!important;width:auto!important;min-width:0!important}
+  .panel-body{width:100%!important;min-width:0!important}
+  .toolbar{width:100%!important;min-width:0!important}
+  .toolbar>*{max-width:100%!important;min-width:0!important}
+  .form-grid{width:100%!important;min-width:0!important}
+  .field input,.field select,.field textarea{box-sizing:border-box!important}
+  .form-actions{width:100%!important}
+  .form-actions button{min-width:0!important}
+  table{min-width:620px}
+  .panel-body{overflow-x:auto!important}
+  .calendar-search-bar{width:100%!important;display:grid!important;grid-template-columns:minmax(0,1fr) auto auto!important;gap:6px!important;align-items:stretch!important}
+  .calendar-search-bar input{min-width:0!important;width:100%!important;height:42px!important}
+  .calendar-search-bar button{min-width:0!important;height:42px!important;padding:9px 11px!important}
+  .calendar-toolbar{width:100%!important;display:grid!important;grid-template-columns:42px minmax(0,1fr) 42px auto!important;gap:6px!important;align-items:center!important}
+  .calendar-toolbar h2{min-width:0!important;font-size:18px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+  .calendar-toolbar .secondary{min-width:42px!important;padding:9px 8px!important}
+  .calendar-main>div[style*="display:flex"]{width:100%!important;min-width:0!important}
+  .calendar-main>div[style*="display:flex"] select{min-width:0!important;max-width:100%!important;flex:1 1 auto!important}
+  .court-cal-grid,.calendar-weekdays{width:100%!important;grid-template-columns:repeat(7,minmax(0,1fr))!important}
+  .court-cal-cell{width:100%!important;min-width:0!important}
+  .next-cases-card{width:100%!important;min-width:0!important}
+  .list-row{min-width:0!important}
+  .list-main{min-width:0!important}
+  .list-main strong,.list-main small{overflow-wrap:anywhere!important}
+  .date-box{flex:0 0 43px!important}
+  .modal{width:100%!important}
+  .modal-card{width:100%!important;min-width:0!important}
+}
+@media (max-width:430px){
+  .content{padding-left:8px!important;padding-right:8px!important}
+  .calendar-search-bar{grid-template-columns:minmax(0,1fr) auto!important}
+  .calendar-search-bar #calendarSearchClear{grid-column:1 / -1!important}
+  .calendar-toolbar{grid-template-columns:38px minmax(0,1fr) 38px!important}
+  .calendar-toolbar #calToday{grid-column:1 / -1!important;width:100%!important}
+  .calendar-toolbar .secondary{min-width:38px!important}
+  .calendar-toolbar h2{font-size:17px!important}
+}
