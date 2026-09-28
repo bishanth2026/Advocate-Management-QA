@@ -643,3 +643,123 @@ th{background:linear-gradient(90deg,#f1f5ff,#f7fbff);color:#526174}
   .content{padding-top:12px!important;padding-bottom:20px!important}
   .page-title{margin-bottom:10px!important}
 }
+
+/* Finance mobile table alignment — presentation only */
+@media (max-width:720px){
+  .finance-main-table tbody td:nth-child(1)::before{content:"Invoice"}
+  .finance-main-table tbody td:nth-child(2)::before{content:"Client"}
+  .finance-main-table tbody td:nth-child(3)::before{content:"Amount"}
+  .finance-main-table tbody td:nth-child(4)::before{content:"Paid"}
+  .finance-main-table tbody td:nth-child(5)::before{content:"Status"}
+  .finance-main-table tbody td:nth-child(6)::before{content:"Actions"}
+
+  .finance-client-table tbody td:nth-child(1)::before{content:"Invoice"}
+  .finance-client-table tbody td:nth-child(2)::before{content:"Invoice Date"}
+  .finance-client-table tbody td:nth-child(3)::before{content:"Total Amount"}
+  .finance-client-table tbody td:nth-child(4)::before{content:"Paid Amount"}
+  .finance-client-table tbody td:nth-child(5)::before{content:"Outstanding"}
+  .finance-client-table tbody td:nth-child(6)::before{content:"Status"}
+
+  .finance-payment-table tbody td:nth-child(1)::before{content:"Payment Date"}
+  .finance-payment-table tbody td:nth-child(2)::before{content:"Invoice"}
+  .finance-payment-table tbody td:nth-child(3)::before{content:"Payment Method"}
+  .finance-payment-table tbody td:nth-child(4)::before{content:"Amount Received"}
+  .finance-payment-table tbody td:nth-child(5)::before{content:"Client Balance"}
+  .finance-payment-table tbody td:nth-child(6)::before{content:"Reference / Notes"}
+
+  .finance-main-table tbody tr,
+  .finance-client-table tbody tr,
+  .finance-payment-table tbody tr{
+    padding:12px 14px!important;
+    margin:0!important;
+    box-sizing:border-box!important;
+  }
+  .finance-main-table tbody td,
+  .finance-client-table tbody td,
+  .finance-payment-table tbody td{
+    align-items:center!important;
+    min-height:42px!important;
+    box-sizing:border-box!important;
+  }
+  .finance-main-table tbody td::before,
+  .finance-client-table tbody td::before,
+  .finance-payment-table tbody td::before{
+    flex:0 0 36%!important;
+    max-width:36%!important;
+    padding-right:8px!important;
+    box-sizing:border-box!important;
+    line-height:1.3!important;
+  }
+  .finance-main-table tbody td > *,
+  .finance-client-table tbody td > *,
+  .finance-payment-table tbody td > *{
+    flex:0 1 64%!important;
+    width:auto!important;
+    max-width:64%!important;
+    min-width:0!important;
+    box-sizing:border-box!important;
+    text-align:right!important;
+    overflow-wrap:anywhere!important;
+    word-break:normal!important;
+  }
+  .finance-main-table .table-actions{
+    display:flex!important;
+    flex:0 1 64%!important;
+    max-width:64%!important;
+    width:auto!important;
+    justify-content:flex-end!important;
+    gap:6px!important;
+    flex-wrap:wrap!important;
+  }
+  .finance-main-table .table-actions .secondary{
+    min-width:72px!important;
+    flex:0 1 auto!important;
+  }
+
+  /* Group and total rows remain readable while preserving the existing grouping. */
+  .finance-client-table .client-group-row td,
+  .finance-client-table .client-total-row td,
+  .finance-payment-table .client-group-row td,
+  .finance-payment-table .client-total-row td{
+    display:block!important;
+    text-align:left!important;
+    padding:10px 0!important;
+    min-height:0!important;
+  }
+  .finance-client-table .client-group-row td::before,
+  .finance-client-table .client-total-row td::before,
+  .finance-payment-table .client-group-row td::before,
+  .finance-payment-table .client-total-row td::before{
+    display:none!important;
+    content:none!important;
+  }
+  .finance-client-table .client-group-row td,
+  .finance-payment-table .client-group-row td{
+    font-size:12px!important;
+  }
+}
+@media (max-width:430px){
+  .finance-main-table tbody td,
+  .finance-client-table tbody td,
+  .finance-payment-table tbody td{
+    font-size:12px!important;
+    gap:8px!important;
+  }
+  .finance-main-table tbody td::before,
+  .finance-client-table tbody td::before,
+  .finance-payment-table tbody td::before{
+    flex-basis:38%!important;
+    max-width:38%!important;
+    font-size:10px!important;
+  }
+  .finance-main-table tbody td > *,
+  .finance-client-table tbody td > *,
+  .finance-payment-table tbody td > *{
+    flex-basis:62%!important;
+    max-width:62%!important;
+  }
+  .finance-main-table .table-actions{
+    flex-basis:62%!important;
+    max-width:62%!important;
+  }
+}
