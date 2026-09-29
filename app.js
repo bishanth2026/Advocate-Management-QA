@@ -193,8 +193,10 @@ function composeDashboardHero(){
       const w=Math.max(1,Math.round(hero.clientWidth)), h=Math.max(1,Math.round(hero.clientHeight));
       const canvas=document.createElement("canvas"); canvas.width=w; canvas.height=h;
       const ctx=canvas.getContext("2d");
-      ctx.fillStyle="#0b1735"; ctx.fillRect(0,0,w,h);
       const left=Math.min(260,Math.round(w*.195));
+      /* Extend the banner's own left-edge color into the photo area so the
+         entire hero is one continuous image with no color seam. */
+      ctx.drawImage(base,0,0,1,base.naturalHeight,0,0,left,h);
       ctx.drawImage(base,left,0,w-left,h);
       const photoSize=w<=720?100:158;
       const cx=w<=720?72:135, cy=h/2;
