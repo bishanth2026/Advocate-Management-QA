@@ -120,8 +120,8 @@ th{background:linear-gradient(90deg,#f1f5ff,#f7fbff);color:#526174}
   margin:0 0 16px;
   border-radius:14px;
   background:#0b1735 url("assets/dashboard-legal-banner.png") right center / calc(100% - 220px) 100% no-repeat;
-  box-shadow:0 14px 34px rgba(20,35,80,.16);
-  border:1px solid rgba(255,255,255,.75);
+  box-shadow:none;
+  border:0;
   overflow:hidden;
 }
 .dashboard-hero:before{
