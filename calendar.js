@@ -534,8 +534,8 @@
 
   const style = document.createElement('style');
   style.textContent =
-    '.court-calendar-layout{scroll-margin-top:84px;display:grid;grid-template-columns:minmax(760px,1.65fr) minmax(300px,.85fr);gap:20px}' +
-    '.court-calendar-card,.next-cases-card{background:var(--card,#fff);border:1px solid var(--border,#e2e8f0);border-radius:18px;overflow:hidden}' +
+    '.court-calendar-layout{scroll-margin-top:84px;display:grid;grid-template-columns:minmax(0,1.65fr) minmax(0,.85fr);gap:20px;width:100%;max-width:100%;min-width:0;box-sizing:border-box}' +
+    '.court-calendar-card,.next-cases-card{background:var(--card,#fff);border:1px solid var(--border,#e2e8f0);border-radius:18px;overflow:hidden;min-width:0;max-width:100%;box-sizing:border-box}' +
     '.court-calendar-card{display:grid;grid-template-columns:220px minmax(0,1fr)}' +
     '.calendar-summary{background:linear-gradient(160deg,#93c5fd,#60a5fa);color:#fff;padding:28px}' +
     '.summary-date{font-size:20px;font-weight:800;line-height:1.45}.summary-total{font-size:30px;font-weight:800;margin-top:28px}' +
