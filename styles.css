@@ -136,6 +136,17 @@ th{background:linear-gradient(90deg,#f1f5ff,#f7fbff);color:#526174}
   z-index:1;
   pointer-events:none;
 }
+.dashboard-hero:after{
+  content:"";
+  position:absolute;
+  left:334px;
+  top:0;
+  bottom:0;
+  width:4px;
+  background:#0b1735;
+  z-index:2;
+  pointer-events:none;
+}
 .dashboard-advocate-photo{
   position:absolute !important;
   left:135px !important;
