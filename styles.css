@@ -130,8 +130,8 @@ th{background:linear-gradient(90deg,#f1f5ff,#f7fbff);color:#526174}
   left:0;
   top:0;
   bottom:0;
-  width:250px;
-  background:linear-gradient(to right,#0b1735 0%,#0b1735 88%,rgba(11,23,53,0) 100%);
+  width:220px;
+  background:#0b1735;
   z-index:1;
   pointer-events:none;
 }
