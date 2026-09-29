@@ -187,6 +187,7 @@ th{background:linear-gradient(90deg,#f1f5ff,#f7fbff);color:#526174}
 .dashboard-advocate-photo span{display:none !important}
 
 @media(max-width:720px){
+  .dashboard-hero:after{display:none}
   .dashboard-hero{
     border-radius:12px;
     background-size:calc(100% - 125px) 100%;
