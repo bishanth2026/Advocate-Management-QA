@@ -190,7 +190,7 @@ function dashboard(){
   const upcomingTasks=state.tasks.filter(t=>t.due && t.status!=="Completed" && new Date(t.due+"T00:00:00")>=today).sort((a,b)=>String(a.due).localeCompare(String(b.due))).slice(0,4);
   const meetingClient=(m)=>state.clients.find(c=>c.id===m.clientId);
   const dashDate=today.toLocaleDateString("en-IN",{weekday:"long",day:"2-digit",month:"long",year:"numeric"});
-  const dashHour=new Date().getHours(); const dashGreeting=dashHour<12?"Good morning":dashHour<17?"Good afternoon":"Good evening"; content.innerHTML=layout(dashGreeting+", Advocate",dashDate+" • Demo Workspace",`openModal('case')`)+
+  const dashHour=new Date().getHours(); const dashGreeting=dashHour<12?"Good morning":dashHour<17?"Good afternoon":"Good evening"; const advocateGreeting=String(auth.name||"Advocate").trim()+" — "+dashGreeting; content.innerHTML=layout(advocateGreeting,dashDate+" • Demo Workspace",`openModal('case')`)+
   `<div class="dashboard-hero ${auth.role==="super_admin"?"super-admin-hero":""}" role="img" aria-label="AdvocateDesk ${auth.role==="super_admin"?"Super Admin":"legal practice"} banner">${auth.role!=="super_admin"&&getAdvocatePhoto()?`<div class="dashboard-advocate-photo"><img src="${getAdvocatePhoto()}" alt="${esc(auth.name||"Advocate")} profile photo"><span>${esc(auth.name||"Advocate")}</span></div>`:""}</div>
   <div class="notice">Demo mode is active. Records are stored in this browser for now. Supabase will be connected in the next phase.</div>
   <div class="cards">
