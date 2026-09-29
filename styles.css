@@ -113,43 +113,38 @@ th{background:linear-gradient(90deg,#f1f5ff,#f7fbff);color:#526174}
 
 /* ===== Dashboard legal hero banner ===== */
 .dashboard-hero{
-  --advocate-photo-width:270px;
   position:relative;
   width:100%;
   aspect-ratio:1335/220;
   min-height:0;
   margin:0 0 16px;
   border-radius:14px;
-  background:#0b1735 url("assets/dashboard-legal-banner.png") right center / calc(100% - var(--advocate-photo-width)) 100% no-repeat;
+  background:#0b1735 url("assets/dashboard-legal-banner.png") center center / 100% 100% no-repeat;
   box-shadow:0 14px 34px rgba(20,35,80,.16);
   border:1px solid rgba(255,255,255,.75);
   overflow:hidden;
 }
 .dashboard-advocate-photo{
   position:absolute !important;
-  left:0 !important;
-  top:0 !important;
+  left:135px !important;
+  top:50% !important;
   right:auto !important;
-  bottom:0 !important;
-  width:var(--advocate-photo-width) !important;
-  height:100% !important;
+  bottom:auto !important;
+  width:158px !important;
+  height:158px !important;
   margin:0 !important;
   padding:0 !important;
   border:0 !important;
-  border-radius:0 !important;
+  border-radius:50% !important;
   background:transparent !important;
   box-shadow:none !important;
-  transform:none !important;
-  display:flex !important;
-  align-items:center !important;
-  justify-content:center !important;
+  transform:translate(-50%,-50%) !important;
+  display:block !important;
   overflow:visible !important;
-  z-index:2 !important;
+  z-index:3 !important;
 }
 .dashboard-advocate-photo img{
-  position:relative !important;
-  left:auto !important;
-  top:auto !important;
+  display:block !important;
   width:158px !important;
   height:158px !important;
   min-width:158px !important;
@@ -158,7 +153,6 @@ th{background:linear-gradient(90deg,#f1f5ff,#f7fbff);color:#526174}
   max-height:158px !important;
   margin:0 !important;
   padding:4px !important;
-  display:block !important;
   border:4px solid rgba(255,255,255,.98) !important;
   border-radius:50% !important;
   background:#fff !important;
@@ -166,23 +160,18 @@ th{background:linear-gradient(90deg,#f1f5ff,#f7fbff);color:#526174}
   object-fit:cover !important;
   object-position:center center !important;
 }
-.dashboard-advocate-photo:after{
-  content:"";
-  position:absolute;
-  left:62%;
-  top:0;
-  right:0;
-  bottom:0;
-  background:linear-gradient(to right,rgba(11,23,53,0),rgba(11,23,53,.08) 40%,#0b1735 100%);
-  pointer-events:none;
-}
+.dashboard-advocate-photo:after{display:none !important}
 .dashboard-advocate-photo span{display:none !important}
 
 @media(max-width:720px){
   .dashboard-hero{
-    --advocate-photo-width:150px;
     border-radius:12px;
-    background-size:calc(100% - var(--advocate-photo-width)) 100%;
+    background-size:100% 100%;
+  }
+  .dashboard-advocate-photo{
+    left:82px !important;
+    width:100px !important;
+    height:100px !important;
   }
   .dashboard-advocate-photo img{
     width:100px !important;
@@ -197,6 +186,7 @@ th{background:linear-gradient(90deg,#f1f5ff,#f7fbff);color:#526174}
 }
 
 /* Central administration controls */
+
 
 
 
