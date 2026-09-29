@@ -132,6 +132,22 @@ if(auth.role!=="super_admin"){document.querySelectorAll(".admin-only").forEach(e
 
 function layout(title,sub,action=""){return `<div class="page-title"><div><h1>${title}</h1><p>${sub}</p></div>${action?`<button class="primary" onclick="${action}">＋ New</button>`:""}</div>`}
 
+function advocatePhotoKey(){
+  const identity=String(auth.email||auth.name||auth.role||"advocate").trim().toLowerCase();
+  return "advocateDeskProfilePhoto:"+identity;
+}
+function getAdvocatePhoto(){try{return localStorage.getItem(advocatePhotoKey())||""}catch(e){return ""}}
+function saveAdvocateProfilePhoto(input){
+  const file=input&&input.files&&input.files[0]; if(!file)return;
+  if(!String(file.type||"").startsWith("image/")){alert("Please select an image file.");input.value="";return;}
+  const reader=new FileReader(); reader.onload=function(){const img=new Image(); img.onload=function(){
+    const max=420,scale=Math.min(1,max/Math.max(img.width,img.height)),canvas=document.createElement("canvas");
+    canvas.width=Math.max(1,Math.round(img.width*scale));canvas.height=Math.max(1,Math.round(img.height*scale));
+    canvas.getContext("2d").drawImage(img,0,0,canvas.width,canvas.height);const data=canvas.toDataURL("image/jpeg",0.82);
+    try{localStorage.setItem(advocatePhotoKey(),data);const p=document.getElementById("advocateProfilePreview");if(p)p.src=data;dashboard()}catch(e){alert("The photo could not be saved in this browser. Please choose a smaller image.");}
+  };img.src=reader.result;}; reader.readAsDataURL(file);
+}
+function removeAdvocateProfilePhoto(){try{localStorage.removeItem(advocatePhotoKey())}catch(e){};settings()}
 function calendarEventsForDate(date){
   const key=String(date||"").slice(0,10);
   const events=[];
@@ -175,7 +191,7 @@ function dashboard(){
   const meetingClient=(m)=>state.clients.find(c=>c.id===m.clientId);
   const dashDate=today.toLocaleDateString("en-IN",{weekday:"long",day:"2-digit",month:"long",year:"numeric"});
   const dashHour=new Date().getHours(); const dashGreeting=dashHour<12?"Good morning":dashHour<17?"Good afternoon":"Good evening"; content.innerHTML=layout(dashGreeting+", Advocate",dashDate+" • Demo Workspace",`openModal('case')`)+
-  `<div class="dashboard-hero ${auth.role==="super_admin"?"super-admin-hero":""}" role="img" aria-label="AdvocateDesk ${auth.role==="super_admin"?"Super Admin":"legal practice"} banner"></div>
+  `<div class="dashboard-hero ${auth.role==="super_admin"?"super-admin-hero":""}" role="img" aria-label="AdvocateDesk ${auth.role==="super_admin"?"Super Admin":"legal practice"} banner">${auth.role!=="super_admin"&&getAdvocatePhoto()?`<div class="dashboard-advocate-photo"><img src="${getAdvocatePhoto()}" alt="${esc(auth.name||"Advocate")} profile photo"><span>${esc(auth.name||"Advocate")}</span></div>`:""}</div>
   <div class="notice">Demo mode is active. Records are stored in this browser for now. Supabase will be connected in the next phase.</div>
   <div class="cards">
    <div class="stat"><div class="stat-top">Active Cases <span>⚖</span></div><div class="stat-value">${state.cases.filter(x=>x.status==="Active").length}</div><div class="stat-foot">Live case portfolio</div></div>
@@ -530,7 +546,8 @@ function generateCase360Report(id){
  reportShell('Case 360° Report',c.number||'Complete case report',`<h2>${esc(c.number||'Case')} — ${esc(c.title||'Untitled case')}</h2><p><strong>Court:</strong> ${esc(c.court||'—')} &nbsp; <strong>Status:</strong> ${esc(c.status||'—')} &nbsp; <strong>Type:</strong> ${esc(c.type||'—')}</p><h3>Clients / Parties</h3><table><thead><tr><th>Name</th><th>Role</th><th>Phone</th><th>Email</th></tr></thead><tbody>${parties.map(p=>`<tr><td>${esc(p.name)}</td><td>${esc(p.role||'Party')}</td><td>${esc(p.phone||'—')}</td><td>${esc(p.email||'—')}</td></tr>`).join('')||'<tr><td colspan="4">No linked clients.</td></tr>'}</tbody></table><h3>Hearings</h3><table><thead><tr><th>Date</th><th>Time</th><th>Stage</th><th>Court</th></tr></thead><tbody>${hearings.map(h=>`<tr><td>${fmtDate(h.date)}</td><td>${esc(h.time||'—')}</td><td>${esc(h.stage||h.purpose||'Hearing')}</td><td>${esc(h.court||c.court||'—')}</td></tr>`).join('')||'<tr><td colspan="4">No hearings.</td></tr>'}</tbody></table><h3>Tasks</h3><table><thead><tr><th>Task</th><th>Due Date</th><th>Priority</th><th>Status</th></tr></thead><tbody>${tasks.map(t=>`<tr><td>${esc(t.title||'Task')}</td><td>${fmtDate(t.due||t.dueDate)}</td><td>${esc(t.priority||'—')}</td><td>${esc(t.status||'—')}</td></tr>`).join('')||'<tr><td colspan="4">No tasks.</td></tr>'}</tbody></table><h3>Finance</h3><table><thead><tr><th>Invoice</th><th>Date</th><th>Client</th><th>Total</th><th>Paid</th><th>Outstanding</th></tr></thead><tbody>${invoices.map(x=>`<tr><td>${esc(x.id||'—')}</td><td>${fmtDate(x.date)}</td><td>${esc(x.client||'—')}</td><td>${money(x.amount)}</td><td>${money(x.paid)}</td><td>${money(Math.max(0,Number(x.amount||0)-Number(x.paid||0)))}</td></tr>`).join('')||'<tr><td colspan="6">No invoices or payments.</td></tr>'}</tbody></table>`);
 }
 function settings(){
- content.innerHTML=layout("Settings","Workspace, profile and application settings")+`<div class="grid-2"><div class="panel"><div class="panel-head"><h3>Workspace</h3></div><div style="padding:18px"><div class="field"><label>Law Office / Practice Name</label><input value="AdvocateDesk Demo Office"></div><br><div class="field"><label>Default Court</label><input value="District Court, Kozhikode"></div></div></div><div class="panel"><div class="panel-head"><h3>Next Phase</h3></div><div style="padding:18px;font-size:12px;color:#667085;line-height:1.7">Supabase authentication, PostgreSQL records, role permissions, secure document storage and audit logs will be connected after the GitHub frontend is approved.</div></div></div>`;
+ const photo=getAdvocatePhoto();
+ content.innerHTML=layout("Settings","Workspace, profile and application settings")+`<div class="grid-2"><div class="panel"><div class="panel-head"><h3>Advocate Profile</h3></div><div class="advocate-profile-settings"><div class="advocate-profile-preview-wrap">${photo?`<img id="advocateProfilePreview" src="${photo}" alt="Advocate profile photo">`:`<span>${esc((auth.name||"A").slice(0,1).toUpperCase())}</span>`}</div><div class="advocate-profile-info"><strong>${esc(auth.name||"Advocate")}</strong><small>${esc(auth.email||"")}</small><label class="secondary advocate-photo-upload">Choose Profile Photo<input type="file" accept="image/*" onchange="saveAdvocateProfilePhoto(this)"></label>${photo?`<button type="button" class="secondary" onclick="removeAdvocateProfilePhoto()">Remove Photo</button>`:""}<small class="profile-photo-help">Shown on your Dashboard banner. Stored locally in this browser until Supabase profile storage is connected.</small></div></div></div><div class="grid-2"><div class="panel"><div class="panel-head"><h3>Workspace</h3></div><div style="padding:18px"><div class="field"><label>Law Office / Practice Name</label><input value="AdvocateDesk Demo Office"></div><br><div class="field"><label>Default Court</label><input value="District Court, Kozhikode"></div></div></div><div class="panel"><div class="panel-head"><h3>Next Phase</h3></div><div style="padding:18px;font-size:12px;color:#667085;line-height:1.7">Supabase authentication, PostgreSQL records, role permissions, secure document storage and audit logs will be connected after the GitHub frontend is approved.</div></div></div>`;
 }
 const pages={dashboard,"case-client":caseClient,"case-details":caseDetails,cases,clients,"client-management":clientManagement,hearings,calendar,documents,tasks,finance,reports,settings};
 if(auth.role==="super_admin") pages["central-control"]=function(){
