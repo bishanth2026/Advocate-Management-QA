@@ -132,7 +132,7 @@ th{background:linear-gradient(90deg,#f1f5ff,#f7fbff);color:#526174}
   bottom:0;
   display:block;
   width:275px;
-  background:linear-gradient(to right,#0b1735 0%,#0b1735 90%,rgba(11,23,53,0) 100%);
+  background:#0b1735;
   z-index:1;
   pointer-events:none;
 }
@@ -184,7 +184,7 @@ th{background:linear-gradient(90deg,#f1f5ff,#f7fbff);color:#526174}
   }
   .dashboard-hero:before{
     width:132px;
-    background:linear-gradient(to right,#0b1735 0%,#0b1735 92%,rgba(11,23,53,0) 100%);
+    background:#0b1735;
   }
   .dashboard-advocate-photo{
     left:72px !important;
