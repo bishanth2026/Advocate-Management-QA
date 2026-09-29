@@ -119,23 +119,12 @@ th{background:linear-gradient(90deg,#f1f5ff,#f7fbff);color:#526174}
   min-height:0;
   margin:0;
   border-radius:14px;
-  background:#0b1735 url("assets/dashboard-legal-banner.png") right center / calc(100% - 260px) 100% no-repeat;
+  background:#0b1735 url("assets/dashboard-legal-banner.png") center center / 100% 100% no-repeat;
   box-shadow:none;
   border:0;
   overflow:hidden;
 }
-.dashboard-hero:before{
-  content:"";
-  position:absolute;
-  left:0;
-  top:1px;
-  bottom:0;
-  display:block;
-  width:275px;
-  background:#0b1735;
-  z-index:1;
-  pointer-events:none;
-}
+.dashboard-hero:before{display:none !important}
 .dashboard-hero:after{display:none !important}
 .dashboard-advocate-photo{
   position:absolute !important;
@@ -180,13 +169,9 @@ th{background:linear-gradient(90deg,#f1f5ff,#f7fbff);color:#526174}
   .dashboard-hero:after{display:none}
   .dashboard-hero{
     border-radius:12px;
-    background-size:calc(100% - 125px) 100%;
+    background-size:100% 100%;
   }
-  .dashboard-hero:before{
-    top:1px;
-    width:132px;
-    background:#0b1735;
-  }
+  .dashboard-hero:before{display:none !important}
   .dashboard-advocate-photo{
     left:72px !important;
     width:100px !important;
