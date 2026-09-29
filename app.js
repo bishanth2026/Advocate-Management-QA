@@ -183,6 +183,38 @@ function dashboardCalendar(){
   }
   return `<div class="panel dashboard-calendar"><div class="panel-head"><div><h3>Calendar</h3><span>${monthName}</span></div><button class="secondary" onclick="navigate('calendar')">Open calendar</button></div><div class="dash-cal-weekdays">${["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map(x=>`<span>${x}</span>`).join("")}</div><div class="dash-cal-grid">${cells}</div><div class="dash-cal-legend"><span><b class="hearing"></b> Hearings</span><span><b class="meeting"></b> Meetings</span><span><b class="task"></b> Tasks</span></div></div>`;
 }
+function composeDashboardHero(){
+  const hero=document.querySelector(".dashboard-hero");
+  const photo=getAdvocatePhoto();
+  if(!hero||auth.role==="super_admin"||!photo)return;
+  const base=new Image(), person=new Image();
+  base.onload=function(){
+    person.onload=function(){
+      const w=Math.max(1,Math.round(hero.clientWidth)), h=Math.max(1,Math.round(hero.clientHeight));
+      const canvas=document.createElement("canvas"); canvas.width=w; canvas.height=h;
+      const ctx=canvas.getContext("2d");
+      ctx.fillStyle="#0b1735"; ctx.fillRect(0,0,w,h);
+      const left=Math.min(260,Math.round(w*.195));
+      ctx.drawImage(base,left,0,w-left,h);
+      const photoSize=w<=720?100:158;
+      const cx=w<=720?72:135, cy=h/2;
+      ctx.save();
+      ctx.beginPath(); ctx.arc(cx,cy,photoSize/2,0,Math.PI*2); ctx.clip();
+      const scale=Math.max(photoSize/person.naturalWidth,photoSize/person.naturalHeight);
+      const pw=person.naturalWidth*scale, ph=person.naturalHeight*scale;
+      ctx.drawImage(person,cx-pw/2,cy-ph/2,pw,ph);
+      ctx.restore();
+      ctx.beginPath(); ctx.arc(cx,cy,photoSize/2-1,0,Math.PI*2);
+      ctx.lineWidth=w<=720?3:4; ctx.strokeStyle="#fff"; ctx.stroke();
+      hero.style.backgroundImage='url("'+canvas.toDataURL("image/jpeg",.94)+'")';
+      hero.style.backgroundSize="100% 100%";
+      hero.style.backgroundPosition="center";
+      hero.innerHTML="";
+    };
+    person.src=photo;
+  };
+  base.src="assets/dashboard-legal-banner.png";
+}
 function dashboard(){
   const today=new Date(); today.setHours(0,0,0,0);
   const upcoming=state.hearings.filter(h=>h.date && new Date(h.date+"T00:00:00")>=today).sort((a,b)=>(String(a.date)+String(a.time||"")).localeCompare(String(b.date)+String(b.time||""))).slice(0,4);
