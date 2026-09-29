@@ -119,7 +119,7 @@ th{background:linear-gradient(90deg,#f1f5ff,#f7fbff);color:#526174}
   min-height:0;
   margin:0;
   border-radius:14px;
-  background:#0b1735 url("assets/dashboard-legal-banner.png") center center / 100% 100% no-repeat;
+  background:#0b1735 url("assets/dashboard-legal-banner.png") right center / calc(100% - 260px) 100% no-repeat;
   box-shadow:none;
   border:0;
   overflow:hidden;
@@ -130,7 +130,9 @@ th{background:linear-gradient(90deg,#f1f5ff,#f7fbff);color:#526174}
   left:0;
   top:0;
   bottom:0;
-  display:none;
+  display:block;
+  width:275px;
+  background:linear-gradient(to right,#0b1735 0%,#0b1735 90%,rgba(11,23,53,0) 100%);
   z-index:1;
   pointer-events:none;
 }
@@ -176,7 +178,7 @@ th{background:linear-gradient(90deg,#f1f5ff,#f7fbff);color:#526174}
 @media(max-width:720px){
   .dashboard-hero{
     border-radius:12px;
-    background-size:100% 100%;
+    background-size:calc(100% - 125px) 100%;
   }
   .dashboard-hero:before{
     width:132px;
