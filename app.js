@@ -247,6 +247,7 @@ function dashboard(){
     <button class="quick" onclick="openModal('meeting')"><strong>＋ Client Meeting</strong><small>Schedule and WhatsApp client</small></button>
    </div></div></div>`;
   if(window.renderDashboardTodayCalendarInto){window.renderDashboardTodayCalendarInto(document.getElementById("dashboard-calendar-module"));}
+  requestAnimationFrame(composeDashboardHero);
 }
 
 function caseClient(){
