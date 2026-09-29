@@ -128,7 +128,7 @@ th{background:linear-gradient(90deg,#f1f5ff,#f7fbff);color:#526174}
   content:"";
   position:absolute;
   left:0;
-  top:0;
+  top:1px;
   bottom:0;
   display:block;
   width:275px;
@@ -183,6 +183,7 @@ th{background:linear-gradient(90deg,#f1f5ff,#f7fbff);color:#526174}
     background-size:calc(100% - 125px) 100%;
   }
   .dashboard-hero:before{
+    top:1px;
     width:132px;
     background:#0b1735;
   }
