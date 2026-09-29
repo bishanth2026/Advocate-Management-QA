@@ -112,8 +112,33 @@ th{background:linear-gradient(90deg,#f1f5ff,#f7fbff);color:#526174}
 }
 
 /* ===== Dashboard legal hero banner ===== */
-.dashboard-advocate-photo{position:absolute;right:22px;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:10px;padding:6px 12px 6px 6px;border-radius:999px;background:rgba(255,255,255,.92);box-shadow:0 8px 24px rgba(15,23,42,.2);backdrop-filter:blur(4px);z-index:2}.dashboard-advocate-photo img{width:58px;height:58px;border-radius:50%;object-fit:cover;border:3px solid #fff;display:block}.dashboard-advocate-photo span{font-size:12px;font-weight:800;color:#172554;max-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.advocate-profile-settings{display:flex;align-items:center;gap:18px;padding:18px}.advocate-profile-preview-wrap{width:86px;height:86px;border-radius:50%;overflow:hidden;flex:none;background:linear-gradient(145deg,#dbeafe,#eef2ff);border:2px solid #bfdbfe;display:grid;place-items:center;color:#2563eb;font-size:30px;font-weight:800}.advocate-profile-preview-wrap img{width:100%;height:100%;object-fit:cover;display:block}.advocate-profile-info{display:flex;flex-direction:column;gap:7px;min-width:0}.advocate-profile-info strong{font-size:16px;color:#172554}.advocate-profile-info small{font-size:11px;color:#667085}.advocate-photo-upload{display:inline-flex;align-items:center;justify-content:center;width:max-content;cursor:pointer}.advocate-photo-upload input{display:none}.profile-photo-help{max-width:430px;line-height:1.5!important}@media(max-width:720px){.dashboard-advocate-photo{right:10px;padding:4px}.dashboard-advocate-photo img{width:48px;height:48px}.dashboard-advocate-photo span{display:none}.advocate-profile-settings{align-items:flex-start;padding:14px;gap:14px}.advocate-profile-preview-wrap{width:72px;height:72px;font-size:24px}.advocate-profile-info{flex:1}.advocate-photo-upload{width:100%}}.dashboard-hero{width:100%;aspect-ratio:1335/220;min-height:0;margin:0 0 16px;border-radius:14px;background-image:url("assets/dashboard-legal-banner.png");background-size:100% 100%;background-position:center;background-repeat:no-repeat;box-shadow:0 14px 34px rgba(20,35,80,.16);border:1px solid rgba(255,255,255,.75);overflow:hidden}
-@media(max-width:720px){.dashboard-hero{border-radius:12px}}
+.dashboard-advocate-photo{position:absolute;right:22px;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:10px;padding:6px 12px 6px 6px;border-radius:999px;background:rgba(255,255,255,.92);box-shadow:0 8px 24px rgba(15,23,42,.2);backdrop-filter:blur(4px);z-index:2}.dashboard-advocate-photo img{width:58px;height:58px;border-radius:50%;object-fit:cover;border:3px solid #fff;display:block}.dashboard-advocate-photo span{font-size:12px;font-weight:800;color:#172554;max-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.advocate-profile-settings{display:flex;align-items:center;gap:18px;padding:18px}.advocate-profile-preview-wrap{width:86px;height:86px;border-radius:50%;overflow:hidden;flex:none;background:linear-gradient(145deg,#dbeafe,#eef2ff);border:2px solid #bfdbfe;display:grid;place-items:center;color:#2563eb;font-size:30px;font-weight:800}.advocate-profile-preview-wrap img{width:100%;height:100%;object-fit:cover;display:block}.advocate-profile-info{display:flex;flex-direction:column;gap:7px;min-width:0}.advocate-profile-info strong{font-size:16px;color:#172554}.advocate-profile-info small{font-size:11px;color:#667085}.advocate-photo-upload{display:inline-flex;align-items:center;justify-content:center;width:max-content;cursor:pointer}.advocate-photo-upload input{display:none}.profile-photo-help{max-width:430px;line-height:1.5!important}@media(max-width:720px){.dashboard-advocate-photo{right:10px;padding:4px}.dashboard-advocate-photo img{width:48px;height:48px}.dashboard-advocate-photo span{display:none}.advocate-profile-settings{align-items:flex-start;padding:14px;gap:14px}.advocate-profile-preview-wrap{width:72px;height:72px;font-size:24px}.advocate-profile-info{flex:1}.advocate-photo-upload{width:100%}}.dashboard-hero{
+  position:relative;width:100%;aspect-ratio:1335/220;min-height:0;margin:0 0 16px;
+  border-radius:14px;background-color:#0b1735;background-image:url("assets/dashboard-legal-banner.png");
+  background-size:calc(100% - 104px) 100%;background-position:right center;background-repeat:no-repeat;
+  box-shadow:0 14px 34px rgba(20,35,80,.16);border:1px solid rgba(255,255,255,.75);overflow:hidden;
+}
+.dashboard-advocate-photo{
+  position:absolute;left:13px;top:50%;transform:translateY(-50%);
+  width:82px;height:82px;border-radius:50%;padding:4px;
+  background:rgba(255,255,255,.96);box-shadow:0 6px 18px rgba(0,0,0,.28);
+  z-index:2;display:grid;place-items:center;
+}
+.dashboard-advocate-photo img{
+  display:block;width:100%;height:100%;border-radius:50%;
+  object-fit:cover;object-position:center;
+}
+.dashboard-advocate-photo span{
+  position:absolute;left:50%;top:calc(100% + 7px);transform:translateX(-50%);
+  white-space:nowrap;max-width:150px;overflow:hidden;text-overflow:ellipsis;
+  padding:4px 8px;border-radius:999px;background:rgba(7,21,54,.88);
+  color:#fff;font-size:10px;font-weight:700;box-shadow:0 4px 12px rgba(0,0,0,.18);
+}
+@media(max-width:720px){
+  .dashboard-hero{border-radius:12px;background-size:calc(100% - 86px) 100%}
+  .dashboard-advocate-photo{left:9px;width:66px;height:66px;padding:3px}
+  .dashboard-advocate-photo span{font-size:9px;max-width:110px;top:calc(100% + 5px)}
+}
 
 /* Central administration controls */
 .admin-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin:18px 0}
