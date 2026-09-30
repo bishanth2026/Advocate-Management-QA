@@ -115,7 +115,7 @@ th{background:linear-gradient(90deg,#f1f5ff,#f7fbff);color:#526174}
 .dashboard-hero{
   position:relative;
   width:100%;
-  aspect-ratio:1335/220;
+  aspect-ratio:1335/260;
   min-height:0;
   margin:0;
   border-radius:14px;
@@ -169,7 +169,7 @@ th{background:linear-gradient(90deg,#f1f5ff,#f7fbff);color:#526174}
   .dashboard-hero:after{display:none}
   .dashboard-hero{
     border-radius:12px;
-    background-size:calc(100% - 125px) 100%;
+    background-size:100% 100%;
   }
   .dashboard-hero:before{display:none !important}
   .dashboard-advocate-photo{
