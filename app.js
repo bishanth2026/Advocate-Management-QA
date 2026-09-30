@@ -586,7 +586,10 @@ function settings(){
 }
 const pages={dashboard,"case-client":caseClient,"case-details":caseDetails,cases,clients,"client-management":clientManagement,hearings,calendar,documents,tasks,finance,reports,settings};
 if(auth.role==="super_admin") pages["central-control"]=function(){
- content.innerHTML=layout("Central Control","System-wide administration across all organizations")+`<div class="admin-grid"><div class="admin-card admin-card-super"><div class="admin-card-icon">👑</div><div><h3>Super Admin</h3><p>Full platform-wide control across every organization and law office.</p></div><span class="role-badge">FULL CONTROL</span></div><div class="admin-card admin-card-admin"><div class="admin-card-icon">🛡️</div><div><h3>Admin</h3><p>Office-level control for authorized users, cases, clients and operations.</p></div><span class="role-badge">OFFICE CONTROL</span></div></div><div class="panel central-panel"><div class="panel-head"><div><h3>Organizations & Administrators</h3><span>Central account control</span></div><button class="primary" onclick="addAdminDemo()">＋ Create Admin</button></div><table id="centralControlTable"><thead><tr><th>Organization</th><th>Administrator</th><th>Status</th><th>Access</th></tr></thead><tbody><tr><td><strong>Demo Law Office</strong></td><td>Advocate Admin</td><td>${badge("Active")}</td><td>Office management</td></tr></tbody></table></div><div class="admin-control-grid"><div class="control-tile"><strong>🏢 Organizations</strong><span>Create and manage law offices.</span></div><div class="control-tile"><strong>👥 Users & Roles</strong><span>Control Admin, Advocate, Clerk, Accountant and Staff access.</span></div><div class="control-tile"><strong>🔐 Security</strong><span>Global authentication and security policies.</span></div><div class="control-tile"><strong>📋 Audit Logs</strong><span>Review important administrator activity.</span></div><div class="control-tile"><strong>💾 Data Policies</strong><span>Manage backup and retention policies.</span></div><div class="control-tile"><strong>⚙ System Settings</strong><span>Configure global platform defaults.</span></div></div>`;
+ content.innerHTML=layout("Central Control","System-wide administration across all organizations")+`<div class="admin-grid"><div class="admin-card admin-card-super"><div class="admin-card-icon">👑</div><div><h3>Super Admin</h3><p>Full platform-wide control across every organization and law office.</p></div><span class="role-badge">FULL CONTROL</span></div><div class="admin-card admin-card-admin"><div class="admin-card-icon">🛡️</div><div><h3>Admin</h3><p>Office-level control for authorized users, cases, clients and operations.</p></div><span class="role-badge">OFFICE CONTROL</span></div></div><div class="panel central-panel"><div class="panel-head"><div><h3>Organizations & Administrators</h3><span>Central account control</span></div><div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+<button class="secondary" onclick="addSuperAdminDemo()">＋ Create Super Admin</button>
+<button class="primary" onclick="addAdminDemo()">＋ Create Admin</button>
+</div></div><table id="centralControlTable"><thead><tr><th>Organization</th><th>Administrator</th><th>Status</th><th>Access</th></tr></thead><tbody><tr><td><strong>Demo Law Office</strong></td><td>Advocate Admin</td><td>${badge("Active")}</td><td>Office management</td></tr></tbody></table></div><div class="admin-control-grid"><div class="control-tile"><strong>🏢 Organizations</strong><span>Create and manage law offices.</span></div><div class="control-tile"><strong>👥 Users & Roles</strong><span>Control Admin, Advocate, Clerk, Accountant and Staff access.</span></div><div class="control-tile"><strong>🔐 Security</strong><span>Global authentication and security policies.</span></div><div class="control-tile"><strong>📋 Audit Logs</strong><span>Review important administrator activity.</span></div><div class="control-tile"><strong>💾 Data Policies</strong><span>Manage backup and retention policies.</span></div><div class="control-tile"><strong>⚙ System Settings</strong><span>Configure global platform defaults.</span></div></div>`;
 };
 function navigate(page,fromHistory){
   if(!pages[page]) return;
@@ -622,7 +625,42 @@ function navigate(page,fromHistory){
 
   setMobileMenu(false)
 }
-function addAdminDemo(){alert("Admin creation is a demo action now. Supabase will create the real account securely in the next phase.")}
+function getDemoUsers(){try{return JSON.parse(localStorage.getItem("advocateDeskUsers")||"[]")}catch(e){return []}}
+function saveDemoUsers(users){try{localStorage.setItem("advocateDeskUsers",JSON.stringify(users));return true}catch(e){return false}}
+function addSuperAdminDemo(){
+  if(auth.role!=="super_admin"){alert("Only Super Admin can create another Super Admin.");return}
+  const name=prompt("Super Admin name:"); if(!name)return;
+  const email=prompt("Super Admin email:"); if(!email)return;
+  const password=prompt("Temporary password:","demo123"); if(!password)return;
+  const users=getDemoUsers();
+  if(users.some(u=>String(u.email).toLowerCase()===String(email).toLowerCase())){alert("An account with this email already exists.");return}
+  users.push({role:"super_admin",name:String(name).trim(),email:String(email).trim(),password:String(password),createdAt:new Date().toISOString()});
+  if(!saveDemoUsers(users)){alert("Could not save the account in this browser.");return}
+  const tbody=document.querySelector("#centralControlTable tbody");
+  if(tbody){
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td><strong>Platform</strong></td><td>${esc(String(name).trim())}</td><td>${badge("Active")}</td><td>Full platform control</td>`;
+    tbody.prepend(tr);
+  }
+  alert("Super Admin created successfully. They can now sign in from the Super Admin Login using the email and password you entered.");
+}
+function addAdminDemo(){
+  if(auth.role!=="super_admin"){alert("Only Super Admin can create Admin accounts.");return}
+  const name=prompt("Admin name:"); if(!name)return;
+  const email=prompt("Admin email:"); if(!email)return;
+  const password=prompt("Temporary password:","demo123"); if(!password)return;
+  const users=getDemoUsers();
+  if(users.some(u=>String(u.email).toLowerCase()===String(email).toLowerCase())){alert("An account with this email already exists.");return}
+  users.push({role:"admin",name:String(name).trim(),email:String(email).trim(),password:String(password),createdAt:new Date().toISOString()});
+  if(!saveDemoUsers(users)){alert("Could not save the account in this browser.");return}
+  const tbody=document.querySelector("#centralControlTable tbody");
+  if(tbody){
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td><strong>Law Office</strong></td><td>${esc(String(name).trim())}</td><td>${badge("Active")}</td><td>Office management</td>`;
+    tbody.prepend(tr);
+  }
+  alert("Admin created successfully.");
+}
 document.querySelectorAll(".nav-item").forEach(b=>b.addEventListener("click",()=>navigate(b.dataset.page)));
 const mobileMenu=document.getElementById("mobileMenu");
 const mobileOverlay=document.getElementById("mobileOverlay");
