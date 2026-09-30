@@ -186,34 +186,42 @@ function dashboardCalendar(){
 function composeDashboardHero(){
   const hero=document.querySelector(".dashboard-hero");
   const photo=getAdvocatePhoto();
-  if(!hero||auth.role==="super_admin"||!photo)return;
-  const base=new Image(), person=new Image();
+  if(!hero||auth.role==="super_admin")return;
+  const base=new Image();
   base.onload=function(){
-    person.onload=function(){
-      const w=Math.max(1,Math.round(hero.clientWidth)), h=Math.max(1,Math.round(hero.clientHeight));
-      const canvas=document.createElement("canvas"); canvas.width=w; canvas.height=h;
-      const ctx=canvas.getContext("2d");
-      const left=Math.min(260,Math.round(w*.195));
-      /* Extend the banner's own left-edge color into the photo area so the
-         entire hero is one continuous image with no color seam. */
-      ctx.drawImage(base,0,0,1,base.naturalHeight,0,0,left,h);
-      ctx.drawImage(base,left,0,w-left,h);
-      const photoSize=w<=720?100:158;
-      const cx=w<=720?72:135, cy=h/2;
-      ctx.save();
-      ctx.beginPath(); ctx.arc(cx,cy,photoSize/2,0,Math.PI*2); ctx.clip();
-      const scale=Math.max(photoSize/person.naturalWidth,photoSize/person.naturalHeight);
-      const pw=person.naturalWidth*scale, ph=person.naturalHeight*scale;
-      ctx.drawImage(person,cx-pw/2,cy-ph/2,pw,ph);
-      ctx.restore();
-      ctx.beginPath(); ctx.arc(cx,cy,photoSize/2-1,0,Math.PI*2);
-      ctx.lineWidth=w<=720?3:4; ctx.strokeStyle="#fff"; ctx.stroke();
-      hero.style.backgroundImage='url("'+canvas.toDataURL("image/jpeg",.94)+'")';
-      hero.style.backgroundSize="100% 100%";
-      hero.style.backgroundPosition="center";
-      hero.innerHTML="";
-    };
-    person.src=photo;
+    const w=Math.max(1,Math.round(hero.clientWidth)), h=Math.max(1,Math.round(hero.clientHeight));
+    const canvas=document.createElement("canvas"); canvas.width=w; canvas.height=h;
+    const ctx=canvas.getContext("2d");
+    /* Keep the original legal banner intact, then integrate the logged-in
+       advocate photo into the same rasterized banner. This preserves the
+       original text/image alignment for every Admin account. */
+    ctx.drawImage(base,0,0,w,h);
+    if(photo){
+      const person=new Image();
+      person.onload=function(){
+        const photoSize=Math.min(w<=720?180:300,Math.max(120,h+84));
+        const cx=w<=720?Math.min(150,w*.205):Math.min(230,w*.205);
+        const cy=h/2;
+        ctx.save();
+        ctx.beginPath(); ctx.arc(cx,cy,photoSize/2,0,Math.PI*2); ctx.clip();
+        const scale=Math.max(photoSize/person.naturalWidth,photoSize/person.naturalHeight);
+        const pw=person.naturalWidth*scale, ph=person.naturalHeight*scale;
+        ctx.drawImage(person,cx-pw/2,cy-ph/2,pw,ph);
+        ctx.restore();
+        ctx.beginPath(); ctx.arc(cx,cy,photoSize/2-1,0,Math.PI*2);
+        ctx.lineWidth=w<=720?3:5; ctx.strokeStyle="#fff"; ctx.stroke();
+        hero.style.backgroundImage='url("'+canvas.toDataURL("image/jpeg",.94)+'")';
+        hero.style.backgroundSize="100% 100%";
+        hero.style.backgroundPosition="center";
+        hero.innerHTML="";
+      };
+      person.src=photo;
+      return;
+    }
+    hero.style.backgroundImage='url("'+canvas.toDataURL("image/jpeg",.94)+'")';
+    hero.style.backgroundSize="100% 100%";
+    hero.style.backgroundPosition="center";
+    hero.innerHTML="";
   };
   base.src="assets/dashboard-legal-banner.png";
 }
