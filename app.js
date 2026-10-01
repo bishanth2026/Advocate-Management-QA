@@ -192,17 +192,16 @@ function composeDashboardHero(){
     const w=Math.max(1,Math.round(hero.clientWidth)), h=Math.max(1,Math.round(hero.clientHeight));
     const canvas=document.createElement("canvas"); canvas.width=w; canvas.height=h;
     const ctx=canvas.getContext("2d");
-    /* Keep the original legal banner intact, then integrate the logged-in
-       advocate photo into the same rasterized banner. This preserves the
-       original text/image alignment for every Admin account. */
-    ctx.drawImage(base,0,0,w,h);
+    /* Create a dedicated photo zone on the left. The legal banner itself is
+       shifted right, so none of its text sits underneath the profile photo. */
+    const zone=w<=720?Math.min(190,Math.round(w*.24)):Math.min(330,Math.round(w*.235));
+    ctx.drawImage(base,0,0,1,base.naturalHeight,0,0,zone,h);
+    ctx.drawImage(base,zone,0,w-zone,h);
     if(photo){
       const person=new Image();
       person.onload=function(){
-        /* Keep the banner copy fully visible: the photo stays inside the
-           left photo zone and does not extend into the original text area. */
-        const photoSize=Math.min(w<=720?150:270,Math.max(120,h+54));
-        const cx=w<=720?Math.min(105,w*.145):Math.min(150,w*.13);
+        const photoSize=w<=720?Math.min(170,h+10):Math.min(300,h+60);
+        const cx=zone/2;
         const cy=h/2;
         ctx.save();
         ctx.beginPath(); ctx.arc(cx,cy,photoSize/2,0,Math.PI*2); ctx.clip();
