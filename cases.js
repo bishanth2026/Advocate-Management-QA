@@ -4,8 +4,8 @@
 (function(){
   'use strict';
   const esc=v=>String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-  const read=()=>{try{return JSON.parse(localStorage.getItem('advocateDeskData')||'{}')}catch(e){return {}}};
-  const write=d=>localStorage.setItem('advocateDeskData',JSON.stringify(d));
+  const read=()=>window.appState||{};
+  const write=d=>{window.appState=d;if(typeof window.saveAdvocateDeskState==='function')window.saveAdvocateDeskState();};
   const caseTypes=['Civil','Criminal','Writ','Family','Commercial','Consumer','Labour','Motor Accident','Matrimonial','Other'];
   const civilPrefixes=['OS','OP'];const criminalPrefixes=['CC','CP','ST','MC'];
   function shell(){return '<div class="page-title"><div><h1>My Cases</h1><p>Manage all your cases.</p></div><button class="primary" onclick="openModal(\'case\')">＋ Add Case</button></div><div class="panel"><div class="empty">Create and manage petitioner, respondent and victim cases from one place.</div></div>'; }
