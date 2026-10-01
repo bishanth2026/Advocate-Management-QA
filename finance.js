@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 var mounted=new WeakMap(),active=null;
-function store(){try{return JSON.parse(localStorage.getItem('advocateDeskData')||'{}')||{};}catch(e){return {};}}
+function store(){return window.appState||{};}
 function s(v){return v==null?'':String(v).trim();}
 function n(v){return s(v).toLowerCase().replace(/\s+/g,' ');}
 function num(c){return s(c.number||c.caseNumber||c.case_no||c.caseNo||c.case_number||c.displayNumber||c.id);}
@@ -72,7 +72,7 @@ if(document.readyState==='loading') document.addEventListener('DOMContentLoaded'
 'use strict';
 function s(v){return v==null?'':String(v).trim();}
 function k(v){return s(v).toLowerCase().replace(/\s+/g,' ');}
-function data(){try{return JSON.parse(localStorage.getItem('advocateDeskData')||'{}')||{};}catch(e){return {};}}
+function data(){return window.appState||{};}
 function arr(n){var d=data();return Array.isArray(d[n])?d[n]:[];}
 function num(c){return s(c.number||c.caseNumber||c.case_no||c.caseNo||c.case_number||c.displayNumber);}
 function cid(c){return s(c.id||c.caseId||c.case_id||c.value);}
