@@ -261,7 +261,7 @@ function dashboard(){
     const dashGreeting=dashHour<12?"Good morning":dashHour<17?"Good afternoon":"Good evening";
     const dashDate=today.toLocaleDateString("en-IN",{weekday:"long",day:"2-digit",month:"long",year:"numeric"});
     content.innerHTML=layout("Hi System Owner, "+dashGreeting+"!",dashDate+" • Platform Control",`openModal('case')`)+
-    \`<div class="dashboard-hero super-admin-hero" role="img" aria-label="AdvocateDesk Super Admin banner"></div>
+    `<div class="dashboard-hero super-admin-hero" role="img" aria-label="AdvocateDesk Super Admin banner"></div>
     <div class="notice">System Owner view. Practice records remain inside each Admin's separate workspace.</div>
     <div class="cards">
       <div class="stat"><div class="stat-top">Organizations <span>🏢</span></div><div class="stat-value">${organizations.length}</div><div class="stat-foot">Law offices on the platform</div></div>
