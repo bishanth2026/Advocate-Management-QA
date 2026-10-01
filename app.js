@@ -199,8 +199,10 @@ function composeDashboardHero(){
     if(photo){
       const person=new Image();
       person.onload=function(){
-        const photoSize=Math.min(w<=720?180:300,Math.max(120,h+84));
-        const cx=w<=720?Math.min(150,w*.205):Math.min(230,w*.205);
+        /* Keep the banner copy fully visible: the photo stays inside the
+           left photo zone and does not extend into the original text area. */
+        const photoSize=Math.min(w<=720?150:270,Math.max(120,h+54));
+        const cx=w<=720?Math.min(105,w*.145):Math.min(150,w*.13);
         const cy=h/2;
         ctx.save();
         ctx.beginPath(); ctx.arc(cx,cy,photoSize/2,0,Math.PI*2); ctx.clip();
