@@ -78,6 +78,8 @@ if(Array.isArray(state.invoices)){
   });
 }
 const save=()=>localStorage.setItem(dataKey,JSON.stringify(state));
+window.advocateDeskDataKey=dataKey;
+window.saveAdvocateDeskState=save;
 if(stateChangedByDemoMigration) save();
 window.appState=state;
 if(storedData===null) save();
