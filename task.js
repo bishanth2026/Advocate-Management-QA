@@ -1,6 +1,6 @@
 (function(){'use strict';
 var oldOpen=window.openModal,oldAdd=window.addRecord,chosenClient=null,chosenCase=null;
-function data(){if(window.appState)return window.appState;try{return JSON.parse(localStorage.getItem('advocateDeskData')||'null')||{}}catch(e){return{}}}
+function data(){if(window.appState)return window.appState;try{return JSON.parse(localStorage.getItem(window.advocateDeskDataKey||'advocateDeskData')||'null')||{}}catch(e){return{}}}
 function clients(){var d=data();return Array.isArray(d.clients)?d.clients:[]}
 function cases(){var d=data();return Array.isArray(d.cases)?d.cases:[]}
 function caseNumber(c){return c.number||c.caseNumber||c.caseNo||c.case_number||c.id||''}
@@ -36,7 +36,7 @@ function enhance(){
  makeField(cf,'Client / Party','taskClientTypeahead','taskClientOptions','Type client / party name...',clients(),'client');
 }
 window.openModal=function(type){var r=oldOpen.apply(this,arguments);if(type==='task'){chosenClient=null;chosenCase=null;setTimeout(enhance,60)}return r};
-function persist(){try{if(typeof save==='function')save();else localStorage.setItem('advocateDeskData',JSON.stringify(window.appState));}catch(e){}}
+function persist(){try{if(typeof window.saveAdvocateDeskState==='function')window.saveAdvocateDeskState();else localStorage.setItem(window.advocateDeskDataKey||'advocateDeskData',JSON.stringify(window.appState));}catch(e){}}
 function linksValid(){
  var ci=document.getElementById('taskClientTypeahead'),ca=document.getElementById('taskCaseTypeahead');
  if(ci&&ci.value.trim()&&!chosenClient){alert('Please select a valid client / party from the dropdown.');return false}
