@@ -200,7 +200,8 @@ function composeDashboardHero(){
     if(photo){
       const person=new Image();
       person.onload=function(){
-        const photoSize=w<=720?Math.min(170,h+10):Math.min(300,h+60);
+        /* Keep the entire circle comfortably inside the banner height. */
+        const photoSize=w<=720?Math.min(145,h-18):Math.min(240,h-18);
         const cx=zone/2;
         const cy=h/2;
         ctx.save();
