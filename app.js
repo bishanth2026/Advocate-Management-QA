@@ -28,7 +28,14 @@ const seed = {
 };
 /* Each Admin gets an isolated workspace. Legacy demo data belongs only to the
    built-in demo Admin; newly created Admins start with a clean workspace. */
-const workspaceIdentity=String(auth.workspaceId||"").trim();
+let workspaceIdentity=String(auth.workspaceId||"").trim();
+if(!workspaceIdentity){
+  workspaceIdentity=(auth.role==="admin" && String(auth.email||"").trim().toLowerCase()==="admin@advocatedesk.local")
+    ?"demo-admin"
+    :"ws_"+Date.now().toString(36)+"_"+Math.random().toString(36).slice(2,10);
+  auth.workspaceId=workspaceIdentity;
+  try{localStorage.setItem("advocateDeskAuth",JSON.stringify(auth))}catch(e){}
+}
 const identity=String(auth.email||auth.name||auth.role||"user").trim().toLowerCase();
 const dataKey="advocateDeskData:"+(workspaceIdentity||identity);
 const isDemoAdmin=auth.role==="admin" && identity==="admin@advocatedesk.local";
