@@ -927,3 +927,20 @@ th{background:linear-gradient(90deg,#f1f5ff,#f7fbff);color:#526174}
   .advocate-photo-upload{justify-content:center}
   .profile-photo-help{max-width:100%}
 }
+
+
+/* ===== Dashboard/banner color blending =====
+   Softly carries the banner's navy, warm gold and charcoal tones into the
+   surrounding white dashboard background without changing cards or modules. */
+.content:has(.dashboard-hero){
+  background:
+    radial-gradient(ellipse 42% 26% at 18% 22%,rgba(23,37,84,.10),transparent 72%),
+    radial-gradient(ellipse 38% 24% at 58% 20%,rgba(166,108,45,.08),transparent 72%),
+    radial-gradient(ellipse 42% 28% at 92% 22%,rgba(48,48,44,.07),transparent 72%),
+    linear-gradient(180deg,#f3f6fb 0%,#f8fafc 32%,#eef4f8 100%);
+}
+.content:has(.dashboard-hero) .dashboard-hero{
+  box-shadow:
+    0 8px 24px rgba(23,37,84,.10),
+    0 0 34px rgba(166,108,45,.06);
+}
