@@ -28,8 +28,9 @@ const seed = {
 };
 /* Each Admin gets an isolated workspace. Legacy demo data belongs only to the
    built-in demo Admin; newly created Admins start with a clean workspace. */
+const workspaceIdentity=String(auth.workspaceId||"").trim();
 const identity=String(auth.email||auth.name||auth.role||"user").trim().toLowerCase();
-const dataKey="advocateDeskData:"+identity;
+const dataKey="advocateDeskData:"+(workspaceIdentity||identity);
 const isDemoAdmin=auth.role==="admin" && identity==="admin@advocatedesk.local";
 const legacyData=localStorage.getItem("advocateDeskData");
 let storedData=localStorage.getItem(dataKey);
@@ -145,7 +146,7 @@ if(auth.role!=="super_admin"){document.querySelectorAll(".admin-only").forEach(e
 function layout(title,sub,action=""){return `<div class="page-title"><div><h1>${title}</h1><p>${sub}</p></div>${action?`<button class="primary" onclick="${action}">＋ New</button>`:""}</div>`}
 
 function advocatePhotoKey(){
-  const identity=String(auth.email||auth.name||auth.role||"advocate").trim().toLowerCase();
+  const identity=String(auth.workspaceId||auth.email||auth.name||auth.role||"advocate").trim().toLowerCase();
   return "advocateDeskProfilePhoto:"+identity;
 }
 function getAdvocatePhoto(){try{return localStorage.getItem(advocatePhotoKey())||""}catch(e){return ""}}
