@@ -635,7 +635,9 @@ if(auth.role==="super_admin") pages["central-control"]=function(){
       const org=u.organization||u.officeName||u.office||"Law Office";
       const access=isSuper?"Full platform control":"Office management";
       const email=String(u.email||"").trim();
-      return '<tr><td><strong>'+esc(org)+'</strong></td><td><strong>'+esc(u.name||"Administrator")+'</strong>'+(email?'<small style="display:block;color:#667085;margin-top:3px">'+esc(email)+'</small>':'')+'</td><td>'+badge("Active")+'</td><td>'+esc(access)+'</td></tr>';
+      const userIndex=created.indexOf(u);
+      const editButton=(!isSuper && userIndex>=0)?'<button type="button" class="secondary" style="padding:6px 10px;font-size:12px;margin-left:8px" onclick="editAdminDemo('+userIndex+')">Edit</button>':"";
+      return '<tr><td><strong>'+esc(org)+'</strong></td><td><strong>'+esc(u.name||"Administrator")+'</strong>'+(email?'<small style="display:block;color:#667085;margin-top:3px">'+esc(email)+'</small>':'')+'</td><td>'+badge("Active")+'</td><td>'+esc(access)+editButton+'</td></tr>';
     }).join("");
   }
 };
@@ -675,6 +677,35 @@ function navigate(page,fromHistory){
 }
 function getDemoUsers(){try{return JSON.parse(localStorage.getItem("advocateDeskUsers")||"[]")}catch(e){return []}}
 function saveDemoUsers(users){try{localStorage.setItem("advocateDeskUsers",JSON.stringify(users));return true}catch(e){return false}}
+function editAdminDemo(index){
+  if(auth.role!=="super_admin"){alert("Only Super Admin can edit Admin accounts.");return}
+  const users=getDemoUsers();
+  const user=users[index];
+  if(!user || user.role!=="admin"){alert("Admin account not found.");return}
+  const name=prompt("Admin name:",String(user.name||""));
+  if(name===null)return;
+  const email=prompt("Admin email:",String(user.email||""));
+  if(email===null)return;
+  const password=prompt("Admin password (leave blank to keep current):","");
+  if(password===null)return;
+  const cleanName=String(name).trim();
+  const cleanEmail=String(email).trim();
+  if(!cleanName||!cleanEmail){alert("Admin name and email are required.");return}
+  const duplicate=users.some((u,i)=>i!==index&&String(u.email||"").trim().toLowerCase()===cleanEmail.toLowerCase());
+  if(duplicate){alert("An account with this email already exists.");return}
+  user.name=cleanName;
+  user.email=cleanEmail;
+  if(String(password).trim()) user.password=String(password);
+  if(!user.workspaceId) user.workspaceId="ws_"+Date.now().toString(36)+"_"+Math.random().toString(36).slice(2,10);
+  if(!saveDemoUsers(users)){alert("Could not save the Admin account in this browser.");return}
+  if(String(auth.workspaceId||"")===String(user.workspaceId||"")){
+    auth.name=user.name;
+    auth.email=user.email;
+    try{localStorage.setItem("advocateDeskAuth",JSON.stringify(auth))}catch(e){}
+  }
+  pages["central-control"]();
+  alert("Admin account updated successfully.");
+}
 function addSuperAdminDemo(){
   if(auth.role!=="super_admin"){alert("Only Super Admin can create another Super Admin.");return}
   const name=prompt("Super Admin name:"); if(!name)return;
