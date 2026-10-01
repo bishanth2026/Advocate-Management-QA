@@ -250,6 +250,41 @@ function composeDashboardHero(){
   base.src="assets/dashboard-legal-banner.png";
 }
 function dashboard(){
+  if(auth.role==="super_admin"){
+    const today=new Date();
+    const users=getDemoUsers().filter(u=>u&&u.role==="admin");
+    const activeAdmins=users.filter(u=>String(u.status||"Active")==="Active").length;
+    const organizations=[...new Set(users.map(u=>String(u.organization||u.officeName||u.office||"Law Office").trim()).filter(Boolean))];
+    const alerts=users.filter(u=>String(u.status||"Active")==="Suspended").length;
+    const recent=users.slice().sort((a,b)=>String(b.createdAt||"").localeCompare(String(a.createdAt||""))).slice(0,5);
+    const dashHour=new Date().getHours();
+    const dashGreeting=dashHour<12?"Good morning":dashHour<17?"Good afternoon":"Good evening";
+    const dashDate=today.toLocaleDateString("en-IN",{weekday:"long",day:"2-digit",month:"long",year:"numeric"});
+    content.innerHTML=layout("Hi System Owner, "+dashGreeting+"!",dashDate+" • Platform Control",`openModal('case')`)+
+    \`<div class="dashboard-hero super-admin-hero" role="img" aria-label="AdvocateDesk Super Admin banner"></div>
+    <div class="notice">System Owner view. Practice records remain inside each Admin's separate workspace.</div>
+    <div class="cards">
+      <div class="stat"><div class="stat-top">Organizations <span>🏢</span></div><div class="stat-value">${organizations.length}</div><div class="stat-foot">Law offices on the platform</div></div>
+      <div class="stat"><div class="stat-top">Active Admins <span>👤</span></div><div class="stat-value">${activeAdmins}</div><div class="stat-foot">Active administrator accounts</div></div>
+      <div class="stat"><div class="stat-top">Admin Accounts <span>🛡️</span></div><div class="stat-value">${users.length}</div><div class="stat-foot">Administrator accounts</div></div>
+      <div class="stat"><div class="stat-top">System Alerts <span>⚠</span></div><div class="stat-value">${alerts}</div><div class="stat-foot">${alerts?"Accounts need attention":"No account alerts"}</div></div>
+    </div>
+    <div class="grid-2" style="margin-top:16px">
+      <div class="panel"><div class="panel-head"><div><h3>Organizations & Administrators</h3><span>Account management only</span></div><button class="secondary" onclick="navigate('central-control')">Open Central Control</button></div>
+        <div class="list">${users.length?users.slice(0,6).map((u,i)=>`<div class="list-row"><div class="date-box"><b>✓</b><small>${esc(String(u.status||"Active"))}</small></div><div class="list-main"><strong>${esc(u.name||"Administrator")}</strong><small>${esc(u.organization||u.officeName||u.office||"Law Office")}</small></div><button class="secondary" onclick="navigate('central-control')">Manage</button></div>`).join(""):`<div class="empty">No Admin accounts created yet.</div>`}</div>
+      </div>
+      <div class="panel"><div class="panel-head"><div><h3>Recent System Activity</h3><span>Platform account activity</span></div></div>
+        <div class="list">${recent.length?recent.map(u=>`<div class="list-row"><div class="date-box"><b>+</b><small>Admin</small></div><div class="list-main"><strong>Admin account created</strong><small>${esc(u.name||"Administrator")} • ${u.createdAt?esc(new Date(u.createdAt).toLocaleDateString("en-IN")):"Date unavailable"}</small></div></div>`).join(""):`<div class="empty">No recent system activity.</div>`}</div>
+      </div>
+    </div>
+    <div class="panel" style="margin-top:16px"><div class="panel-head"><div><h3>System Management</h3><span>Platform-level controls</span></div></div><div class="quick-grid">
+      <button class="quick" onclick="navigate('central-control')"><strong>👥 Admin Accounts</strong><small>Create and manage administrators</small></button>
+      <button class="quick" onclick="navigate('central-control')"><strong>🏢 Organizations</strong><small>Manage law office accounts</small></button>
+      <button class="quick" onclick="navigate('central-control')"><strong>🔐 Security</strong><small>Review platform access</small></button>
+      <button class="quick" onclick="navigate('central-control')"><strong>📋 Audit Logs</strong><small>Review account activity</small></button>
+    </div></div>`;
+    return;
+  }
   const today=new Date(); today.setHours(0,0,0,0);
   const upcoming=state.hearings.filter(h=>h.date && new Date(h.date+"T00:00:00")>=today).sort((a,b)=>(String(a.date)+String(a.time||"")).localeCompare(String(b.date)+String(b.time||""))).slice(0,4);
   const upcomingMeetings=state.meetings.filter(m=>m.date && new Date(m.date+"T00:00:00")>=today).sort((a,b)=>(String(a.date)+String(a.time||"")).localeCompare(String(b.date)+String(b.time||""))).slice(0,4);
