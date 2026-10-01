@@ -621,7 +621,7 @@ if(auth.role==="super_admin") pages["central-control"]=function(){
   content.innerHTML=layout("Central Control","System-wide administration across all organizations")+`<div class="admin-grid"><div class="admin-card admin-card-super"><div class="admin-card-icon">👑</div><div><h3>Super Admin</h3><p>Full platform-wide control across every organization and law office.</p></div><span class="role-badge">FULL CONTROL</span></div><div class="admin-card admin-card-admin"><div class="admin-card-icon">🛡️</div><div><h3>Admin</h3><p>Office-level control for authorized users, cases, clients and operations.</p></div><span class="role-badge">OFFICE CONTROL</span></div></div><div class="panel central-panel"><div class="panel-head"><div><h3>Organizations & Administrators</h3><span>Central account control</span></div><div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
  <button class="secondary" onclick="addSuperAdminDemo()">＋ Create Super Admin</button>
  <button class="primary" onclick="addAdminDemo()">＋ Create Admin</button>
- </div></div><table id="centralControlTable"><thead><tr><th>Organization</th><th>Administrator</th><th>Status</th><th>Access</th></tr></thead><tbody></tbody></table></div><div class="admin-control-grid"><div class="control-tile"><strong>🏢 Organizations</strong><span>Create and manage law offices.</span></div><div class="control-tile"><strong>👥 Users & Roles</strong><span>Control Admin, Advocate, Clerk, Accountant and Staff access.</span></div><div class="control-tile"><strong>🔐 Security</strong><span>Global authentication and security policies.</span></div><div class="control-tile"><strong>📋 Audit Logs</strong><span>Review important administrator activity.</span></div><div class="control-tile"><strong>💾 Data Policies</strong><span>Manage backup and retention policies.</span></div><div class="control-tile"><strong>⚙ System Settings</strong><span>Configure global platform defaults.</span></div></div>`;
+ </div></div><table id="centralControlTable"><thead><tr><th>Organization</th><th>Administrator</th><th>Status</th><th>Actions</th></tr></thead><tbody></tbody></table></div><div class="admin-control-grid"><div class="control-tile"><strong>🏢 Organizations</strong><span>Create and manage law offices.</span></div><div class="control-tile"><strong>👥 Users & Roles</strong><span>Control Admin, Advocate, Clerk, Accountant and Staff access.</span></div><div class="control-tile"><strong>🔐 Security</strong><span>Global authentication and security policies.</span></div><div class="control-tile"><strong>📋 Audit Logs</strong><span>Review important administrator activity.</span></div><div class="control-tile"><strong>💾 Data Policies</strong><span>Manage backup and retention policies.</span></div><div class="control-tile"><strong>⚙ System Settings</strong><span>Configure global platform defaults.</span></div></div>`;
   const tbody=document.querySelector("#centralControlTable tbody");
   if(tbody){
     const created=getDemoUsers().filter(u=>u&&((u.role==="admin")||(u.role==="super_admin")));
@@ -633,11 +633,10 @@ if(auth.role==="super_admin") pages["central-control"]=function(){
     }).map(u=>{
       const isSuper=u.role==="super_admin";
       const org=u.organization||u.officeName||u.office||"Law Office";
-      const access=isSuper?"Full platform control":"Office management";
-      const email=String(u.email||"").trim();
+      const status=String(u.status||"Active");
       const userIndex=created.indexOf(u);
-      const editButton=(!isSuper && userIndex>=0)?'<button type="button" class="secondary" style="padding:6px 10px;font-size:12px;margin-left:8px" onclick="editAdminDemo('+userIndex+')">Edit</button>':"";
-      return '<tr><td><strong>'+esc(org)+'</strong></td><td><strong>'+esc(u.name||"Administrator")+'</strong>'+(email?'<small style="display:block;color:#667085;margin-top:3px">'+esc(email)+'</small>':'')+'</td><td>'+badge("Active")+'</td><td>'+esc(access)+editButton+'</td></tr>';
+      const editButton=(!isSuper && userIndex>=0)?'<button type="button" class="secondary" style="padding:6px 12px;font-size:12px" onclick="editAdminDemo('+userIndex+')">Edit</button>':"—";
+      return '<tr><td><strong>'+esc(org)+'</strong></td><td><strong>'+esc(u.name||"Administrator")+'</strong></td><td>'+badge(status)+'</td><td>'+editButton+'</td></tr>';
     }).join("");
   }
 };
@@ -677,25 +676,28 @@ function navigate(page,fromHistory){
 }
 function getDemoUsers(){try{return JSON.parse(localStorage.getItem("advocateDeskUsers")||"[]")}catch(e){return []}}
 function saveDemoUsers(users){try{localStorage.setItem("advocateDeskUsers",JSON.stringify(users));return true}catch(e){return false}}
-function editAdminDemo(index){
+function closeAdminEdit(){
+  const modal=document.getElementById("adminEditModal");
+  if(modal) modal.remove();
+}
+function saveAdminEdit(index){
   if(auth.role!=="super_admin"){alert("Only Super Admin can edit Admin accounts.");return}
   const users=getDemoUsers();
   const user=users[index];
   if(!user || user.role!=="admin"){alert("Admin account not found.");return}
-  const name=prompt("Admin name:",String(user.name||""));
-  if(name===null)return;
-  const email=prompt("Admin email:",String(user.email||""));
-  if(email===null)return;
-  const password=prompt("Admin password (leave blank to keep current):","");
-  if(password===null)return;
-  const cleanName=String(name).trim();
-  const cleanEmail=String(email).trim();
-  if(!cleanName||!cleanEmail){alert("Admin name and email are required.");return}
-  const duplicate=users.some((u,i)=>i!==index&&String(u.email||"").trim().toLowerCase()===cleanEmail.toLowerCase());
+  const name=String(document.getElementById("editAdminName")?.value||"").trim();
+  const email=String(document.getElementById("editAdminEmail")?.value||"").trim();
+  const password=String(document.getElementById("editAdminPassword")?.value||"");
+  const organization=String(document.getElementById("editAdminOffice")?.value||"").trim();
+  const status=String(document.getElementById("editAdminStatus")?.value||"Active");
+  if(!name||!email){alert("Admin name and email are required.");return}
+  const duplicate=users.some((u,i)=>i!==index&&String(u.email||"").trim().toLowerCase()===email.toLowerCase());
   if(duplicate){alert("An account with this email already exists.");return}
-  user.name=cleanName;
-  user.email=cleanEmail;
-  if(String(password).trim()) user.password=String(password);
+  user.name=name;
+  user.email=email;
+  user.organization=organization||"Law Office";
+  user.status=status;
+  if(password.trim()) user.password=password;
   if(!user.workspaceId) user.workspaceId="ws_"+Date.now().toString(36)+"_"+Math.random().toString(36).slice(2,10);
   if(!saveDemoUsers(users)){alert("Could not save the Admin account in this browser.");return}
   if(String(auth.workspaceId||"")===String(user.workspaceId||"")){
@@ -703,8 +705,40 @@ function editAdminDemo(index){
     auth.email=user.email;
     try{localStorage.setItem("advocateDeskAuth",JSON.stringify(auth))}catch(e){}
   }
+  closeAdminEdit();
   pages["central-control"]();
-  alert("Admin account updated successfully.");
+}
+function editAdminDemo(index){
+  if(auth.role!=="super_admin"){alert("Only Super Admin can edit Admin accounts.");return}
+  const users=getDemoUsers();
+  const user=users[index];
+  if(!user || user.role!=="admin"){alert("Admin account not found.");return}
+  const escHtml=v=>esc(String(v==null?"":v));
+  const createdDate=user.createdAt?new Date(user.createdAt).toLocaleString():"Not available";
+  const modal=document.createElement("div");
+  modal.id="adminEditModal";
+  modal.style.cssText="position:fixed;inset:0;background:rgba(15,23,42,.38);display:flex;align-items:center;justify-content:center;padding:20px;z-index:9999;";
+  modal.innerHTML=`
+    <div style="width:min(520px,100%);background:#fff;border-radius:16px;box-shadow:0 20px 50px rgba(15,23,42,.22);overflow:hidden;">
+      <div style="padding:18px 20px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between;">
+        <div><h3 style="margin:0;color:#172554;">Edit Admin Account</h3><small style="color:#667085;">Account settings only — practice records are unchanged.</small></div>
+        <button type="button" class="secondary" onclick="closeAdminEdit()" style="padding:6px 10px;">×</button>
+      </div>
+      <div style="padding:20px;display:grid;gap:14px;">
+        <div class="field"><label>Admin Name</label><input id="editAdminName" value="${escHtml(user.name)}"></div>
+        <div class="field"><label>Email</label><input id="editAdminEmail" type="email" value="${escHtml(user.email)}"></div>
+        <div class="field"><label>New Password <small style="color:#667085;">(leave blank to keep current)</small></label><input id="editAdminPassword" type="password" value=""></div>
+        <div class="field"><label>Office / Organization</label><input id="editAdminOffice" value="${escHtml(user.organization||user.officeName||user.office||"Law Office")}"></div>
+        <div class="field"><label>Status</label><select id="editAdminStatus"><option value="Active"${String(user.status||"Active")==="Active"?" selected":""}>Active</option><option value="Suspended"${String(user.status)==="Suspended"?" selected":""}>Suspended</option></select></div>
+        <div style="font-size:12px;color:#667085;">Created: ${escHtml(createdDate)}</div>
+      </div>
+      <div style="padding:14px 20px;border-top:1px solid #e5e7eb;display:flex;justify-content:flex-end;gap:8px;">
+        <button type="button" class="secondary" onclick="closeAdminEdit()">Cancel</button>
+        <button type="button" class="primary" onclick="saveAdminEdit(${index})">Save Changes</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.addEventListener("click",e=>{if(e.target===modal)closeAdminEdit()});
 }
 function addSuperAdminDemo(){
   if(auth.role!=="super_admin"){alert("Only Super Admin can create another Super Admin.");return}
@@ -730,7 +764,7 @@ function addAdminDemo(){
   const password=prompt("Temporary password:","demo123"); if(!password)return;
   const users=getDemoUsers();
   if(users.some(u=>String(u.email).toLowerCase()===String(email).toLowerCase())){alert("An account with this email already exists.");return}
-  users.push({role:"admin",name:String(name).trim(),email:String(email).trim(),password:String(password),createdAt:new Date().toISOString()});
+  users.push({role:"admin",name:String(name).trim(),email:String(email).trim(),password:String(password),organization:"Law Office",status:"Active",createdAt:new Date().toISOString()});
   if(!saveDemoUsers(users)){alert("Could not save the account in this browser.");return}
   const tbody=document.querySelector("#centralControlTable tbody");
   if(tbody){
