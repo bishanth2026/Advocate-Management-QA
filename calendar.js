@@ -23,7 +23,7 @@
 
   function readData() {
     try {
-      return JSON.parse(localStorage.getItem('advocateDeskData') || '{}') || {};
+      return window.appState || {};
     } catch (_) {
       return {};
     }
@@ -397,7 +397,7 @@
         const state = window.appState;
         if (!state || !Array.isArray(state[collection]) || !Number.isInteger(index) || !state[collection][index]) return;
         state[collection].splice(index, 1);
-        localStorage.setItem('advocateDeskData', JSON.stringify(state));
+        if(typeof window.saveAdvocateDeskState==='function') window.saveAdvocateDeskState();
         selectedRecordKey = null;
         render();
       };
