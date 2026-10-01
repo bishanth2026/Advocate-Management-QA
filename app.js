@@ -618,10 +618,26 @@ function settings(){
 }
 const pages={dashboard,"case-client":caseClient,"case-details":caseDetails,cases,clients,"client-management":clientManagement,hearings,calendar,documents,tasks,finance,reports,settings};
 if(auth.role==="super_admin") pages["central-control"]=function(){
- content.innerHTML=layout("Central Control","System-wide administration across all organizations")+`<div class="admin-grid"><div class="admin-card admin-card-super"><div class="admin-card-icon">👑</div><div><h3>Super Admin</h3><p>Full platform-wide control across every organization and law office.</p></div><span class="role-badge">FULL CONTROL</span></div><div class="admin-card admin-card-admin"><div class="admin-card-icon">🛡️</div><div><h3>Admin</h3><p>Office-level control for authorized users, cases, clients and operations.</p></div><span class="role-badge">OFFICE CONTROL</span></div></div><div class="panel central-panel"><div class="panel-head"><div><h3>Organizations & Administrators</h3><span>Central account control</span></div><div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
-<button class="secondary" onclick="addSuperAdminDemo()">＋ Create Super Admin</button>
-<button class="primary" onclick="addAdminDemo()">＋ Create Admin</button>
-</div></div><table id="centralControlTable"><thead><tr><th>Organization</th><th>Administrator</th><th>Status</th><th>Access</th></tr></thead><tbody><tr><td><strong>Demo Law Office</strong></td><td>Advocate Admin</td><td>${badge("Active")}</td><td>Office management</td></tr></tbody></table></div><div class="admin-control-grid"><div class="control-tile"><strong>🏢 Organizations</strong><span>Create and manage law offices.</span></div><div class="control-tile"><strong>👥 Users & Roles</strong><span>Control Admin, Advocate, Clerk, Accountant and Staff access.</span></div><div class="control-tile"><strong>🔐 Security</strong><span>Global authentication and security policies.</span></div><div class="control-tile"><strong>📋 Audit Logs</strong><span>Review important administrator activity.</span></div><div class="control-tile"><strong>💾 Data Policies</strong><span>Manage backup and retention policies.</span></div><div class="control-tile"><strong>⚙ System Settings</strong><span>Configure global platform defaults.</span></div></div>`;
+  content.innerHTML=layout("Central Control","System-wide administration across all organizations")+\`<div class="admin-grid"><div class="admin-card admin-card-super"><div class="admin-card-icon">👑</div><div><h3>Super Admin</h3><p>Full platform-wide control across every organization and law office.</p></div><span class="role-badge">FULL CONTROL</span></div><div class="admin-card admin-card-admin"><div class="admin-card-icon">🛡️</div><div><h3>Admin</h3><p>Office-level control for authorized users, cases, clients and operations.</p></div><span class="role-badge">OFFICE CONTROL</span></div></div><div class="panel central-panel"><div class="panel-head"><div><h3>Organizations & Administrators</h3><span>Central account control</span></div><div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+ <button class="secondary" onclick="addSuperAdminDemo()">＋ Create Super Admin</button>
+ <button class="primary" onclick="addAdminDemo()">＋ Create Admin</button>
+ </div></div><table id="centralControlTable"><thead><tr><th>Organization</th><th>Administrator</th><th>Status</th><th>Access</th></tr></thead><tbody></tbody></table></div><div class="admin-control-grid"><div class="control-tile"><strong>🏢 Organizations</strong><span>Create and manage law offices.</span></div><div class="control-tile"><strong>👥 Users & Roles</strong><span>Control Admin, Advocate, Clerk, Accountant and Staff access.</span></div><div class="control-tile"><strong>🔐 Security</strong><span>Global authentication and security policies.</span></div><div class="control-tile"><strong>📋 Audit Logs</strong><span>Review important administrator activity.</span></div><div class="control-tile"><strong>💾 Data Policies</strong><span>Manage backup and retention policies.</span></div><div class="control-tile"><strong>⚙ System Settings</strong><span>Configure global platform defaults.</span></div></div>\`;
+  const tbody=document.querySelector("#centralControlTable tbody");
+  if(tbody){
+    const created=getDemoUsers().filter(u=>u&&((u.role==="admin")||(u.role==="super_admin")));
+    const rows=[{role:"admin",name:"Advocate Admin",email:"admin@advocatedesk.local",organization:"Demo Law Office"}].concat(created);
+    const seen={};
+    tbody.innerHTML=rows.filter(u=>{
+      const key=String(u.email||u.name||"").trim().toLowerCase();
+      if(seen[key]) return false; seen[key]=true; return true;
+    }).map(u=>{
+      const isSuper=u.role==="super_admin";
+      const org=u.organization||u.officeName||u.office||"Law Office";
+      const access=isSuper?"Full platform control":"Office management";
+      const email=String(u.email||"").trim();
+      return '<tr><td><strong>'+esc(org)+'</strong></td><td><strong>'+esc(u.name||"Administrator")+'</strong>'+(email?'<small style="display:block;color:#667085;margin-top:3px">'+esc(email)+'</small>':'')+'</td><td>'+badge("Active")+'</td><td>'+esc(access)+'</td></tr>';
+    }).join("");
+  }
 };
 function navigate(page,fromHistory){
   if(!pages[page]) return;
