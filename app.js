@@ -26,16 +26,28 @@ const seed = {
     {title:"Review writ petition",case:"WP 422/2026",due:"2026-09-11",priority:"High",status:"Pending"}
   ]
 };
-const storedData = localStorage.getItem("advocateDeskData");
-const state = storedData ? (JSON.parse(storedData) || seed) : seed;
-// Backward-compatible collections for the Client Management workspace.
-state.discussions = Array.isArray(state.discussions) ? state.discussions : [];
-state.meetings = Array.isArray(state.meetings) ? state.meetings : [];
-state.payments = Array.isArray(state.payments) ? state.payments : [];
-state.invoices = Array.isArray(state.invoices) ? state.invoices : [
+/* Each Admin gets an isolated workspace. Legacy demo data belongs only to the
+   built-in demo Admin; newly created Admins start with a clean workspace. */
+const identity=String(auth.email||auth.name||auth.role||"user").trim().toLowerCase();
+const dataKey="advocateDeskData:"+identity;
+const isDemoAdmin=auth.role==="admin" && identity==="admin@advocatedesk.local";
+const legacyData=localStorage.getItem("advocateDeskData");
+let storedData=localStorage.getItem(dataKey);
+if(storedData===null && isDemoAdmin && legacyData){
+  storedData=legacyData;
+  localStorage.setItem(dataKey,legacyData);
+}
+const emptyState={
+  cases:[],clients:[],hearings:[],tasks:[],discussions:[],meetings:[],payments:[],invoices:[]
+};
+let state=storedData ? (JSON.parse(storedData)||emptyState) : (isDemoAdmin ? JSON.parse(JSON.stringify(seed)) : emptyState);
+state.discussions=Array.isArray(state.discussions)?state.discussions:[];
+state.meetings=Array.isArray(state.meetings)?state.meetings:[];
+state.payments=Array.isArray(state.payments)?state.payments:[];
+state.invoices=Array.isArray(state.invoices)?state.invoices:(isDemoAdmin?[
   {id:"INV-101",date:"2026-09-13",client:"ABC Traders",clientId:"CL-003",case:"WP 422/2026",caseId:"CS-2026-003",caseNumber:"WP 422/2026",amount:1000,paid:500,status:"Partial"},
   {id:"INV-001",date:"2026-09-13",client:"ABC Traders",clientId:"CL-003",case:"WP 422/2026",caseId:"CS-2026-003",caseNumber:"WP 422/2026",amount:25000,paid:15000,status:"Partial"}
-];
+]:[]);
 let stateChangedByDemoMigration=false;
 // Migrate only the known legacy demo invoices. Genuine user-created invoices are not rewritten.
 if(Array.isArray(state.invoices)){
@@ -57,7 +69,7 @@ if(Array.isArray(state.invoices)){
     }
   });
 }
-const save=()=>localStorage.setItem("advocateDeskData",JSON.stringify(state));
+const save=()=>localStorage.setItem(dataKey,JSON.stringify(state));
 if(stateChangedByDemoMigration) save();
 window.appState=state;
 if(storedData===null) save();
