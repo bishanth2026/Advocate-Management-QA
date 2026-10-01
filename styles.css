@@ -842,3 +842,88 @@ th{background:linear-gradient(90deg,#f1f5ff,#f7fbff);color:#526174}
     max-width:62%!important;
   }
 }
+
+
+/* Advocate profile settings — keep profile controls aligned and readable */
+.advocate-profile-settings{
+  display:grid;
+  grid-template-columns:140px minmax(0,1fr);
+  gap:22px;
+  align-items:center;
+  padding:20px;
+}
+.advocate-profile-preview-wrap{
+  width:120px;
+  height:120px;
+  border-radius:50%;
+  overflow:hidden;
+  display:grid;
+  place-items:center;
+  flex:none;
+  background:linear-gradient(135deg,#172554,#3155a6);
+  color:#fff;
+  font-size:34px;
+  font-weight:700;
+  border:4px solid #fff;
+  box-shadow:0 8px 20px rgba(23,37,84,.16);
+}
+.advocate-profile-preview-wrap img{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  object-position:center;
+}
+.advocate-profile-info{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:6px;
+}
+.advocate-profile-info>strong{
+  font-size:16px;
+  line-height:1.3;
+  color:var(--ink);
+  overflow-wrap:anywhere;
+}
+.advocate-profile-info>small{
+  color:var(--muted);
+  font-size:12px;
+  line-height:1.45;
+  overflow-wrap:anywhere;
+}
+.advocate-photo-upload{
+  position:relative;
+  display:inline-flex;
+  align-items:center;
+  width:max-content;
+  max-width:100%;
+  margin-top:6px;
+  cursor:pointer;
+  overflow:hidden;
+}
+.advocate-photo-upload input[type="file"]{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  opacity:0;
+  cursor:pointer;
+}
+.profile-photo-help{
+  max-width:460px;
+}
+@media(max-width:720px){
+  .advocate-profile-settings{
+    grid-template-columns:1fr;
+    justify-items:center;
+    text-align:center;
+  }
+  .advocate-profile-info{
+    align-items:center;
+    width:100%;
+  }
+  .advocate-photo-upload{justify-content:center}
+  .profile-photo-help{max-width:100%}
+}
