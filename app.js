@@ -799,7 +799,7 @@ function addAdminDemo(){
   const password=prompt("Temporary password:","demo123"); if(!password)return;
   const users=getDemoUsers();
   if(users.some(u=>String(u.email).toLowerCase()===String(email).toLowerCase())){alert("An account with this email already exists.");return}
-  users.push({role:"admin",name:String(name).trim(),email:String(email).trim(),password:String(password),organization:"Law Office",status:"Active",createdAt:new Date().toISOString()});
+  users.push({role:"admin",name:String(name).trim(),email:String(email).trim(),password:String(password),organization:"Law Office",status:"Active",workspaceId:"ws_"+Date.now().toString(36)+"_"+Math.random().toString(36).slice(2,10),createdAt:new Date().toISOString()});
   if(!saveDemoUsers(users)){alert("Could not save the account in this browser.");return}
   const tbody=document.querySelector("#centralControlTable tbody");
   if(tbody){
