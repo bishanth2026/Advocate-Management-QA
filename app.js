@@ -300,9 +300,9 @@ function dashboard(){
   const upcomingTasks=state.tasks.filter(t=>t.due && t.status!=="Completed" && new Date(t.due+"T00:00:00")>=today).sort((a,b)=>String(a.due).localeCompare(String(b.due))).slice(0,4);
   const meetingClient=(m)=>state.clients.find(c=>c.id===m.clientId);
   const dashDate=today.toLocaleDateString("en-IN",{weekday:"long",day:"2-digit",month:"long",year:"numeric"});
-  const dashHour=new Date().getHours(); const dashGreeting=dashHour<12?"Good morning":dashHour<17?"Good afternoon":"Good evening"; const advocateName=String(auth.name||"Advocate").trim(); const advocateGreeting="Hi "+advocateName+", "+dashGreeting+"!"; content.innerHTML=layout(advocateGreeting,dashDate+" • Demo Workspace",`openModal('case')`)+
+  const dashHour=new Date().getHours(); const dashGreeting=dashHour<12?"Good morning":dashHour<17?"Good afternoon":"Good evening"; const advocateName=String(auth.name||"Advocate").trim(); const advocateGreeting="Hi "+advocateName+", "+dashGreeting+"!"; content.innerHTML=layout(advocateGreeting,dashDate+" • "+(auth.cloudAuth?(auth.workspaceName||"Admin Workspace"):"Demo Workspace"),`openModal('case')`)+
   `<div class="dashboard-hero ${auth.role==="super_admin"?"super-admin-hero":""}" role="img" aria-label="AdvocateDesk ${auth.role==="super_admin"?"Super Admin":"legal practice"} banner">${auth.role!=="super_admin"&&getAdvocatePhoto()?`<div class="dashboard-advocate-photo"><img src="${getAdvocatePhoto()}" alt="${esc(auth.name||"Advocate")} profile photo"></div>`:""}</div>
-  <div class="notice">Demo mode is active. Records are stored in this browser for now. Supabase will be connected in the next phase.</div>
+  ${auth.cloudAuth?`<div class="notice">Cloud workspace is active. Your practice records are securely synced with your workspace.</div>`:`<div class="notice">Demo mode is active. Records are stored in this browser for now.</div>`}
   <div class="cards">
    <div class="stat"><div class="stat-top">Active Cases <span>⚖</span></div><div class="stat-value">${state.cases.filter(x=>x.status==="Active").length}</div><div class="stat-foot">Live case portfolio</div></div>
    <div class="stat"><div class="stat-top">Upcoming Hearings <span>◷</span></div><div class="stat-value">${upcoming.length}</div><div class="stat-foot">Upcoming hearings</div></div>
