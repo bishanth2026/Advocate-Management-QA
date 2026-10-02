@@ -141,6 +141,13 @@ function main() {
     duplicateKeys.set(k, (duplicateKeys.get(k)||0)+1);
   });
   for (const [key, n] of duplicateKeys) if (n > 1) issues.push({severity:'error',code:'TARGET_KEY_COLLISION',key,occurrences:n,message:'Multiple source rows would share the target workspace/type/key.'});
+  const metadataRecord = {
+    workspace_id:workspaceId,
+    record_type:'other',
+    record_key:'workspace_metadata_v1',
+    payload:metadata,
+    _source:{collection:'__metadata__',index:null,id_source:'reserved_metadata_key'}
+  };
   const report = {
     mode:'DRY_RUN_ONLY',
     source_file:path.basename(inputPath),
@@ -149,6 +156,7 @@ function main() {
     source_collection_count:collections.length,
     source_record_count:rows.length,
     output_record_count:rows.length,
+    preserved_metadata_keys:Object.keys(metadata),
     issue_summary:{
       errors:issues.filter(x=>x.severity==='error').length,
       warnings:issues.filter(x=>x.severity==='warning').length
@@ -156,8 +164,9 @@ function main() {
     collections:counts,
     issues
   };
-  const preview = { _migration_report:report, records:rows };
-  fs.writeFileSync(outputPath, JSON.stringify(preview, null, 2) + '\n', {flag:'w'});
+  const preview = { _migration_report:report, metadata_record:metadataRecord, records:rows };
+  try { fs.writeFileSync(outputPath, JSON.stringify(preview, null, 2) + '\n', {flag:'wx'}); }
+  catch (error) { console.error('Could not safely create preview file: ' + error.message); process.exitCode = 2; return; }
   console.log(JSON.stringify(report, null, 2));
   console.log('\nPreview written locally to: ' + path.resolve(outputPath));
   console.log('No database connection or Supabase write was attempted.');
