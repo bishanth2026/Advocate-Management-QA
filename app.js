@@ -48,7 +48,7 @@ if(storedData===null && isDemoAdmin && legacyData){
 const emptyState={
   cases:[],clients:[],hearings:[],tasks:[],discussions:[],meetings:[],payments:[],invoices:[]
 };
-let state=storedData ? (JSON.parse(storedData)||emptyState) : (isDemoAdmin ? JSON.parse(JSON.stringify(seed)) : emptyState);
+let state=auth.cloudAuth ? JSON.parse(JSON.stringify(window.ADCloudInitialState||emptyState)) : (storedData ? (JSON.parse(storedData)||emptyState) : (isDemoAdmin ? JSON.parse(JSON.stringify(seed)) : emptyState));
 state.discussions=Array.isArray(state.discussions)?state.discussions:[];
 state.meetings=Array.isArray(state.meetings)?state.meetings:[];
 state.payments=Array.isArray(state.payments)?state.payments:[];
@@ -77,12 +77,21 @@ if(Array.isArray(state.invoices)){
     }
   });
 }
-const save=()=>localStorage.setItem(dataKey,JSON.stringify(state));
+const save=()=>{
+  if(!auth.cloudAuth){localStorage.setItem(dataKey,JSON.stringify(state));return;}
+  if(window.ADCloudSync&&typeof window.ADCloudSync.save==="function"){
+    window.ADCloudSync.save(state).catch(function(err){
+      console.error("AdvocateDesk cloud save failed",err);
+      if(typeof window.showToast==="function")window.showToast("Cloud sync failed. Your latest changes may not be saved online. Check your connection and retry.");
+      else if(typeof window.toast==="function")window.toast("Cloud sync failed. Check your connection and retry.");
+    });
+  }
+};
 window.advocateDeskDataKey=dataKey;
 window.saveAdvocateDeskState=save;
-if(stateChangedByDemoMigration) save();
+if(stateChangedByDemoMigration && !auth.cloudAuth) save();
 window.appState=state;
-if(storedData===null) save();
+if(storedData===null && !auth.cloudAuth) save();
 const fmtDate=d=>new Date(d+"T00:00:00").toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"});
 const KOZHIKODE_COURTS = [
   "JFCM Court, Kunnamangalam",
