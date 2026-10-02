@@ -807,7 +807,7 @@ async function provisionPlatformUser(action){
  try{const r=await ADAuth.client().functions.invoke("advocatedesk-provision-user",{body:{action,email:email.trim(),full_name:name.trim(),workspace_name:workspace_name.trim()}});
  if(r.error)throw r.error;if(r.data&&r.data.error)throw new Error(r.data.error);
  alert("Invitation sent to "+email.trim()+". The user must complete the email invitation before signing in.");await refreshPlatformAccounts();
- }catch(e){alert("Could not create account: "+(e.message||"Check Edge Function and SMTP configuration."));}
+ }catch(e){let detail=e&&e.message?e.message:"Unknown error";try{const response=e&&e.context;if(response&&typeof response.clone==="function"){const body=await response.clone().json();if(body&&body.error)detail=body.error;else if(body&&body.message)detail=body.message;}}catch(_parseError){}const normalized=detail.toLowerCase();if(normalized.includes("already")||normalized.includes("registered")||normalized.includes("exists")){try{const users=await refreshPlatformAccounts();const existing=users.find(u=>(u.email||"").toLowerCase()===email.trim().toLowerCase());if(existing){alert("This email already has a platform account. Current status: "+existing.status+". No duplicate account was created.");return;}}catch(_refreshError){}alert("This email may already be registered in Supabase. Check the Central Control account list before retrying. Details: "+detail);return;}alert("Could not create account: "+detail);}
 }
 function addSuperAdminDemo(){provisionPlatformUser("invite_super_admin");}
 function addAdminDemo(){provisionPlatformUser("invite_admin");}
