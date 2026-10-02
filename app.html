@@ -16,6 +16,13 @@
    const auth=await ADAuth.validateAppSession();
    if(!auth){fail('Your session is missing or expired.');return;}
    const client=ADAuth.client();
+   window.ADPlatformAccounts=[];
+   if(auth.role==="super_admin"){
+     const platformResult=await client.functions.invoke("advocatedesk-provision-user",{body:{action:"list_admins"}});
+     if(platformResult.error)throw platformResult.error;
+     if(platformResult.data&&platformResult.data.error)throw new Error(platformResult.data.error);
+     window.ADPlatformAccounts=Array.isArray(platformResult.data.users)?platformResult.data.users:[];
+   }
    const result=await client.from('practice_records').select('id,payload,updated_at').eq('workspace_id',auth.workspaceId).eq('record_type','other').eq('record_key','workspace_state').maybeSingle();
    if(result.error)throw result.error;
    const empty={cases:[],clients:[],hearings:[],tasks:[],discussions:[],meetings:[],payments:[],invoices:[]};
