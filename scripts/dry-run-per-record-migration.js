@@ -62,11 +62,21 @@ function main() {
     console.error('Usage: node scripts/dry-run-per-record-migration.js <snapshot.json> [preview.json]');
     process.exitCode = 2; return;
   }
-  const outputPath = process.argv[3] || path.resolve(process.cwd(), 'per-record-migration-preview.json');
-  const state = unwrap(JSON.parse(fs.readFileSync(inputPath, 'utf8')));
+  const outputPath = path.resolve(process.argv[3] || path.resolve(process.cwd(), 'per-record-migration-preview.json'));
+  const resolvedInput = path.resolve(inputPath);
+  if (outputPath === resolvedInput) {
+    console.error('Refusing to overwrite the source snapshot. Choose a different preview output path.');
+    process.exitCode = 2; return;
+  }
+  let state;
+  try { state = unwrap(JSON.parse(fs.readFileSync(inputPath, 'utf8'))); }
+  catch (error) { console.error('Could not parse workspace snapshot: ' + error.message); process.exitCode = 2; return; }
   const workspaceId = state.workspace_id || state.workspaceId || null;
   const collections = Object.keys(state).filter(k => Array.isArray(state[k]));
   const rows = [], issues = [], counts = {};
+  const knownStateKeys = new Set([...knownCollections, 'workspace_id', 'workspaceId', 'updated_at', 'updatedAt', 'created_at', 'createdAt', 'version']);
+  const metadata = Object.fromEntries(Object.entries(state).filter(([key]) => !knownStateKeys.has(key) && !Array.isArray(state[key])));
+  if (Object.keys(metadata).length) issues.push({ severity:'warning', code:'TOP_LEVEL_METADATA_PRESERVED', keys:Object.keys(metadata), message:'Non-collection state fields are preserved in metadata_record and need mapping review.' });
   const identityMaps = { case: new Set(), client: new Set(), invoice: new Set(), payment: new Set() };
   const typeFor = key => ({
     cases:'case', caseRecords:'case', allCases:'case',
