@@ -1,7 +1,7 @@
 (function(){
   "use strict";
   var SUPABASE_URL="https://ykxfidrtvmkmmbxameji.supabase.co";
-  var SUPABASE_KEY="sb_publishable_bERxJEXhG2wgoivZ-jDozQ_DWGXynd5";
+  var SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlreGZpZHJ0dm1rbW1ieGFtZWppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA4ODIwMjUsImV4cCI6MjEwNjQ1ODAyNX0.9m6LYk1i2i_B5iwNbjX5iYCHrGrnXFf-O7pFMWVDVDk";
   var client=null;
   function getClient(){
     if(client)return client;
