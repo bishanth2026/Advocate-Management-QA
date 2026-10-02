@@ -38,6 +38,14 @@
     get:function(){try{return JSON.parse(localStorage.getItem("advocateDeskAuth")||"null")}catch(e){return null}},
     set:function(role,name,email,workspaceId){var a={role:role,name:name,email:email,workspaceId:workspaceId||"",loginAt:new Date().toISOString()};localStorage.setItem("advocateDeskAuth",JSON.stringify(a));return a;},
     client:getClient,
+    resetPassword:async function(email){
+      var address=String(email||"").trim();
+      if(!address)throw new Error("Enter your account email address first.");
+      var redirectTo=new URL("reset-password.html",window.location.href).href;
+      var r=await getClient().auth.resetPasswordForEmail(address,{redirectTo:redirectTo});
+      if(r.error)throw r.error;
+      return true;
+    },
     signIn:async function(email,password,portal){
       var c=getClient(),r=await c.auth.signInWithPassword({email:String(email||"").trim(),password:String(password||"")});
       if(r.error)throw r.error;
