@@ -261,7 +261,7 @@ function composeDashboardHero(){
 function dashboard(){
   if(auth.role==="super_admin"){
     const today=new Date();
-    const users=getDemoUsers().filter(u=>u&&u.role==="admin");
+    const users=(window.ADPlatformAccounts||[]).filter(u=>u&&u.role==="admin").map(u=>({...u,organization:(u.workspaces||[]).map(w=>w.name).join(", ")||"Law Office",createdAt:u.created_at,status:u.status}));
     const activeAdmins=users.filter(u=>String(u.status||"Active")==="Active").length;
     const organizations=[...new Set(users.map(u=>String(u.organization||u.officeName||u.office||"Law Office").trim()).filter(Boolean))];
     const alerts=users.filter(u=>String(u.status||"Active")==="Suspended").length;
@@ -683,6 +683,8 @@ if(auth.role==="super_admin") pages["central-control"]=function(){
       return '<tr><td><strong>'+esc(org)+'</strong></td><td><strong>'+esc(u.name||"Administrator")+'</strong></td><td>'+badge(status)+'</td><td>'+editButton+'</td></tr>';
     }).join("");
   }
+   renderPlatformAccounts();
+   refreshPlatformAccounts().catch(function(e){const el=document.getElementById("centralAccountStatus");if(el)el.textContent="Could not load cloud accounts: "+(e.message||"Unknown error");});
 };
 function navigate(page,fromHistory){
   if(!pages[page]) return;
@@ -784,40 +786,31 @@ function editAdminDemo(index){
   document.body.appendChild(modal);
   modal.addEventListener("click",e=>{if(e.target===modal)closeAdminEdit()});
 }
-function addSuperAdminDemo(){
-  if(auth.role!=="super_admin"){alert("Only Super Admin can create another Super Admin.");return}
-  const name=prompt("Super Admin name:"); if(!name)return;
-  const email=prompt("Super Admin email:"); if(!email)return;
-  const password=prompt("Temporary password:","demo123"); if(!password)return;
-  const users=getDemoUsers();
-  if(users.some(u=>String(u.email).toLowerCase()===String(email).toLowerCase())){alert("An account with this email already exists.");return}
-  users.push({role:"super_admin",name:String(name).trim(),email:String(email).trim(),password:String(password),createdAt:new Date().toISOString()});
-  if(!saveDemoUsers(users)){alert("Could not save the account in this browser.");return}
-  const tbody=document.querySelector("#centralControlTable tbody");
-  if(tbody){
-    const tr=document.createElement("tr");
-    tr.innerHTML=`<td><strong>Platform</strong></td><td>${esc(String(name).trim())}</td><td>${badge("Active")}</td><td>Full platform control</td>`;
-    tbody.prepend(tr);
-  }
-  alert("Super Admin created successfully. They can now sign in from the Super Admin Login using the email and password you entered.");
+async function refreshPlatformAccounts(){
+ if(auth.role!=="super_admin")throw new Error("Only Super Admin can view platform accounts.");
+ const r=await ADAuth.client().functions.invoke("advocatedesk-provision-user",{body:{action:"list_admins"}});
+ if(r.error)throw r.error;if(r.data&&r.data.error)throw new Error(r.data.error);
+ window.ADPlatformAccounts=Array.isArray(r.data.users)?r.data.users:[];
+ renderPlatformAccounts();return window.ADPlatformAccounts;
 }
-function addAdminDemo(){
-  if(auth.role!=="super_admin"){alert("Only Super Admin can create Admin accounts.");return}
-  const name=prompt("Admin name:"); if(!name)return;
-  const email=prompt("Admin email:"); if(!email)return;
-  const password=prompt("Temporary password:","demo123"); if(!password)return;
-  const users=getDemoUsers();
-  if(users.some(u=>String(u.email).toLowerCase()===String(email).toLowerCase())){alert("An account with this email already exists.");return}
-  users.push({role:"admin",name:String(name).trim(),email:String(email).trim(),password:String(password),organization:"Law Office",status:"Active",workspaceId:"ws_"+Date.now().toString(36)+"_"+Math.random().toString(36).slice(2,10),createdAt:new Date().toISOString()});
-  if(!saveDemoUsers(users)){alert("Could not save the account in this browser.");return}
-  const tbody=document.querySelector("#centralControlTable tbody");
-  if(tbody){
-    const tr=document.createElement("tr");
-    tr.innerHTML=`<td><strong>Law Office</strong></td><td>${esc(String(name).trim())}</td><td>${badge("Active")}</td><td>Office management</td>`;
-    tbody.prepend(tr);
-  }
-  alert("Admin created successfully.");
+function renderPlatformAccounts(){
+ const tbody=document.querySelector("#centralControlTable tbody");if(!tbody)return;
+ const users=window.ADPlatformAccounts||[];
+ tbody.innerHTML=users.length?users.map(u=>{const ws=(u.workspaces||[]).map(w=>w.name).join(", ")||(u.role==="super_admin"?"Platform":"—");return '<tr><td><strong>'+esc(ws)+'</strong></td><td><strong>'+esc(u.name||"Administrator")+'</strong></td><td>'+esc(u.email||"—")+'<br><small>'+esc(u.role==="super_admin"?"Super Admin":"Admin")+'</small></td><td>'+badge(u.status||"Unknown")+'</td><td>Managed in Supabase</td></tr>';}).join(""):'<tr><td colspan="5">No cloud administrator accounts found.</td></tr>';
+ const el=document.getElementById("centralAccountStatus");if(el)el.textContent="Showing "+users.length+" account(s) from Supabase. Browser demo entries are excluded.";
 }
+async function provisionPlatformUser(action){
+ if(auth.role!=="super_admin"){alert("Only Super Admin can provision platform accounts.");return;}
+ const name=prompt("Full name:");if(!name||!name.trim())return;
+ const email=prompt("Email address:");if(!email||!email.trim())return;
+ let workspace_name="";if(action==="invite_admin"){workspace_name=prompt("Law office / workspace name:");if(!workspace_name||!workspace_name.trim())return;}
+ try{const r=await ADAuth.client().functions.invoke("advocatedesk-provision-user",{body:{action,email:email.trim(),full_name:name.trim(),workspace_name:workspace_name.trim()}});
+ if(r.error)throw r.error;if(r.data&&r.data.error)throw new Error(r.data.error);
+ alert("Invitation sent to "+email.trim()+". The user must complete the email invitation before signing in.");await refreshPlatformAccounts();
+ }catch(e){alert("Could not create account: "+(e.message||"Check Edge Function and SMTP configuration."));}
+}
+function addSuperAdminDemo(){provisionPlatformUser("invite_super_admin");}
+function addAdminDemo(){provisionPlatformUser("invite_admin");}
 document.querySelectorAll(".nav-item").forEach(b=>b.addEventListener("click",()=>navigate(b.dataset.page)));
 const mobileMenu=document.getElementById("mobileMenu");
 const mobileOverlay=document.getElementById("mobileOverlay");
