@@ -58,7 +58,7 @@ state.invoices=Array.isArray(state.invoices)?state.invoices:(isDemoAdmin?[
 ]:[]);
 let stateChangedByDemoMigration=false;
 // Migrate only the known legacy demo invoices. Genuine user-created invoices are not rewritten.
-if(Array.isArray(state.invoices)){
+if(!auth.cloudAuth && Array.isArray(state.invoices)){
   state.invoices.forEach(inv=>{
     if(inv && (inv.id==="INV-101"||inv.id==="INV-001") && (
       inv.client==="ABC Industries" ||
