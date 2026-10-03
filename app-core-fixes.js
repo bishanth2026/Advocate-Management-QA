@@ -77,10 +77,16 @@
     if (!dashboardNav || !content || !content.querySelector('.cards')) return;
     var now = new Date(), hour = now.getHours();
     var greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
-    var title = content.querySelector('.page-title h1');
-    if (title) title.textContent = greeting + ', Advocate';
-    var subtitle = content.querySelector('.page-title p');
-    if (subtitle) subtitle.textContent = now.toLocaleDateString('en-IN', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }) + ' • Demo Workspace';
+    var session = null;
+    try { session = window.ADAuth && typeof window.ADAuth.get === 'function' ? window.ADAuth.get() : null; } catch (_) {}
+    /* app.js renders the authoritative greeting and workspace after secure bootstrap.
+       Never replace authenticated cloud identity with demo fallback text. */
+    if (!session || !session.cloudAuth) {
+      var title = content.querySelector('.page-title h1');
+      if (title) title.textContent = greeting + ', Advocate';
+      var subtitle = content.querySelector('.page-title p');
+      if (subtitle) subtitle.textContent = now.toLocaleDateString('en-IN', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }) + ' • Demo Workspace';
+    }
     var hearings = Array.isArray(data().hearings) ? data().hearings : [], start = new Date(now); start.setHours(0, 0, 0, 0); var end = new Date(start); end.setDate(end.getDate() + 30);
     var count = hearings.filter(function (h) { var d = date(h.date); return d && d >= start && d <= end; }).length;
     var cards = content.querySelectorAll('.stat'), value = cards[1] && cards[1].querySelector('.stat-value');
