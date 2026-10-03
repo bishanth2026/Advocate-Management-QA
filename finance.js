@@ -1,5 +1,7 @@
 (function(){
 'use strict';
+if(window.__advocateDeskFinanceCaseAutocompleteV2)return;
+window.__advocateDeskFinanceCaseAutocompleteV2=true;
 var mounted=new WeakMap(),active=null;
 function store(){return window.appState||{};}
 function s(v){return v==null?'':String(v).trim();}
