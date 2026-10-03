@@ -529,6 +529,28 @@ function calendar(){
   const today=new Date().toISOString().slice(0,10);
   content.innerHTML=layout("Calendar","Court hearings, appointments and deadlines")+calendarModuleMarkup(today,true);
 }
+/* Client-side file signature preflight is defense in depth only; the browser can be bypassed. */
+async function validateDocumentFileSignature(file){
+ const bytes=new Uint8Array(await file.slice(0,Math.min(file.size,65536)).arrayBuffer());
+ const starts=(sig)=>sig.every((v,i)=>bytes[i]===v);
+ const mime=String(file.type||"").toLowerCase();
+ if(mime==="application/pdf"){
+  const head=new TextDecoder("latin1").decode(bytes.slice(0,1024));
+  return head.includes("%PDF-");
+ }
+ if(mime==="image/png")return starts([0x89,0x50,0x4e,0x47,0x0d,0x0a,0x1a,0x0a]);
+ if(mime==="image/jpeg"){
+  if(!starts([0xff,0xd8,0xff]))return false;
+  const tail=new Uint8Array(await file.slice(Math.max(0,file.size-2)).arrayBuffer());
+  return tail.length===2&&tail[0]===0xff&&tail[1]===0xd9;
+ }
+ if(mime==="application/vnd.openxmlformats-officedocument.wordprocessingml.document"){
+  if(!starts([0x50,0x4b,0x03,0x04]))return false;
+  const zipHeader=new TextDecoder("latin1").decode(bytes);
+  return zipHeader.includes("[Content_Types].xml")&&zipHeader.includes("word/document.xml");
+ }
+ return false;
+}
 async function documents(){
  const workspaceId=String(auth.workspaceId||"");
  const cloud=!!auth.cloudAuth&&!!workspaceId;
@@ -550,14 +572,14 @@ window.openCaseDocument=async function(id){
 };
 window.deleteCaseDocument=async function(id){
  if(!confirm("Delete this document permanently?"))return;
- try{const c=ADAuth.client(),workspaceId=String(auth.workspaceId||"");if(!auth.cloudAuth||!workspaceId)throw new Error("Sign in to the correct cloud workspace.");const q=await c.from("case_documents").select("storage_path").eq("id",id).eq("workspace_id",workspaceId).maybeSingle();if(q.error)throw q.error;if(!q.data)throw new Error("Document not found or access denied.");const del=await c.from("case_documents").delete().eq("id",id).eq("workspace_id",workspaceId).select("id").maybeSingle();if(del.error)throw del.error;if(!del.data)throw new Error("Metadata was not deleted; check your workspace access.");const removed=await c.storage.from("advocatedesk-documents").remove([q.data.storage_path]);if(removed.error){console.error("Document metadata deleted but storage cleanup failed",removed.error);await documents();alert("Document record was deleted, but its stored file could not be removed. An administrator must clean up the orphaned file.");return;}await documents();}catch(e){alert("Unable to delete document: "+(e?.message||"Please try again."));}
+ try{const c=ADAuth.client(),workspaceId=String(auth.workspaceId||"");if(!auth.cloudAuth||!workspaceId)throw new Error("Sign in to the correct cloud workspace.");const q=await c.from("case_documents").select("storage_path").eq("id",id).eq("workspace_id",workspaceId).maybeSingle();if(q.error)throw q.error;if(!q.data)throw new Error("Document not found or access denied.");const removed=await c.storage.from("advocatedesk-documents").remove([q.data.storage_path]);if(removed.error){console.error("Document storage removal failed; metadata retained for retry",removed.error);throw new Error("The stored file could not be removed. The document record was kept; please retry.");}const del=await c.from("case_documents").delete().eq("id",id).eq("workspace_id",workspaceId).select("id").maybeSingle();if(del.error)throw del.error;if(!del.data)throw new Error("The file was removed, but its record could not be deleted. Refresh and retry cleanup.");await documents();}catch(e){alert("Unable to delete document: "+(e?.message||"Please try again."));}
 };
 async function uploadCaseDocument(){
  const name=String(document.getElementById("documentName")?.value||"").trim(),caseId=String(document.getElementById("documentCaseInput")?.value||"").trim(),category=String(document.getElementById("documentCategory")?.value||"Other"),file=document.getElementById("documentFile")?.files?.[0];
  const selected=state.cases.find(c=>String(c.id)===caseId||String(c.number)===caseId);
  if(!name){alert("Enter a document name.");return;}if(!selected){alert("Select a valid case from the case list.");return;}if(!file){alert("Choose a file to upload.");return;}
  const allowed=["application/pdf","application/vnd.openxmlformats-officedocument.wordprocessingml.document","image/jpeg","image/png"];
- if(!allowed.includes(file.type)){alert("Only PDF, DOCX, JPG and PNG files are allowed.");return;}if(file.size<=0||file.size>20971520){alert("File must be smaller than or equal to 20 MB.");return;}
+ if(!allowed.includes(file.type)){alert("Only PDF, DOCX, JPG and PNG files are allowed.");return;}if(file.size<=0||file.size>20971520){alert("File must be smaller than or equal to 20 MB.");return;}if(!(await validateDocumentFileSignature(file))){alert("The selected file content does not match a supported PDF, DOCX, JPG or PNG document. Please choose a valid file.");return;}
  const workspaceId=String(auth.workspaceId||"");if(!auth.cloudAuth||!workspaceId){alert("Secure document upload requires an authenticated cloud workspace.");return;}
  const btn=document.getElementById("uploadDocumentButton");if(btn){btn.disabled=true;btn.textContent="Uploading…";}
  const client=ADAuth.client(),id=(function(){if(window.crypto&&typeof window.crypto.randomUUID==="function")return window.crypto.randomUUID();const b=new Uint8Array(16);if(window.crypto&&typeof window.crypto.getRandomValues==="function")window.crypto.getRandomValues(b);else for(let i=0;i<16;i++)b[i]=Math.floor(Math.random()*256);b[6]=(b[6]&15)|64;b[8]=(b[8]&63)|128;const h=Array.from(b,x=>x.toString(16).padStart(2,"0")).join("");return h.slice(0,8)+"-"+h.slice(8,12)+"-"+h.slice(12,16)+"-"+h.slice(16,20)+"-"+h.slice(20)})(),safeName=file.name.replace(/[^a-zA-Z0-9._-]/g,"_").slice(-150)||"document",path=workspaceId+"/"+id+"/"+safeName;
