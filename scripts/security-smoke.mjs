@@ -6,6 +6,7 @@ const auth = read("../auth.js");
 const app = read("../app.js");
 const shell = read("../app.html");
 const loginPages = ["../login.html", "../admin-login.html", "../super-admin-login.html"].map(read);
+const provisioning = read("../supabase/functions/advocatedesk-provision-user/index.ts");
 
 assert.match(auth, /https:\/\/uqtsksgypncsbcnuanbk\.supabase\.co/, "Auth must point to the isolated QA Supabase project");
 assert.doesNotMatch(auth, /ykxfidrtvmkmmbxameji|advocate-management\.supabase\.co/i, "QA Auth must not point to production Supabase");
@@ -24,6 +25,11 @@ const deleteAt = app.indexOf("window.deleteCaseDocument=async function");
 const storageRemoveAt = app.indexOf('.storage.from("advocatedesk-documents").remove', deleteAt);
 const metadataDeleteAt = app.indexOf('.from("case_documents").delete()', deleteAt);
 assert.ok(deleteAt >= 0 && storageRemoveAt > deleteAt && metadataDeleteAt > storageRemoveAt, "Deletion must remove the private object before deleting metadata");
+assert.match(provisioning, /async function listAllAuthUsers\(/, "Central Control must paginate Auth administrator accounts");
+assert.match(provisioning, /listUsers\(\{ page, perPage \}\)/, "Auth listing must request each page");
+assert.match(provisioning, /if \(batch\.length < perPage\) return \{ users, error: null \}/, "Auth pagination must stop only after the final short page");
+assert.match(provisioning, /callerProfile\?\.platform_role !== "super_admin"/, "Provisioning endpoint must verify the caller's platform role");
+assert.match(provisioning, /action !== "invite_admin"/, "Provisioning endpoint must reject unsupported actions including super-admin invitation");
 assert.match(shell, /auth\.js\?v=20261003-02/, "App shell must use current auth cache-busting version");
 for (const page of loginPages) assert.match(page, /auth\.js\?v=20261003-02/, "All login pages must use the same auth cache-busting version");
 
