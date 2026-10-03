@@ -101,7 +101,7 @@ Deno.serve(async (req: Request) => {
       console.error("Workspace lookup failed:", workspaceError.message);
       return json(500, { error: "Could not load administrator workspaces." });
     }
-    const authById = new Map((authUsers?.users || []).map((u: any) => [u.id, u]));
+    const authById = new Map(authUsers.map((u: any) => [u.id, u]));
     const workspaceById = new Map((workspaces || []).map((w: any) => [w.id, w]));
     const membershipByUser = new Map<string, any[]>();
     for (const m of memberships || []) {
