@@ -1,7 +1,8 @@
 (function(){
   "use strict";
-  var SUPABASE_URL="https://ykxfidrtvmkmmbxameji.supabase.co";
-  var SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlreGZpZHJ0dm1rbW1ieGFtZWppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA4ODIwMjUsImV4cCI6MjEwNjQ1ODAyNX0.9m6LYk1i2i_B5iwNbjX5iYCHrGrnXFf-O7pFMWVDVDk";
+  // TEST ONLY: isolated Supabase project. Do not merge this auth config into production.
+  var SUPABASE_URL="https://uqtsksgypncsbcnuanbk.supabase.co";
+  var SUPABASE_KEY="sb_publishable_cK6gEEBcDOOEfpkXlgVEDQ_7EVPt-XW";
   var client=null;
   function getClient(){
     if(client)return client;
@@ -19,19 +20,14 @@
     var p=await c.from("profiles").select("user_id,full_name,email,platform_role").eq("user_id",user.id).maybeSingle();
     if(p.error)throw p.error;
     if(!p.data)throw new Error("Your AdvocateDesk profile is not ready. Contact the workspace administrator.");
-    if(portal==="super_admin"){
-      if(p.data.platform_role!=="super_admin")throw new Error("This account is not authorized for the Super Admin portal.");
-    }
+    if(portal==="super_admin"&&p.data.platform_role!=="super_admin")throw new Error("This account is not authorized for the Super Admin portal.");
     var m=await c.from("workspace_members").select("workspace_id,role,workspaces(id,name,status)").eq("user_id",user.id);
     if(m.error)throw m.error;
-    var members=m.data||[];
-    if(portal==="admin")members=members.filter(function(x){return x.role==="admin"&&x.workspaces&&x.workspaces.status==="active"});
-    else members=members.filter(function(x){return x.workspaces&&x.workspaces.status==="active"});
+    var members=(m.data||[]).filter(function(x){return x.workspaces&&x.workspaces.status==="active"});
+    if(portal==="admin")members=members.filter(function(x){return x.role==="admin"});
     if(!members.length)throw new Error(portal==="admin"?"No active Admin workspace is assigned to this account.":"No active workspace is assigned to this account.");
+    if(members.length>1)throw new Error("This account has access to multiple workspaces. Please contact the administrator to select a workspace.");
     var chosen=members[0];
-    if(portal==="admin"&&p.data.platform_role==="super_admin"&&members.length>1){
-      chosen=members.find(function(x){return x.workspace_id==="6ae30194-2438-44ce-9bad-712ff682827a"})||chosen;
-    }
     return cache(p.data,chosen,chosen.workspaces);
   }
   window.ADAuth={
