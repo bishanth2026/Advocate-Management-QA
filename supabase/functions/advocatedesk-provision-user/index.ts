@@ -15,6 +15,19 @@ function clean(value: unknown, max: number): string {
   return typeof value === "string" ? value.trim().slice(0, max) : "";
 }
 
+/** Supabase Auth Admin listUsers is paginated; gather every page for Central Control. */
+async function listAllAuthUsers(admin: ReturnType<typeof createClient>) {
+  const users: any[] = [];
+  const perPage = 1000;
+  for (let page = 1; ; page += 1) {
+    const { data, error } = await admin.auth.admin.listUsers({ page, perPage });
+    if (error) return { users: null, error };
+    const batch = data?.users || [];
+    users.push(...batch);
+    if (batch.length < perPage) return { users, error: null };
+  }
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json(405, { error: "Method not allowed." });
@@ -71,14 +84,15 @@ Deno.serve(async (req: Request) => {
     const ids = (profiles || []).map((p: { user_id: string }) => p.user_id);
     if (!ids.length) return json(200, { users: [] });
 
-    const [{ data: memberships, error: membersError }, { data: authUsers, error: authError }] = await Promise.all([
+    const [{ data: memberships, error: membersError }, authUsersResult] = await Promise.all([
       admin.from("workspace_members").select("user_id,workspace_id,role").in("user_id", ids).eq("role", "admin"),
-      admin.auth.admin.listUsers({ page: 1, perPage: 1000 }),
+      listAllAuthUsers(admin),
     ]);
-    if (membersError || authError) {
-      console.error("Admin account details lookup failed:", membersError?.message, authError?.message);
+    if (membersError || authUsersResult.error) {
+      console.error("Admin account details lookup failed:", membersError?.message, authUsersResult.error?.message);
       return json(500, { error: "Could not load administrator account details." });
     }
+    const authUsers = authUsersResult.users || [];
     const workspaceIds = [...new Set((memberships || []).map((m: { workspace_id: string }) => m.workspace_id))];
     const { data: workspaces, error: workspaceError } = workspaceIds.length
       ? await admin.from("workspaces").select("id,name,status").in("id", workspaceIds)
