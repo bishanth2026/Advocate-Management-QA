@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   javascript-syntax:
-    name: JavaScript syntax check
+    name: JavaScript syntax and security smoke checks
     runs-on: ubuntu-latest
     steps:
       - name: Checkout test branch
@@ -26,3 +26,5 @@ jobs:
         run: node --check auth.js
       - name: Check application module syntax
         run: node --check app.js
+      - name: Check static security contracts
+        run: node scripts/security-smoke.mjs
