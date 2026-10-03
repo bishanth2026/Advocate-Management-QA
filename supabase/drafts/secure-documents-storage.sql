@@ -42,38 +42,20 @@ alter table public.case_documents enable row level security;
 create policy "case_documents_select_member"
 on public.case_documents for select to authenticated
 using (
-  exists (
-    select 1 from public.workspace_members wm
-    join public.workspaces w on w.id = wm.workspace_id
-    where wm.workspace_id = case_documents.workspace_id
-      and wm.user_id = auth.uid()
-      and w.status = 'active'
-  )
+  private.is_workspace_member(workspace_id)
 );
 
 create policy "case_documents_insert_member"
 on public.case_documents for insert to authenticated
 with check (
   uploaded_by = auth.uid()
-  and exists (
-    select 1 from public.workspace_members wm
-    join public.workspaces w on w.id = wm.workspace_id
-    where wm.workspace_id = case_documents.workspace_id
-      and wm.user_id = auth.uid()
-      and w.status = 'active'
-  )
+  and private.is_workspace_member(workspace_id)
 );
 
 create policy "case_documents_delete_member"
 on public.case_documents for delete to authenticated
 using (
-  exists (
-    select 1 from public.workspace_members wm
-    join public.workspaces w on w.id = wm.workspace_id
-    where wm.workspace_id = case_documents.workspace_id
-      and wm.user_id = auth.uid()
-      and w.status = 'active'
-  )
+  private.is_workspace_member(workspace_id)
 );
 
 -- Storage object paths must be <workspace UUID>/<document UUID>/<filename>.
@@ -82,12 +64,8 @@ on storage.objects for select to authenticated
 using (
   bucket_id = 'advocatedesk-documents'
   and exists (
-    select 1 from public.workspace_members wm
-    join public.workspaces w on w.id = wm.workspace_id
-    where wm.workspace_id::text = (storage.foldername(name))[1]
-      and wm.user_id = auth.uid()
-      and w.status = 'active'
-  )
+    select 1
+    where (storage.foldername(name))[1] ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}
 );
 
 create policy "advocatedesk_documents_insert_member"
@@ -113,6 +91,76 @@ using (
     where wm.workspace_id::text = (storage.foldername(name))[1]
       and wm.user_id = auth.uid()
       and w.status = 'active'
+  )
+);
+
+commit;
+
+-- Before production use:
+-- 1. Verify actual schema, existing policy names, bucket configuration and RLS.
+-- 2. Test cross-workspace read/insert/delete denial in a disposable Supabase project.
+-- 3. Add case-membership validation if case access is narrower than workspace access.
+-- 4. Add coordinated metadata/object cleanup and upload rollback in application code.
+-- 5. Use short-lived signed URLs for downloads; never make this bucket public.
+
+      and private.is_workspace_member(((storage.foldername(name))[1])::uuid)
+  )
+);
+
+create policy "advocatedesk_documents_insert_member"
+on storage.objects for insert to authenticated
+with check (
+  bucket_id = 'advocatedesk-documents'
+  and exists (
+    select 1
+    where (storage.foldername(name))[1] ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}
+);
+
+create policy "advocatedesk_documents_delete_member"
+on storage.objects for delete to authenticated
+using (
+  bucket_id = 'advocatedesk-documents'
+  and exists (
+    select 1 from public.workspace_members wm
+    join public.workspaces w on w.id = wm.workspace_id
+    where wm.workspace_id::text = (storage.foldername(name))[1]
+      and wm.user_id = auth.uid()
+      and w.status = 'active'
+  )
+);
+
+commit;
+
+-- Before production use:
+-- 1. Verify actual schema, existing policy names, bucket configuration and RLS.
+-- 2. Test cross-workspace read/insert/delete denial in a disposable Supabase project.
+-- 3. Add case-membership validation if case access is narrower than workspace access.
+-- 4. Add coordinated metadata/object cleanup and upload rollback in application code.
+-- 5. Use short-lived signed URLs for downloads; never make this bucket public.
+
+      and private.is_workspace_member(((storage.foldername(name))[1])::uuid)
+  )
+);
+
+create policy "advocatedesk_documents_delete_member"
+on storage.objects for delete to authenticated
+using (
+  bucket_id = 'advocatedesk-documents'
+  and exists (
+    select 1
+    where (storage.foldername(name))[1] ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}
+);
+
+commit;
+
+-- Before production use:
+-- 1. Verify actual schema, existing policy names, bucket configuration and RLS.
+-- 2. Test cross-workspace read/insert/delete denial in a disposable Supabase project.
+-- 3. Add case-membership validation if case access is narrower than workspace access.
+-- 4. Add coordinated metadata/object cleanup and upload rollback in application code.
+-- 5. Use short-lived signed URLs for downloads; never make this bucket public.
+
+      and private.is_workspace_member(((storage.foldername(name))[1])::uuid)
   )
 );
 
