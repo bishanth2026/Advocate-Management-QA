@@ -1,0 +1,30 @@
+name: AdvocateDesk Test Validation
+
+on:
+  push:
+    branches:
+      - staging/advocatedesk-test
+  pull_request:
+    branches:
+      - feature/secure-documents-draft
+
+permissions:
+  contents: read
+
+jobs:
+  javascript-syntax:
+    name: JavaScript syntax and security smoke checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout test branch
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check authentication module syntax
+        run: node --check auth.js
+      - name: Check application module syntax
+        run: node --check app.js
+      - name: Check static security contracts
+        run: node scripts/security-smoke.mjs

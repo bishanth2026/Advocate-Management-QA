@@ -1,7 +1,8 @@
 (function(){
   "use strict";
-  var SUPABASE_URL="https://ykxfidrtvmkmmbxameji.supabase.co";
-  var SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlreGZpZHJ0dm1rbW1ieGFtZWppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA4ODIwMjUsImV4cCI6MjEwNjQ1ODAyNX0.9m6LYk1i2i_B5iwNbjX5iYCHrGrnXFf-O7pFMWVDVDk";
+  // TEST ONLY: isolated Supabase project. Do not merge this auth config into production.
+  var SUPABASE_URL="https://uqtsksgypncsbcnuanbk.supabase.co";
+  var SUPABASE_KEY="sb_publishable_cK6gEEBcDOOEfpkXlgVEDQ_7EVPt-XW";
   var client=null;
   function getClient(){
     if(client)return client;
@@ -28,10 +29,8 @@
     if(portal==="admin")members=members.filter(function(x){return x.role==="admin"&&x.workspaces&&x.workspaces.status==="active"});
     else members=members.filter(function(x){return x.workspaces&&x.workspaces.status==="active"});
     if(!members.length)throw new Error(portal==="admin"?"No active Admin workspace is assigned to this account.":"No active workspace is assigned to this account.");
+    // Resolve only from this account's active memberships. Never hardcode a production workspace ID in test configuration.
     var chosen=members[0];
-    if(portal==="admin"&&p.data.platform_role==="super_admin"&&members.length>1){
-      chosen=members.find(function(x){return x.workspace_id==="6ae30194-2438-44ce-9bad-712ff682827a"})||chosen;
-    }
     return cache(p.data,chosen,chosen.workspaces);
   }
   window.ADAuth={
