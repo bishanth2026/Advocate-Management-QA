@@ -531,7 +531,7 @@ function calendar(){
 }
 /* Client-side file signature preflight is defense in depth only; the browser can be bypassed. */
 async function validateDocumentFileSignature(file){
- const bytes=new Uint8Array(await file.slice(0,Math.min(file.size,65536)).arrayBuffer());
+ const bytes=new Uint8Array(await file.arrayBuffer());
  const starts=(sig)=>sig.every((v,i)=>bytes[i]===v);
  const mime=String(file.type||"").toLowerCase();
  if(mime==="application/pdf"){
