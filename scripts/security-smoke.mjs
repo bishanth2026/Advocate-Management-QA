@@ -27,6 +27,8 @@ const metadataDeleteAt = app.indexOf('.from("case_documents").delete()', deleteA
 assert.ok(deleteAt >= 0 && storageRemoveAt > deleteAt && metadataDeleteAt > storageRemoveAt, "Deletion must remove the private object before deleting metadata");
 assert.match(provisioning, /async function listAllAuthUsers\(/, "Central Control must paginate Auth administrator accounts");
 assert.match(provisioning, /listUsers\(\{ page, perPage \}\)/, "Auth listing must request each page");
+assert.match(provisioning, /new Map\(authUsers\.map\(\(u: any\) => \[u\.id, u\]\)\)/, "Auth lookup map must use the fully paginated user array");
+assert.doesNotMatch(provisioning, /authUsers\?\.users/, "Do not treat the paginated user array as a response object");
 assert.match(provisioning, /if \(batch\.length < perPage\) return \{ users, error: null \}/, "Auth pagination must stop only after the final short page");
 assert.match(provisioning, /callerProfile\?\.platform_role !== "super_admin"/, "Provisioning endpoint must verify the caller's platform role");
 assert.match(provisioning, /action !== "invite_admin"/, "Provisioning endpoint must reject unsupported actions including super-admin invitation");
