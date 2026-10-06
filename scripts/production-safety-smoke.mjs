@@ -21,6 +21,9 @@ assert.match(provisioning, /async function listAllAuthUsers\(/, "Administrator l
 assert.match(provisioning, /listUsers\(\{ page, perPage \}\)/, "Auth pagination must request each page");
 assert.match(provisioning, /callerProfile\?\.platform_role !== "super_admin"/, "Provisioning must verify Super Admin role");
 assert.match(provisioning, /action !== "invite_admin"/, "Unsupported provisioning actions must be rejected");
+assert.doesNotMatch(provisioning, /invite_super_admin/, "Production provisioning endpoint must not expose Super Admin invitation");
+assert.doesNotMatch(provisioning, /bishanth2026\.github\.io\/Advocate-Management-QA/, "Production provisioning endpoint must not contain QA redirect URLs");
+assert.match(provisioning, /advocate\.biznexco\.in\/reset-password\.html/, "Production provisioning invites must use the production reset URL");
 assert.doesNotMatch(shell, /uqtsksgypncsbcnuanbk|Advocate-Management-QA/i, "Production app shell must not contain QA configuration");
 
 console.log("AdvocateDesk production safety smoke checks: PASS");
