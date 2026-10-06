@@ -139,6 +139,7 @@ Deno.serve(async (req: Request) => {
 
   const { data: invitation, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, {
     data: { full_name: fullName },
+    redirectTo: "https://advocate.biznexco.in/reset-password.html",
   });
   if (inviteError || !invitation.user) {
     const message = inviteError?.message || "Invitation could not be created.";
