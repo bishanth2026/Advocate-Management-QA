@@ -1,0 +1,30 @@
+name: AdvocateDesk Production Safety Validation
+
+on:
+  push:
+    branches:
+      - production/advocatedesk-final
+  pull_request:
+    branches:
+      - feature/secure-documents-draft
+
+permissions:
+  contents: read
+
+jobs:
+  production-safety:
+    name: Production safety and syntax checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check authentication syntax
+        run: node --check auth.js
+      - name: Check application syntax
+        run: node --check app.js
+      - name: Run production safety smoke checks
+        run: node scripts/production-safety-smoke.mjs
