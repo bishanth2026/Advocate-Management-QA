@@ -22,6 +22,9 @@
     if(!p.data)throw new Error("Your AdvocateDesk profile is not ready. Contact the workspace administrator.");
     if(portal==="super_admin"){
       if(p.data.platform_role!=="super_admin")throw new Error("This account is not authorized for the Super Admin portal.");
+      // A platform Super Admin is not required to belong to a law-office workspace.
+      // Use an isolated platform context; never borrow an Admin's workspace.
+      return cache(p.data,{role:"super_admin"},{id:"__platform_control__",name:"Platform Control",status:"active"});
     }
     var m=await c.from("workspace_members").select("workspace_id,role,workspaces(id,name,status)").eq("user_id",user.id);
     if(m.error)throw m.error;
