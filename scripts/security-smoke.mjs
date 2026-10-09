@@ -32,8 +32,8 @@ assert.doesNotMatch(provisioning, /authUsers\?\.users/, "Do not treat the pagina
 assert.match(provisioning, /if \(batch\.length < perPage\) return \{ users, error: null \}/, "Auth pagination must stop only after the final short page");
 assert.match(provisioning, /callerProfile\?\.platform_role !== "super_admin"/, "Provisioning endpoint must verify the caller's platform role");
 assert.match(provisioning, /action !== "invite_admin"/, "Provisioning endpoint must reject unsupported actions including super-admin invitation");
-assert.match(shell, /auth\.js\?v=20261003-02/, "App shell must use current auth cache-busting version");
-for (const page of loginPages) assert.match(page, /auth\.js\?v=20261003-02/, "All login pages must use the same auth cache-busting version");
+assert.match(shell, /auth\.js\?v=20261009-superadmin-fix/, "App shell must use current auth cache-busting version");
+for (const page of loginPages) assert.match(page, /auth\.js\?v=20261009-superadmin-fix/, "All login pages must use the same auth cache-busting version");
 
 console.log("AdvocateDesk staging security smoke checks: PASS");
 console.log("Scope: static source-contract checks only; not browser, RLS, Storage, or malware tests.");
