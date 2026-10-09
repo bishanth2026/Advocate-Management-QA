@@ -1,7 +1,7 @@
 (function(){
   "use strict";
-  var SUPABASE_URL="https://ykxfidrtvmkmmbxameji.supabase.co";
-  var SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlreGZpZHJ0dm1rbW1ieGFtZWppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA4ODIwMjUsImV4cCI6MjEwNjQ1ODAyNX0.9m6LYk1i2i_B5iwNbjX5iYCHrGrnXFf-O7pFMWVDVDk";
+  var SUPABASE_URL="https://uqtsksgypncsbcnuanbk.supabase.co";
+  var SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVxdHNrc2d5cG5jc2JjbnVhbmJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5NzM1NTYsImV4cCI6MjEwNjU0OTU1Nn0.AMaMyHQK52ZTwyf0C4GISRrSQ08x1iTzh7pyNao7CGg";
   var client=null;
   function getClient(){
     if(client)return client;
@@ -21,6 +21,9 @@
     if(!p.data)throw new Error("Your AdvocateDesk profile is not ready. Contact the workspace administrator.");
     if(portal==="super_admin"){
       if(p.data.platform_role!=="super_admin")throw new Error("This account is not authorized for the Super Admin portal.");
+      // A platform Super Admin is not required to belong to a law-office workspace.
+      // Use an isolated platform context; never borrow an Admin's workspace.
+      return cache(p.data,{role:"super_admin"},{id:"__platform_control__",name:"Platform Control",status:"active"});
     }
     var m=await c.from("workspace_members").select("workspace_id,role,workspaces(id,name,status)").eq("user_id",user.id);
     if(m.error)throw m.error;
