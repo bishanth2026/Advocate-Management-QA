@@ -65,6 +65,6 @@ const store = sandbox.window.ADResourceStore;
   const denied = makeClient([], true);
   await assert.rejects(() => store.save(denied, "ws-1", {
     cases: [{ id: "CASE-1" }], clients: [], hearings: [], tasks: [], invoices: [], payments: [], meetings: [], discussions: [], courts: []
-  }), /simulated RLS denial/);
+  }), err => err && err.message === "simulated RLS denial" && err.code === "42501");
   console.log("resource-store adapter unit tests: PASS (fake Supabase only)");
 })().catch(err => { console.error(err); process.exitCode = 1; });
