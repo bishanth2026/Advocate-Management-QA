@@ -32,12 +32,13 @@ const store = sandbox.window.ADResourceStore;
 (async () => {
   const client = makeClient([
     { workspace_id: "ws-1", resource_type: "case", resource_id: "CASE-1", case_id: null, payload: { id: "CASE-1", number: "OS 1/2026" } },
-    { workspace_id: "ws-1", resource_type: "hearing", resource_id: "HEAR-1", case_id: "CASE-1", payload: { id: "HEAR-1", caseId: "CASE-1" } },
+    { workspace_id: "ws-1", resource_type: "hearing", resource_id: "HEAR-1", case_id: "CASE-1", payload: { id: "HEAR-1" } },
     { workspace_id: "ws-2", resource_type: "case", resource_id: "SECRET", case_id: null, payload: { id: "SECRET" } }
   ]);
   const loaded = await store.load(client, "ws-1");
   assert.equal(loaded.cases.length, 1, "maps rows returned for requested workspace");
   assert.equal(loaded.hearings.length, 1);
+  assert.equal(loaded.hearings[0].caseId, "CASE-1", "restores normalized case relationship on load");
 
   const saveClient = makeClient();
   const result = await store.save(saveClient, "ws-1", {
