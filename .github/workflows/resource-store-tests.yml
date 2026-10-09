@@ -1,0 +1,28 @@
+name: Resource Store Unit Tests
+on:
+  push:
+    branches:
+      - staging/advocatedesk-test
+    paths:
+      - "resource-store.js"
+      - "tests/resource-store.test.js"
+      - ".github/workflows/resource-store-tests.yml"
+  pull_request:
+    branches:
+      - staging/advocatedesk-test
+    paths:
+      - "resource-store.js"
+      - "tests/resource-store.test.js"
+      - ".github/workflows/resource-store-tests.yml"
+jobs:
+  adapter-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout QA branch
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Run resource-store unit tests
+        run: node tests/resource-store.test.js
