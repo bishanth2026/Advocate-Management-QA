@@ -78,6 +78,8 @@ if(!auth.cloudAuth && Array.isArray(state.invoices)){
   });
 }
 const save=()=>{
+  // Platform Super Admin manages platform accounts, not law-office practice records.
+  if(auth.role==="super_admin")return;
   if(!auth.cloudAuth){localStorage.setItem(dataKey,JSON.stringify(state));return;}
   if(window.ADCloudSync&&typeof window.ADCloudSync.save==="function"){
     window.ADCloudSync.save(state).catch(function(err){
