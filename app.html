@@ -23,7 +23,8 @@
      if(platformResult.data&&platformResult.data.error)throw new Error(platformResult.data.error);
      window.ADPlatformAccounts=Array.isArray(platformResult.data.users)?platformResult.data.users:[];
    }
-   const result=await client.from('practice_records').select('id,payload,updated_at').eq('workspace_id',auth.workspaceId).eq('record_type','other').eq('record_key','workspace_state').maybeSingle();
+   // Platform Super Admins must not read a law-office workspace state.
+   const result=auth.role==="super_admin"?{data:null,error:null}:await client.from('practice_records').select('id,payload,updated_at').eq('workspace_id',auth.workspaceId).eq('record_type','other').eq('record_key','workspace_state').maybeSingle();
    if(result.error)throw result.error;
    const empty={cases:[],clients:[],hearings:[],tasks:[],discussions:[],meetings:[],payments:[],invoices:[]};
    window.ADCloudInitialState=result.data&&result.data.payload&&typeof result.data.payload==='object'?result.data.payload:empty;
