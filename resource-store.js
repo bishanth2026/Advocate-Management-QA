@@ -77,7 +77,13 @@
     const state = JSON.parse(JSON.stringify(EMPTY));
     (result.data || []).forEach(row => {
       const key = Object.keys(TYPES).find(k => TYPES[k] === row.resource_type);
-      if (key) state[key].push(row.payload || {});
+      if (key) {
+        const payload = JSON.parse(JSON.stringify(row.payload || {}));
+        // Preserve the normalized relationship column when loading. Otherwise
+        // a later upsert could erase links that exist only in case_id.
+        if (row.case_id && !payload.caseId && !payload.case_id) payload.caseId = row.case_id;
+        state[key].push(payload);
+      }
     });
     state.__resourceStore = { mode: "resource-scoped", loadedAt: new Date().toISOString() };
     return state;
