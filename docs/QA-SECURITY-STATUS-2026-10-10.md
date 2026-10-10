@@ -41,7 +41,14 @@ The zero-assignment count means an Advocate/Staff account will not have assigned
 ## Additional Supabase advisor notices
 
 - Leaked-password protection remains disabled and requires review in the QA Auth settings.
-- Supabase reports the two case-assignment RPCs as callable SECURITY DEFINER functions for authenticated users. The functions contain Admin-membership checks; retain the grants only if this is the intended Admin assignment interface and verify negative authorization tests.
-- Performance advisor reports three foreign-key indexes that could be considered later; this is not the current release blocker.
+- Supabase reports the two case-assignment RPCs as callable SECURITY DEFINER functions for authenticated users. Read-only inspection confirmed both require an authenticated caller who is an Admin member of the same active workspace, validate the target case/member, and write assignment/unassignment audit events. `anon` execution is denied. The advisor warning is therefore not automatically a vulnerability, but authenticated negative tests remain required.
+- Added the three missing foreign-key indexes to the isolated QA database via migration `20261010063000_index_assignment_and_audit_foreign_keys.sql`: `case_assignments.assigned_by`, `workspace_audit_log.actor_user_id`, and `workspace_audit_log.target_user_id`. The indexes were verified in `pg_indexes`. Remaining unused-index notices are informational; no indexes were dropped.
+- Leaked-password protection remains disabled in QA Auth settings. This cannot be safely represented as a SQL migration; enable and verify it in Supabase Auth settings before production readiness.
 
 **Status: QA only — not production-ready. Do not merge the resource-store cutover to production until all acceptance gates pass.**
+
+
+## Follow-up verification — 10 October 2026
+
+- QA-only migration `20261010063000_index_assignment_and_audit_foreign_keys.sql` committed at `e36ec12cf05847454ad9af493fbc07232b490f83` and successfully applied to the isolated QA Supabase project. Index existence was confirmed by a read-only catalog query.
+- Authenticated browser/RLS tests are still not complete because no confirmed separate test-account credentials/session are available in this workflow. Do not infer them from static checks or service-side catalog access.
