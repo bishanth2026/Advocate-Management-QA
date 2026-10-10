@@ -79,3 +79,48 @@ for (const policyName of [
 }
 
 console.log("resource policy draft static contract tests: PASS (not live RLS tests)");
+
+
+// Ensure every generic resource category stays explicitly covered by all four
+// policy commands. Missing CASE branches can otherwise silently deny a feature
+// or accidentally inherit the wrong permission during future edits.
+const allResourceTypes = [
+  "case", "client", "case_party", "hearing", "task",
+  "invoice", "payment", "transaction", "meeting", "discussion", "court"
+];
+for (const [policyName, nextMarker] of [
+  ["practice_resources_select_authorized", "DROP POLICY IF EXISTS practice_resources_insert_authorized"],
+  ["practice_resources_insert_authorized", "DROP POLICY IF EXISTS practice_resources_update_authorized"],
+  ["practice_resources_update_authorized", "DROP POLICY IF EXISTS practice_resources_delete_authorized"],
+  ["practice_resources_delete_authorized", "\\nCOMMIT;"]
+]) {
+  const start = sql.indexOf("CREATE POLICY " + policyName);
+  assert.notEqual(start, -1, "missing policy " + policyName);
+  const end = sql.indexOf(nextMarker, start + 1);
+  assert.notEqual(end, -1, "cannot find policy boundary for " + policyName);
+  const body = sql.slice(start, end);
+  for (const type of allResourceTypes) {
+    assert.ok(body.includes("WHEN '" + type + "'"), policyName + " must explicitly cover " + type);
+  }
+  assert.ok(body.includes("ELSE false") || body.includes("ELSE '__deny__'"),
+    policyName + " must fail closed for unknown resource types");
+}
+
+// Finance resources must remain finance-gated on read and every mutation path.
+const financeTypes = ["invoice", "payment", "transaction"];
+const policyRanges = [
+  ["practice_resources_select_authorized", "DROP POLICY IF EXISTS practice_resources_insert_authorized"],
+  ["practice_resources_insert_authorized", "DROP POLICY IF EXISTS practice_resources_update_authorized"],
+  ["practice_resources_update_authorized", "DROP POLICY IF EXISTS practice_resources_delete_authorized"],
+  ["practice_resources_delete_authorized", "\\nCOMMIT;"]
+];
+for (const [name, boundary] of policyRanges) {
+  const start = sql.indexOf("CREATE POLICY " + name);
+  const end = sql.indexOf(boundary, start + 1);
+  const body = sql.slice(start, end);
+  for (const type of financeTypes) {
+    const expectedPermission = name === "practice_resources_select_authorized" ? "finance.view" : "finance.edit";
+    assert.ok(body.includes("WHEN '" + type + "'") && body.includes("'" + expectedPermission + "'"),
+      name + " must preserve " + expectedPermission + " gating for " + type);
+  }
+}
