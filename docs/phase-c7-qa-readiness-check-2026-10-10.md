@@ -14,6 +14,12 @@
 - The live `practice_resources` mutation policies still map task insert/update/delete to `hearings.manage`, not `tasks.manage`. Their shared case-scoped mutation predicate also allows `cases.view_all` as a workspace-wide exception. The C7H draft changes these semantics and remains unapplied.
 - The C7D revision foundation and C7E helper hardening drafts are also not applied.
 
+## Fixture preflight (read-only, latest check)
+
+The QA schema currently contains 4 profile rows, 3 workspace membership rows, **0 case assignments**, and **1 task resource** (that task is linked; there are 0 unlinked task resources). This is insufficient for the required three-task/two-case visibility matrix. No fixtures or memberships were created.
+
+The test fixture set must therefore be created intentionally in a dedicated disposable QA workspace, not improvised from current rows. Because `workspace_members` and `case_assignments` reference real `auth.users`, do not insert guessed user IDs or reuse unrelated users as test identities. Provision dedicated identities first, then create test records with recorded IDs and a cleanup plan.
+
 ## Decision
 
 **Do not apply C7H/C7D/C7E yet and do not switch the app persistence adapter.** The intended policy differs from the live policy, and no authenticated JWT role matrix or database-level transaction rollback/concurrency acceptance has run.
