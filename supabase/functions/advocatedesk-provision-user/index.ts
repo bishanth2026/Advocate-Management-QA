@@ -127,13 +127,19 @@ Deno.serve(async (req: Request) => {
   }
 
   // Super-admin invitations are deliberately not supported by this endpoint.
-  // Bootstrap or rotate platform super-admins through a separately controlled process.
-  if (action !== "invite_admin") return json(400, { error: "Unsupported action." });
+  // Admin invitations retain existing behavior; invite_member is restricted to approved non-Admin roles.
+  if (action !== "invite_admin" && action !== "invite_member") return json(400, { error: "Unsupported action." });
 
   const fullName = clean(body.full_name, 120);
   const email = clean(body.email, 254).toLowerCase();
   const workspaceName = clean(body.workspace_name, 160);
-  if (!fullName || !workspaceName || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+  const requestedRole = clean(body.role, 40);
+  const allowedMemberRoles = ["advocate", "junior_advocate", "clerk", "accountant", "staff"];
+  const workspaceRole = action === "invite_member" ? requestedRole : "admin";
+  if (action === "invite_member" && !allowedMemberRoles.includes(workspaceRole)) {
+    return json(400, { error: "Choose an approved non-Admin workspace role." });
+  }
+  if (!fullName || !workspaceName || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {
     return json(400, { error: "A valid email, full name, and workspace name are required." });
   }
 
@@ -163,7 +169,7 @@ Deno.serve(async (req: Request) => {
     workspaceId = workspace.id;
 
     const { error: memberInsertError } = await admin.from("workspace_members").insert({
-      workspace_id: workspaceId, user_id: userId, role: "admin",
+      workspace_id: workspaceId, user_id: userId, role: workspaceRole,
     });
     if (memberInsertError) throw new Error("Workspace membership creation failed: " + memberInsertError.message);
     membershipCreated = true;
@@ -177,5 +183,5 @@ Deno.serve(async (req: Request) => {
     return json(500, { error: "Administrator setup did not complete. Cleanup was attempted; verify the test account list before retrying." });
   }
 
-  return json(200, { success: true, invited: true, user_id: userId });
+  return json(200, { success: true, invited: true, role: workspaceRole, user_id: userId });
 });
