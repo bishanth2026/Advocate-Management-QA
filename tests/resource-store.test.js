@@ -88,6 +88,11 @@ const store = sandbox.window.ADResourceStore;
   assert.ok(legacyRecord.id, "generates and persists an ID on legacy-style records");
   assert.equal(idClient.calls[0].batch[0].resource_id, legacyRecord.id);
   await assert.rejects(() => store.save(client, "ws-1", { cases: "not-an-array" }), /Expected cases to be an array/);
+  await assert.rejects(
+    () => store.save(client, "ws-1", { cases: [], clients: [], customModuleRecords: [{ id: "CUSTOM-1" }] }),
+    /Unsupported non-empty resource collections: customModuleRecords/,
+    "unknown module collections must fail closed instead of being silently dropped"
+  );
   const denied = makeClient([], true);
   await assert.rejects(() => store.save(denied, "ws-1", {
     cases: [{ id: "CASE-1" }], clients: [], hearings: [], tasks: [], invoices: [], payments: [], transactions: [], meetings: [], discussions: [], courts: [], caseParties: []
