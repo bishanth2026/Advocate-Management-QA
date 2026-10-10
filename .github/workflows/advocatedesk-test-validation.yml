@@ -26,5 +26,9 @@ jobs:
         run: node --check auth.js
       - name: Check application module syntax
         run: node --check app.js
+      - name: Check resource-store module syntax
+        run: node --check resource-store.js
+      - name: Run resource-store unit tests
+        run: node tests/resource-store.test.js
       - name: Check static security contracts
         run: node scripts/security-smoke.mjs
