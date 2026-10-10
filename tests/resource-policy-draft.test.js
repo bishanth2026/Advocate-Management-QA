@@ -17,7 +17,7 @@ for (const type of ["client", "hearing", "task", "meeting", "discussion", "case_
   assert.ok(sql.includes("WHEN '" + type + "'"), "missing policy branch for " + type);
 }
 assert.ok((sql.match(/case_id IS NOT NULL/g) || []).length >= 12, "read/write paths must guard unlinked records");
-assert.ok((sql.match(/private[.]can_access_case/g) || []).length >= 12, "read/write paths must call case assignment helper");
+assert.ok((sql.split("private.can_access_case").length - 1) >= 12, "read/write paths must call case assignment helper");
 
 const update = sql.split("CREATE POLICY practice_resources_update_authorized")[1].split("DROP POLICY IF EXISTS practice_resources_delete_authorized")[0];
 assert.ok(update.includes("USING ("), "UPDATE must authorize the existing row");
