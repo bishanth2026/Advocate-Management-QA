@@ -63,3 +63,7 @@ Using transaction-scoped role switching to the PostgreSQL `authenticated` role w
 - Advocate assignment RPC attempt was rejected with SQLSTATE `42501` and message `Only an Admin of this active workspace can assign cases` before writes.
 
 These are database-role/policy simulations, not real PostgREST/browser sessions using signed JWTs. They increase confidence in the policy logic but do not replace authenticated browser acceptance tests, cross-workspace write tests, or document Storage tests. No test assignment was retained.
+
+### Confirmed legacy aggregate exposure in the role simulation
+
+The same simulated Advocate session could SELECT its workspace's legacy `practice_records` row containing the aggregate `workspace_state` JSON. The QA seed row contained one case and one client. This is expected under the current workspace-member SELECT policy, but demonstrates why case-scoped resource policies do not currently protect the application UI: the UI still loads the aggregate. The query was read-only and the transaction rolled back. Treat this as a verified architecture/cutover blocker, not as evidence of cross-workspace access; the separate resource query returned zero rows from the other workspace.
