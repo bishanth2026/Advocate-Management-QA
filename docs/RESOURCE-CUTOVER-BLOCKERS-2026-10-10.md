@@ -99,3 +99,21 @@ A read-only query of `pg_policies` confirms the main release blocker remains act
 The current `practice_resources` policies are resource-type aware for SELECT/INSERT/UPDATE/DELETE, and the assignment table has scoped SELECT with no direct client mutation policies. However, this policy inspection is not a substitute for signed-in browser tests. The revision/RPC design must preserve these resource-level policies and must not make the revision table a way to mutate resources without their normal permissions.
 
 No policy was modified in this review. The next safe step is an authenticated UI/DB acceptance suite against the isolated QA project, followed by the atomic save design; do not cut over or weaken aggregate policies until parity is demonstrated.
+
+
+## Storage-object RLS inspection — 10 October 2026
+
+A read-only inspection of `storage.objects` policies in the isolated QA project found three policies for the `advocatedesk-documents` bucket:
+
+- SELECT and DELETE require a matching `case_documents` metadata row, the corresponding document permission, and `private.can_access_case(...)`.
+- INSERT requires the first storage path segment to parse as a UUID, workspace membership, and `documents.upload` permission.
+
+This is a useful policy-level check, not an end-to-end storage test. Acceptance testing must verify the exact upload path format, metadata insert/read/delete sequence, denied reads for unassigned cases, denied cross-workspace object access, and behavior when metadata is missing or stale. No storage policy or object was modified.
+
+## Latest report CI verification
+
+The report update was committed as `d5ee278a94a8633a91ccc8a64e99da3b43e53735`. Both workflows completed successfully:
+- [QA validation #38031791584](https://github.com/bishanth2026/Advocate-Management-QA/actions/runs/38031791584)
+- [QA Pages deployment #38031791530](https://github.com/bishanth2026/Advocate-Management-QA/actions/runs/38031791530)
+
+These CI results validate the repository workflow and deployment, not authenticated RLS behavior in a browser.
