@@ -141,7 +141,8 @@ Deno.serve(async (req: Request) => {
 
   const fullName = clean(body.full_name, 120);
   const email = clean(body.email, 254).toLowerCase();
-  const workspaceName = clean(body.workspace_name, 160);\n  const requestedWorkspaceId = clean(body.workspace_id, 80);
+  const workspaceName = clean(body.workspace_name, 160);
+  const requestedWorkspaceId = clean(body.workspace_id, 80);
   const requestedRole = clean(body.role, 40);
   const allowedMemberRoles = ["advocate", "junior_advocate", "clerk", "accountant", "staff"];
   const workspaceRole = action === "invite_member" ? requestedRole : "admin";
