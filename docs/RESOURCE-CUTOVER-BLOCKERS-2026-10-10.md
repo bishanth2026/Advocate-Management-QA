@@ -50,6 +50,17 @@ Do not enable the resource-scoped store in the live QA UI until the blockers bel
 QA-only. Stable-ID handling has been improved and automated checks/deployment pass, but the app still uses the legacy aggregate state and `resource-store.js` is not loaded by `app.html`. The authorization, complete-state mapping, migration reconciliation and authenticated browser tests remain release blockers. No production changes are authorized by this report.
 
 
+## Follow-up findings — duplicate resource IDs and latest CI (10 October 2026)
+
+- Added pre-write duplicate-ID validation per resource collection. If two records in the same module resolve to the same stable resource ID, save rejects the state before sending any upsert request. This prevents silent same-key overwrites inside a batch and is covered by a regression test.
+- Latest QA-only commit: `a50139433d90ba431c663c0b2a5118050ede7e63`.
+- Latest automated checks passed:
+  - [Resource Store Unit Tests #38031466991](https://github.com/bishanth2026/Advocate-Management-QA/actions/runs/38031466991)
+  - [QA Validation #38031466953](https://github.com/bishanth2026/Advocate-Management-QA/actions/runs/38031466953)
+  - [QA Pages Deployment #38031466965](https://github.com/bishanth2026/Advocate-Management-QA/actions/runs/38031466965)
+- This safeguard is not concurrency control: simultaneous sessions can still overwrite each other's edits, and multiple batches can still partially persist if a later database request fails. Compare-and-swap/version checks or a transactional server-side save operation remain required before cutover.
+- The aggregate `practice_records.workspace_state` path remains active in the UI; this update does not enable resource-store persistence or authorize production changes.
+
 ## Follow-up findings — 10 October 2026
 
 - Added an adapter unit test for duplicate case labels; the hearing relationship remains null rather than arbitrarily choosing one case. Validation, QA Pages deployment, and the related workflow completed successfully on commit `5583d9ab0f7b909e8e2b3f5a94612660f59005c6`.
