@@ -112,6 +112,17 @@
   async function save(client, workspaceId, state) {
     requireClient(client, workspaceId);
     if (!state || typeof state !== "object") throw new Error("A state object is required.");
+    // Fail closed if a future module adds a collection that this adapter cannot persist.
+    // Silent omission here would make a cutover appear successful while losing module data.
+    const unsupportedCollections = Object.keys(state).filter(key =>
+      !Object.prototype.hasOwnProperty.call(TYPES, key) &&
+      key !== "__resourceStore" &&
+      Array.isArray(state[key]) &&
+      state[key].length > 0
+    );
+    if (unsupportedCollections.length) {
+      throw new Error("Unsupported non-empty resource collections: " + unsupportedCollections.join(", "));
+    }
     const rel = buildRelationships(state);
     const rows = [];
     Object.keys(TYPES).forEach(key => {
