@@ -53,3 +53,18 @@ The current database does not have the case assignments and distinct task fixtur
 ## Safety boundary
 
 This document is an evidence snapshot, not a migration or seed script. Do not use it to authorize writes. Production remains out of scope.
+
+
+## Follow-up verification — disposable fixture template (2026-10-10)
+
+A second read-only schema inspection was completed after the fixture template was committed.
+
+- The deployment workflow for commit `0099a11b515b8705c9d21dac38aec1e753e6c49c` completed successfully: [workflow run](https://github.com/bishanth2026/Advocate-Management-QA/actions/runs/38036591114).
+- The validation workflow for the same commit completed successfully: [workflow run](https://github.com/bishanth2026/Advocate-Management-QA/actions/runs/38036591125).
+- The live schema confirms `public.workspaces(name, owner_id, status)`, `public.workspace_members(workspace_id, user_id, role)`, and the expected columns in `public.practice_resources` and `public.case_assignments`. The workspace status and workspace role constraints include the fixture values used by the template.
+- The fixture SQL remains **unexecuted**. This check did not create Auth users, insert fixture rows, change policies, or apply migrations.
+- These successful GitHub Actions runs establish repository validation/deployment only. They are not live JWT/RLS authorization tests.
+
+### Execution gate remains closed
+
+Before using the template, review the actual live constraints and policies one more time, create and verify five dedicated Auth users in this QA project, and prepare separate short-lived JWTs for the GET-only harness. The SQL Editor seed is a privileged setup operation and cannot itself demonstrate RLS enforcement. Do not use any real user's identity as a fixture. Do not proceed to migration application or persistence cutover based on CI status alone.
