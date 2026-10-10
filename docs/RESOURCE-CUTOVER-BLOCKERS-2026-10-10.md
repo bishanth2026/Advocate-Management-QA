@@ -206,3 +206,15 @@ Read-only inspection of the QA schema and adapter source identifies additional h
 4. **The revision-safe save API does not yet exist.** Before cutover, introduce a schema and authenticated save path that applies all changes and a workspace revision check in one database transaction, rolls back on any error, and returns a typed conflict for stale revisions. Preserve existing RLS/permission checks; do not solve this by granting broad access or by a SECURITY DEFINER function that bypasses user authorization. The exact implementation needs migration-level review and tests against the live QA schema before application wiring.
 
 These findings are based on source and schema inspection only. No live resource rows were changed by this review, and no migration/cutover was performed.
+
+
+## Database constraint review — 10 October 2026
+
+A read-only inspection of live QA constraints confirms:
+
+- `practice_resources` has a unique key on `(workspace_id, resource_type, resource_id)`, and validates that payloads are JSON objects and resource IDs are nonblank and at most 200 characters.
+- The database CHECK constraint permits only `case`, `client`, `hearing`, `task`, `invoice`, `payment`, `transaction`, `meeting`, `discussion`, `court`, and `case_party`. It does not permit `document` or generic `other_<collection>` types. Therefore the converter's document/unknown-collection output cannot be inserted into this table as-is; changing the CHECK constraint alone would not supply the missing document authorization and storage lifecycle.
+- `practice_records` has uniqueness on `(workspace_id, record_type, record_key)`, which supports one aggregate `workspace_state` row per workspace/type/key. This uniqueness helps prevent duplicate initial rows, but does not enforce case-level access inside the JSON payload.
+- Both tables reference `workspaces(id)` with cascade delete. `practice_resources.legacy_record_id` references `practice_records(id)` with `ON DELETE SET NULL`; the migration plan must account for this linkage before any legacy cleanup.
+
+These are QA schema facts only. No schema constraints or data were changed during this inspection.
