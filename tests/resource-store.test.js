@@ -32,19 +32,20 @@ const store = sandbox.window.ADResourceStore;
 (async () => {
   const client = makeClient([
     { workspace_id: "ws-1", resource_type: "case", resource_id: "CASE-1", case_id: null, payload: { id: "CASE-1", number: "OS 1/2026" } },
-    { workspace_id: "ws-1", resource_type: "hearing", resource_id: "HEAR-1", case_id: "CASE-1", payload: { id: "HEAR-1" } },
+    { workspace_id: "ws-1", resource_type: "hearing", resource_id: "HEAR-1", case_id: "CASE-1", payload: {} },
     { workspace_id: "ws-2", resource_type: "case", resource_id: "SECRET", case_id: null, payload: { id: "SECRET" } }
   ]);
   const loaded = await store.load(client, "ws-1");
   assert.equal(loaded.cases.length, 1, "maps rows returned for requested workspace");
   assert.equal(loaded.hearings.length, 1);
+  assert.equal(loaded.hearings[0].id, "HEAR-1", "restores row ID when legacy payload has no ID");
   assert.equal(loaded.hearings[0].caseId, "CASE-1", "restores normalized case relationship on load");
 
   const saveClient = makeClient();
   const result = await store.save(saveClient, "ws-1", {
     cases: [{ id: "CASE-1", number: "OS 1/2026", clientId: "CL-1" }],
     clients: [{ id: "CL-1", name: "Client" }],
-    hearings: [{ id: "HEAR-1", case: "OS 1/2026" }],
+    hearings: [{ case: "OS 1/2026" }],
     invoices: [{ id: "INV-1", case: "OS 1/2026" }],
     payments: [{ id: "PAY-1", invoiceId: "INV-1" }],
     tasks: [], meetings: [], discussions: [], courts: []
@@ -55,6 +56,8 @@ const store = sandbox.window.ADResourceStore;
   assert.equal(saveClient.calls[0].options.onConflict, "workspace_id,resource_type,resource_id");
   const savedRows = saveClient.calls[0].batch;
   assert.equal(savedRows.find(r => r.resource_type === "hearing").case_id, "CASE-1");
+  assert.ok(savedRows.find(r => r.resource_type === "hearing").resource_id, "generates a stable ID for new legacy-style hearing");
+  assert.equal(savedRows.find(r => r.resource_type === "hearing").payload.id, savedRows.find(r => r.resource_type === "hearing").resource_id, "writes generated ID into payload");
   assert.equal(savedRows.find(r => r.resource_type === "client").case_id, "CASE-1");
   assert.equal(savedRows.find(r => r.resource_type === "invoice").case_id, "CASE-1");
   assert.equal(savedRows.find(r => r.resource_type === "payment").case_id, "CASE-1");
