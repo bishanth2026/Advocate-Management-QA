@@ -49,4 +49,32 @@ assert.ok(!selectBody.includes("WHEN 'task' THEN private.has_workspace_permissio
   "task visibility must not accidentally inherit case-wide visibility");
 assert.ok(sql.includes("ON CONFLICT (role, permission_key)"), "role permission seeding must be repeatable");
 
+
+const expectedScopeByType = {
+  client: "clients.view_all",
+  hearing: "hearings.view_all",
+  task: "tasks.view_all",
+  meeting: "hearings.view_all",
+  discussion: "cases.view_all",
+  case_party: "cases.view_all"
+};
+for (const policyName of [
+  "practice_resources_insert_authorized",
+  "practice_resources_update_authorized",
+  "practice_resources_delete_authorized"
+]) {
+  const start = sql.indexOf("CREATE POLICY " + policyName);
+  const next = sql.indexOf("\\nDROP POLICY IF EXISTS", start);
+  const end = next < 0 ? sql.indexOf("\\nCOMMIT;", start) : next;
+  const body = sql.slice(start, end < 0 ? sql.length : end);
+  for (const [type, permission] of Object.entries(expectedScopeByType)) {
+    assert.ok(body.includes("WHEN '" + type + "' THEN private.has_workspace_permission(workspace_id,'" + permission + "')"),
+      policyName + " must use " + permission + " for " + type + " workspace-wide scope");
+  }
+  assert.ok(!body.includes("WHEN 'client' THEN private.has_workspace_permission(workspace_id,'cases.view_all')"),
+    policyName + " must not use cases.view_all as a substitute for clients.view_all");
+  assert.ok(!body.includes("WHEN 'task' THEN private.has_workspace_permission(workspace_id,'cases.view_all')"),
+    policyName + " must not use cases.view_all as a substitute for tasks.view_all");
+}
+
 console.log("resource policy draft static contract tests: PASS (not live RLS tests)");
