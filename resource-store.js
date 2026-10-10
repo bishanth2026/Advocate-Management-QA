@@ -15,12 +15,19 @@
     if (!client || typeof client.from !== "function") throw new Error("Supabase client is required.");
     if (!workspaceId || typeof workspaceId !== "string") throw new Error("An authenticated workspace ID is required.");
   }
+  let generatedIdCounter = 0;
   function stableId(type, item) {
     const candidate = type === "case"
       ? (item.id || item.caseId || item.number || item.caseNumber)
       : (item.id || item.key || item[type + "Id"]);
-    if (candidate == null || String(candidate).trim() === "") throw new Error("Cannot save " + type + " without a stable ID.");
-    return String(candidate).trim();
+    if (candidate != null && String(candidate).trim() !== "") return String(candidate).trim();
+    // Legacy UI modules sometimes create hearings/tasks without IDs. Assign the
+    // ID onto the object before upsert so subsequent saves reuse the same key.
+    const randomPart = global.crypto && typeof global.crypto.randomUUID === "function"
+      ? global.crypto.randomUUID()
+      : (Date.now().toString(36) + "_" + (++generatedIdCounter).toString(36) + "_" + Math.random().toString(36).slice(2, 10));
+    item.id = type + "_" + randomPart;
+    return item.id;
   }
   function normalize(v) { return String(v == null ? "" : v).trim().toLowerCase(); }
   function buildRelationships(state) {
@@ -79,6 +86,9 @@
       const key = Object.keys(TYPES).find(k => TYPES[k] === row.resource_type);
       if (key) {
         const payload = JSON.parse(JSON.stringify(row.payload || {}));
+        // Legacy rows may have a database resource_id while their JSON payload
+        // lacks an ID. Restore it to avoid generating a different key on save.
+        if (!payload.id && row.resource_id) payload.id = row.resource_id;
         // Preserve the normalized relationship column when loading. Otherwise
         // a later upsert could erase links that exist only in case_id.
         if (row.case_id && !payload.caseId && !payload.case_id) payload.caseId = row.case_id;
