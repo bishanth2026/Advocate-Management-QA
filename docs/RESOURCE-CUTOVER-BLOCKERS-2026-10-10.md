@@ -11,7 +11,7 @@ Do not enable the resource-scoped store in the live QA UI until the blockers bel
 - `app.js` initializes state from `ADCloudInitialState` and persists the whole object through `ADCloudSync.save(state)`.
 - `practice_records` policies allow active workspace members to select/update workspace rows; they do not filter individual cases within the JSON payload.
 - The existing resource adapter supports only cases, clients, hearings, tasks, invoices, payments, meetings, discussions and courts. `app.js` also accesses `transactions`; modules may maintain additional relationships and transient state.
-- Existing hearing/task objects can lack stable IDs, while `resource-store.js` currently rejects writes without IDs. The legacy backfill creates fallback IDs for rows, but `load()` does not currently restore the row ID into payloads that lack an ID. Newly created records may also lack IDs.
+- **Stable-ID handling improved on 10 October:** `resource-store.js` now restores `resource_id` into legacy payloads that lack `id`, and assigns an ID to new legacy-style records before upsert. Unit tests cover both cases. This removes the known missing-ID failure mode, but does not by itself establish full migration parity or safe authorization.
 - The adapter uses upsert-only saves, which is safer than deleting all rows absent from a role-filtered state. A complete migration must still implement deliberate, permission-checked deletes.
 - The QA test database currently has two legacy workspace-state rows (workspaces A and B), nine resource rows, two case rows, zero case assignments and three active memberships.
 
@@ -36,6 +36,12 @@ Do not enable the resource-scoped store in the live QA UI until the blockers bel
 - Create/edit/delete, relationships, refresh/re-login, two-session concurrency, and conflict recovery work without data loss.
 - Existing workspace data is reconciled against resource rows before the legacy aggregate is retired.
 
+## Latest QA status — 10 October 2026
+
+- Resource-store unit tests passed after the stable-ID fix: [run #38030497923](https://github.com/bishanth2026/Advocate-Management-QA/actions/runs/38030497923).
+- Main QA validation passed: [run #38030498068](https://github.com/bishanth2026/Advocate-Management-QA/actions/runs/38030498068).
+- QA Pages deployment passed: [run #38030497960](https://github.com/bishanth2026/Advocate-Management-QA/actions/runs/38030497960).
+
 ## Status
 
-QA-only. The current automated validation and deployment pass, but neither substitutes for these authorization and migration tests. No production changes are authorized by this report.
+QA-only. Stable-ID handling has been improved and automated checks/deployment pass, but the app still uses the legacy aggregate state and `resource-store.js` is not loaded by `app.html`. The authorization, complete-state mapping, migration reconciliation and authenticated browser tests remain release blockers. No production changes are authorized by this report.
