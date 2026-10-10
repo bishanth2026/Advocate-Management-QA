@@ -133,12 +133,16 @@
       if (list == null) return;
       if (!Array.isArray(list)) throw new Error("Expected " + key + " to be an array.");
       const type = TYPES[key];
+      const seenIds = new Set();
       list.forEach(item => {
         if (!item || typeof item !== "object" || Array.isArray(item)) throw new Error("Invalid " + key + " record.");
+        const id = stableId(type, item);
+        if (seenIds.has(id)) throw new Error("Duplicate " + key + " resource ID: " + id);
+        seenIds.add(id);
         rows.push({
           workspace_id: workspaceId,
           resource_type: type,
-          resource_id: stableId(type, item),
+          resource_id: id,
           case_id: caseId(type, item, rel),
           payload: item,
           source_hash: sourceHash(item),
