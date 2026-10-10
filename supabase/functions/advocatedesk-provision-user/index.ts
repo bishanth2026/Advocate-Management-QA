@@ -149,7 +149,7 @@ Deno.serve(async (req: Request) => {
   if (action === "invite_member" && !allowedMemberRoles.includes(workspaceRole)) {
     return json(400, { error: "Choose an approved non-Admin workspace role." });
   }
-  if (!fullName || (action === "invite_admin" && !workspaceName) || (action === "invite_member" && !requestedWorkspaceId) || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {
+  if (!fullName || (action === "invite_admin" && !workspaceName) || (action === "invite_member" && !requestedWorkspaceId) || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return json(400, { error: action === "invite_member" ? "A valid email, full name, and existing QA workspace are required." : "A valid email, full name, and workspace name are required." });
   }
   let selectedWorkspace: { id: string; name: string; status: string } | null = null;
