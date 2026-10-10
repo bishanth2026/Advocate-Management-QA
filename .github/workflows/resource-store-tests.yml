@@ -6,6 +6,9 @@ on:
     paths:
       - "resource-store.js"
       - "tests/resource-store.test.js"
+      - "tests/resource-policy-draft.test.js"
+      - "tests/transactional-save-contract.test.js"
+      - "supabase/drafts/20261010_phase_c7h_task_permission_and_unlinked_scope_draft.sql"
       - ".github/workflows/resource-store-tests.yml"
   pull_request:
     branches:
@@ -25,4 +28,7 @@ jobs:
         with:
           node-version: "20"
       - name: Run resource-store unit tests
-        run: node tests/resource-store.test.js
+        run: |
+          node tests/resource-store.test.js
+          node tests/resource-policy-draft.test.js
+          node tests/transactional-save-contract.test.js
