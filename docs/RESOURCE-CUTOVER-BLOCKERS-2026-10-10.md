@@ -146,3 +146,12 @@ This is a clean empty baseline, not a successful upload/access test. No real doc
 The storage review was documented in commit `e2b13c150e0d44805c11ff88f1f364f9affcf79c`. Both workflows passed:
 - [QA validation #38031893954](https://github.com/bishanth2026/Advocate-Management-QA/actions/runs/38031893954)
 - [QA Pages deployment #38031893994](https://github.com/bishanth2026/Advocate-Management-QA/actions/runs/38031893994)
+
+
+## QA table privilege and RLS cross-check — 10 October 2026
+
+Read-only catalog inspection confirmed row-level security is enabled on `practice_records`, `practice_resources`, `case_assignments`, `case_documents`, and `storage.objects`; FORCE ROW LEVEL SECURITY is not enabled on these tables.
+
+The privilege catalog also reports direct table privileges for the `anon` role on `practice_resources` and `storage.objects`. The inspected `practice_resources` policies and document-storage policies are scoped to `authenticated`, so the grants alone do not demonstrate anonymous data access; RLS remains a separate enforcement layer. Still, this is a least-privilege review item: confirm whether these anonymous grants are necessary and, if not, revoke them through a reviewed QA migration after checking Supabase Storage's expected grants. Do not assume that enabling RLS removes SQL privileges, and do not change grants in production as part of this QA task.
+
+No privileges or policies were changed by this read-only inspection.
