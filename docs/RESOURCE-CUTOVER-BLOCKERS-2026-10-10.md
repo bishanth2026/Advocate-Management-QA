@@ -117,3 +117,14 @@ The report update was committed as `d5ee278a94a8633a91ccc8a64e99da3b43e53735`. B
 - [QA Pages deployment #38031791530](https://github.com/bishanth2026/Advocate-Management-QA/actions/runs/38031791530)
 
 These CI results validate the repository workflow and deployment, not authenticated RLS behavior in a browser.
+
+
+## Document metadata and bucket configuration review — 10 October 2026
+
+Read-only QA database checks confirmed:
+
+- The `advocatedesk-documents` bucket is private, has a 20 MiB file-size limit, and allows PDF, DOCX, JPEG and PNG MIME types.
+- `case_documents` SELECT requires `documents.view` plus case access; INSERT requires `uploaded_by = auth.uid()`, `documents.upload`, and case access; DELETE requires `documents.delete` plus case access.
+- Storage object upload policy itself validates workspace membership and `documents.upload`, but it cannot verify case access from the current workspace-only path convention before the metadata row exists. Therefore an authorized uploader may be able to create an orphan object if metadata insertion fails. Such an object is not made public—the bucket is private—but the current object DELETE policy requires matching metadata, so cleanup of an orphan may need a trusted maintenance path. Verify this behavior with a real authenticated upload/metadata-failure test before release; do not broaden client privileges to fix cleanup.
+
+No bucket settings, policies, files, or database rows were modified during this inspection.
