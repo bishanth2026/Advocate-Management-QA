@@ -23,6 +23,8 @@ Do not enable the resource-scoped store in the live QA UI until the blockers bel
 3. Implement a single authoritative resource-scoped load/save path for all roles. Do not dual-write legacy and resource stores as competing sources of truth; concurrent Admin/member saves could overwrite one another.
 4. Restrict legacy aggregate access only as part of the verified cutover, after confirming every role and every screen uses the new store. Do not make a change that causes the app to appear empty or prevents Admin saves.
 5. Ensure missing case links are denied for case-linked data. Normalize links by stable case IDs, not ambiguous case titles/numbers.
+   - **Client-to-case relationship parity remains unresolved:** the adapter derives client case access from `case.clientId`/`case.clientIds` only, while legacy cases may store a client name in `case.client` and client records may store only a count or label. A client row with no normalized `case_id` cannot pass the assigned-client SELECT policy. Do not infer a relationship from a name unless it uniquely resolves and the data model can preserve multiple case links; preferably use a normalized client-to-case join/assignment table for many-to-many relationships.
+   - **Legacy aggregate remains a security bypass for the new model:** `practice_records` still grants workspace-member-wide read/update access to aggregate JSON. The new `practice_resources` policies do not protect the UI while it continues reading/writing `workspace_state`. Restrict aggregate access only in a staged, tested cutover after every screen and role is migrated.
 6. Add explicit permission-checked delete/update behavior and audit trail where required; do not use broad table deletes to sync a filtered state.
 7. Run separate authenticated browser tests for Admin and non-Admin users and verify database results—not just rendered UI.
 
@@ -46,3 +48,10 @@ Do not enable the resource-scoped store in the live QA UI until the blockers bel
 ## Status
 
 QA-only. Stable-ID handling has been improved and automated checks/deployment pass, but the app still uses the legacy aggregate state and `resource-store.js` is not loaded by `app.html`. The authorization, complete-state mapping, migration reconciliation and authenticated browser tests remain release blockers. No production changes are authorized by this report.
+
+
+## Follow-up findings — 10 October 2026
+
+- Added an adapter unit test for duplicate case labels; the hearing relationship remains null rather than arbitrarily choosing one case. Validation, QA Pages deployment, and the related workflow completed successfully on commit `5583d9ab0f7b909e8e2b3f5a94612660f59005c6`.
+- Read-only inspection of the isolated QA policy catalog confirmed the aggregate `practice_records` policies remain workspace-member scoped, while `practice_resources` has per-resource permission policies. This reinforces that the UI must not cut over until complete-state parity and authenticated tests are finished.
+- Current unresolved blocker highlighted: client-to-case link normalization for assigned-only client visibility. No production database was accessed or changed.
