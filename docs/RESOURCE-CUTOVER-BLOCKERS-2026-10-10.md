@@ -194,3 +194,15 @@ Therefore the aggregate path is the active production-like QA application path, 
 ## Validation status after latest documentation update
 
 GitHub Actions validation and QA Pages deployment both passed for report commit `bada4379004dab5cff3a6a502fdb4eab17eccc4b`. This validates the repository workflow, not authenticated authorization behavior or end-to-end browser persistence.
+
+
+## Schema-to-adapter parity review — 10 October 2026
+
+Read-only inspection of the QA schema and adapter source identifies additional hard cutover gates:
+
+1. **No revision/CAS field in the resource schema.** The inspected `practice_resources` columns are `id`, `workspace_id`, `resource_type`, `resource_id`, `case_id`, `payload`, `legacy_record_id`, `source_hash`, `migrated_at`, `created_at`, and `updated_at`. There is no workspace revision/version column or transaction envelope. The current adapter performs independent upserts in batches of 100; a later batch failure can leave earlier batches persisted. The legacy aggregate row's `updated_at` compare-and-set does not solve atomic multi-resource saves.
+2. **Documents are not adapter-supported.** The dry-run converter recognizes `documents` and `caseDocuments` and emits a `document` resource type, but `resource-store.js` has no document type in its `TYPES` map. A non-empty `documents` or `caseDocuments` collection is rejected as unsupported by the adapter. The application uses the separate `case_documents` metadata table and private storage bucket, which require a dedicated migration/preservation path—not JSON conversion into `practice_resources`.
+3. **Other converter-only collections require mapping review.** The converter accepts `caseRecords` and `allCases` as case aliases, but the adapter only maps the `cases` state collection. The converter also emits `other_<collection>` for unrecognized array collections, while the adapter deliberately fails closed on unknown resource types/collections. A clean preview report alone is not evidence that these records can be loaded by the application.
+4. **The revision-safe save API does not yet exist.** Before cutover, introduce a schema and authenticated save path that applies all changes and a workspace revision check in one database transaction, rolls back on any error, and returns a typed conflict for stale revisions. Preserve existing RLS/permission checks; do not solve this by granting broad access or by a SECURITY DEFINER function that bypasses user authorization. The exact implementation needs migration-level review and tests against the live QA schema before application wiring.
+
+These findings are based on source and schema inspection only. No live resource rows were changed by this review, and no migration/cutover was performed.
