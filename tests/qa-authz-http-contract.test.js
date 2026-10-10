@@ -29,5 +29,7 @@ assert.match(source, /method:\s*"GET"/, "harness must use read-only GET requests
 assert.doesNotMatch(source, /method:\s*"(POST|PATCH|PUT|DELETE)"/, "harness must not mutate data");
 assert.match(source, /if \(missing\.length\)[\s\S]*?process\.exit\(0\)/, "missing secrets must skip without fallback");
 assert.match(source, /QA_SUPABASE_URL/, "must require explicit QA URL");
+assert.match(source, /uqtsksgypncsbcnuanbk\\.supabase\\.co/, "must fail closed unless targeting the isolated QA project");
+assert.match(source, /Refusing to run authorization harness/, "must reject non-QA URLs at runtime");
 assert.match(source, /Never point this harness at production/, "must document production exclusion");
 console.log("PASS QA HTTP authorization harness static coverage contract (not live RLS)");
