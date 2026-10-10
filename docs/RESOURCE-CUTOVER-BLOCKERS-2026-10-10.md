@@ -128,3 +128,21 @@ Read-only QA database checks confirmed:
 - Storage object upload policy itself validates workspace membership and `documents.upload`, but it cannot verify case access from the current workspace-only path convention before the metadata row exists. Therefore an authorized uploader may be able to create an orphan object if metadata insertion fails. Such an object is not made public—the bucket is private—but the current object DELETE policy requires matching metadata, so cleanup of an orphan may need a trusted maintenance path. Verify this behavior with a real authenticated upload/metadata-failure test before release; do not broaden client privileges to fix cleanup.
 
 No bucket settings, policies, files, or database rows were modified during this inspection.
+
+
+## QA document-storage data reconciliation — 10 October 2026
+
+A read-only reconciliation query compared the document metadata table with objects in the private `advocatedesk-documents` bucket. Current isolated QA counts:
+
+- `case_documents` metadata rows: 0
+- Storage objects in the bucket: 0
+- Objects without matching metadata: 0
+- Metadata rows without matching objects: 0
+
+This is a clean empty baseline, not a successful upload/access test. No real document records exist in QA to demonstrate assigned-case access or orphan cleanup. Acceptance testing must create synthetic test documents under separate test accounts, verify allowed and denied operations, then remove test data and rerun the reconciliation query.
+
+## Latest storage-review report CI
+
+The storage review was documented in commit `e2b13c150e0d44805c11ff88f1f364f9affcf79c`. Both workflows passed:
+- [QA validation #38031893954](https://github.com/bishanth2026/Advocate-Management-QA/actions/runs/38031893954)
+- [QA Pages deployment #38031893994](https://github.com/bishanth2026/Advocate-Management-QA/actions/runs/38031893994)
