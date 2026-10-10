@@ -52,3 +52,14 @@ The zero-assignment count means an Advocate/Staff account will not have assigned
 
 - QA-only migration `20261010063000_index_assignment_and_audit_foreign_keys.sql` committed at `e36ec12cf05847454ad9af493fbc07232b490f83` and successfully applied to the isolated QA Supabase project. Index existence was confirmed by a read-only catalog query.
 - Authenticated browser/RLS tests are still not complete because no confirmed separate test-account credentials/session are available in this workflow. Do not infer them from static checks or service-side catalog access.
+
+## Read-only RLS simulation — 10 October 2026
+
+Using transaction-scoped role switching to the PostgreSQL `authenticated` role with the QA users' existing subject UUIDs (all writes rolled back):
+
+- Admin simulation for workspace A saw one case and one invoice in its own workspace, and zero rows from workspace B.
+- Advocate simulation with zero case assignments saw zero cases, zero hearings, and zero invoices, and zero rows from workspace B. This is consistent with assigned-only policy and the current empty assignment table.
+- Admin assignment RPC happy path returned an assignment ID for a same-workspace case/member; the transaction was rolled back, so no assignment or audit event was persisted.
+- Advocate assignment RPC attempt was rejected with SQLSTATE `42501` and message `Only an Admin of this active workspace can assign cases` before writes.
+
+These are database-role/policy simulations, not real PostgREST/browser sessions using signed JWTs. They increase confidence in the policy logic but do not replace authenticated browser acceptance tests, cross-workspace write tests, or document Storage tests. No test assignment was retained.
