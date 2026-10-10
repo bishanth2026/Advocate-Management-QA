@@ -13,7 +13,11 @@ assert.match(sql, /Replace every placeholder with a verified disposable Auth UUI
 assert.match(sql, /SELECT count\(\*\) FROM auth\.users[\s\S]*<> 5/, "all five Auth identities must exist before writes");
 assert.match(sql, /Each test role must use a distinct disposable Auth identity/, "identities must be distinct");
 assert.match(sql, /already belongs to a workspace; stop and investigate/, "existing workspace members must fail closed");
-assert.match(sql, /'admin','advocate','advocate','accountant'/, "fixture must add only intended four workspace roles");
+const membershipInsert = sql.split("INSERT INTO public.workspace_members(workspace_id,user_id,role) VALUES")[1]?.split(";")[0] || "";
+for (const role of ["admin", "advocate", "accountant"]) {
+  assert.ok(membershipInsert.includes("'" + role + "'"), "fixture membership insert missing role " + role);
+}
+assert.equal((membershipInsert.match(/\'advocate\'/g) || []).length, 2, "fixture must add exactly two advocate memberships");
 assert.match(sql, /The nonmember intentionally is NOT inserted into workspace_members/, "nonmember must remain outside workspace");
 assert.match(sql, /resource_type='task'\) <> 3/, "must verify exactly three task fixtures");
 assert.match(sql, /FROM public\.case_assignments[\s\S]*<> 2/, "must verify exactly two case assignments");
