@@ -67,6 +67,20 @@ const store = sandbox.window.ADResourceStore;
   assert.equal(savedRows.find(r => r.resource_type === "case_party").case_id, "CASE-1", "links case-party record to its stable case ID");
   assert.ok(savedRows.every(r => typeof r.source_hash === "string" && r.source_hash.length > 0), "supplies required source_hash for real database writes");
 
+  // Ambiguous case labels must not be guessed into a relationship.
+  const ambiguousClient = makeClient();
+  await store.save(ambiguousClient, "ws-1", {
+    cases: [
+      { id: "CASE-A", number: "OS 9/2026" },
+      { id: "CASE-B", number: "OS 9/2026" }
+    ],
+    hearings: [{ id: "HEAR-AMBIG", case: "OS 9/2026" }],
+    clients: [], tasks: [], invoices: [], payments: [], transactions: [],
+    meetings: [], discussions: [], courts: [], caseParties: []
+  });
+  const ambiguousHearing = ambiguousClient.calls[0].batch.find(r => r.resource_type === "hearing");
+  assert.equal(ambiguousHearing.case_id, null, "ambiguous case labels must remain unresolved instead of linking to an arbitrary case");
+
   await assert.rejects(() => store.load(client, ""), /workspace ID/);
   const idClient = makeClient();
   const legacyRecord = { title: "Legacy-style hearing" };
