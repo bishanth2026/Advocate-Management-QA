@@ -41,7 +41,7 @@ try { parsedUrl = new URL(configuredUrl); } catch {
 if (parsedUrl.protocol !== "https:" || parsedUrl.hostname !== "uqtsksgypncsbcnuanbk.supabase.co" || parsedUrl.pathname !== "" && parsedUrl.pathname !== "/") {
   throw new Error("Refusing to run authorization harness: URL must be exactly the isolated AdvocateDesk-Test project (uqtsksgypncsbcnuanbk.supabase.co).");
 }
-const base = configuredUrl.replace(/\\/$/, "");
+const base = parsedUrl.origin;
 const anonKey = process.env.QA_SUPABASE_ANON_KEY;
 const workspace = process.env.QA_WORKSPACE_ID;
 const cases = {
