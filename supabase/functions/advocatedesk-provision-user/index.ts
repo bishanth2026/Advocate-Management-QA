@@ -149,8 +149,14 @@ Deno.serve(async (req: Request) => {
   if (action === "invite_member" && !allowedMemberRoles.includes(workspaceRole)) {
     return json(400, { error: "Choose an approved non-Admin workspace role." });
   }
-  if (!fullName || !workspaceName || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {
-    return json(400, { error: "A valid email, full name, and workspace name are required." });
+  if (!fullName || (action === "invite_admin" && !workspaceName) || (action === "invite_member" && !requestedWorkspaceId) || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {
+    return json(400, { error: action === "invite_member" ? "A valid email, full name, and existing QA workspace are required." : "A valid email, full name, and workspace name are required." });
+  }
+  let selectedWorkspace: { id: string; name: string; status: string } | null = null;
+  if (action === "invite_member") {
+    const { data, error } = await admin.from("workspaces").select("id,name,status").eq("id", requestedWorkspaceId).eq("status", "active").maybeSingle();
+    if (error || !data) return json(400, { error: "Choose an existing active QA workspace." });
+    selectedWorkspace = data;
   }
 
   const { data: invitation, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, {
