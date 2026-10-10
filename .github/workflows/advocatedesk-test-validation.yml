@@ -30,5 +30,11 @@ jobs:
         run: node --check resource-store.js
       - name: Run resource-store unit tests
         run: node tests/resource-store.test.js
+      - name: Run resource-policy draft static contract tests
+        run: node tests/resource-policy-draft.test.js
+      - name: Run QA HTTP authorization harness static contract tests
+        run: node tests/qa-authz-http-contract.test.js
+      - name: Run disposable fixture template contract tests
+        run: node tests/qa-fixture-template-contract.test.js
       - name: Check static security contracts
         run: node scripts/security-smoke.mjs
