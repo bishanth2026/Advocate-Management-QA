@@ -92,7 +92,7 @@ for (const [policyName, nextMarker] of [
   ["practice_resources_select_authorized", "DROP POLICY IF EXISTS practice_resources_insert_authorized"],
   ["practice_resources_insert_authorized", "DROP POLICY IF EXISTS practice_resources_update_authorized"],
   ["practice_resources_update_authorized", "DROP POLICY IF EXISTS practice_resources_delete_authorized"],
-  ["practice_resources_delete_authorized", "\\nCOMMIT;"]
+  ["practice_resources_delete_authorized", "COMMIT;"]
 ]) {
   const start = sql.indexOf("CREATE POLICY " + policyName);
   assert.notEqual(start, -1, "missing policy " + policyName);
