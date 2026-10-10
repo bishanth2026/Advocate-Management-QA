@@ -95,6 +95,9 @@
     const state = JSON.parse(JSON.stringify(EMPTY));
     (result.data || []).forEach(row => {
       const key = Object.keys(TYPES).find(k => TYPES[k] === row.resource_type);
+      if (!key) {
+        throw new Error("Unsupported resource type returned by database: " + String(row.resource_type));
+      }
       if (key) {
         const payload = JSON.parse(JSON.stringify(row.payload || {}));
         // Legacy rows may have a database resource_id while their JSON payload
