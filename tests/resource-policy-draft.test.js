@@ -24,4 +24,29 @@ assert.ok(update.includes("USING ("), "UPDATE must authorize the existing row");
 assert.ok(update.includes("WITH CHECK ("), "UPDATE must authorize the proposed row");
 assert.ok(!sql.includes("CREATE FUNCTION") && !sql.includes("CREATE OR REPLACE FUNCTION"), "draft must not contain an unreviewed privileged RPC");
 assert.ok(sql.toLowerCase().includes("do not apply until real jwt authorization and"));
+
+for (const policy of [
+  "CREATE POLICY practice_resources_insert_authorized",
+  "CREATE POLICY practice_resources_update_authorized",
+  "CREATE POLICY practice_resources_delete_authorized"
+]) {
+  const start = sql.indexOf(policy);
+  assert.notEqual(start, -1, "missing mutation policy: " + policy);
+  const next = sql.indexOf("DROP POLICY IF EXISTS practice_resources_", start + policy.length);
+  const body = sql.slice(start, next === -1 ? sql.length : next);
+  assert.ok(body.includes("WHEN 'task' THEN 'tasks.manage'"), policy + " must use tasks.manage");
+  assert.ok(body.includes("WHEN 'task' THEN private.has_workspace_permission(workspace_id,'tasks.view_all')"),
+    policy + " must use task-specific workspace-wide visibility, not cases.view_all");
+  assert.ok(body.includes("case_id IS NOT NULL AND private.can_access_case(workspace_id,case_id)"),
+    policy + " must deny assigned-only writes to unlinked tasks");
+}
+const selectStart = sql.indexOf("CREATE POLICY practice_resources_select_authorized");
+const insertStart = sql.indexOf("DROP POLICY IF EXISTS practice_resources_insert_authorized", selectStart);
+const selectBody = sql.slice(selectStart, insertStart);
+assert.ok(selectBody.includes("WHEN 'task' THEN private.has_workspace_permission(workspace_id,'tasks.view_all')"));
+assert.ok(selectBody.includes("private.has_workspace_permission(workspace_id,'tasks.view_assigned')"));
+assert.ok(!selectBody.includes("WHEN 'task' THEN private.has_workspace_permission(workspace_id,'cases.view_all')"),
+  "task visibility must not accidentally inherit case-wide visibility");
+assert.ok(sql.includes("ON CONFLICT (role, permission_key)"), "role permission seeding must be repeatable");
+
 console.log("resource policy draft static contract tests: PASS (not live RLS tests)");
