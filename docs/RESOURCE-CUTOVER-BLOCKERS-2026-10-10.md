@@ -177,3 +177,20 @@ A fresh read-only query of `pg_policies` confirms that `practice_records` still 
 This policy design is workspace-member-scoped, not case-assignment-scoped. Because the current UI's legacy workspace-state path stores a whole workspace payload in a `practice_records` row, an authenticated workspace member with table access may read or overwrite the aggregate payload without going through the finer `practice_resources` per-resource policies. This is a cutover blocker, not proof of a successful exploit or of access between different workspaces. The resource-store migration must be completed and tested before the aggregate row can be retired; do not weaken the resource policies to accommodate the legacy path.
 
 The same catalog query confirmed `practice_resources` policies are explicitly for `authenticated` and use resource-type permission checks. Catalog inspection is not a substitute for signed-in HTTP tests using accounts with different permissions and case assignments.
+
+
+## Application call-path trace — 10 October 2026
+
+Source inspection of the current QA branch confirms the cutover has not occurred:
+
+- `app.html` bootstraps non-Super-Admin sessions by selecting the single `practice_records` row with `record_type='other'` and `record_key='workspace_state'`, then exposes its `payload` as `window.ADCloudInitialState`.
+- The same bootstrap defines `window.ADCloudSync.save(state)` to update that aggregate row using an `updated_at` compare-and-set, or insert the row if it does not exist.
+- `app.js` initializes cloud-authenticated application state from `window.ADCloudInitialState`; its `save()` function delegates to `window.ADCloudSync.save(state)`.
+- `resource-store.js` explicitly says it is QA-only and not loaded by `app.html`. The existing adapter tests use a fake Supabase client and explicitly do not prove RLS behavior.
+- `scripts/dry-run-per-record-migration.js` is documented as a local, read-only snapshot converter; it does not write to Supabase.
+
+Therefore the aggregate path is the active production-like QA application path, while the resource store and converter remain preparatory only. The existing `updated_at` compare-and-set helps detect competing updates to that one aggregate row, but it does not provide per-resource authorization or atomic multi-resource persistence. Do not enable the adapter or retire the aggregate table until a parity-tested cutover is implemented and verified with authenticated sessions.
+
+## Validation status after latest documentation update
+
+GitHub Actions validation and QA Pages deployment both passed for report commit `bada4379004dab5cff3a6a502fdb4eab17eccc4b`. This validates the repository workflow, not authenticated authorization behavior or end-to-end browser persistence.
