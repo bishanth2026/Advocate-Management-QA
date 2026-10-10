@@ -33,7 +33,15 @@ if (missing.length) {
   console.log("SKIP qa-authz-http: missing isolated-QA configuration: " + missing.join(", "));
   process.exit(0);
 }
-const base = process.env.QA_SUPABASE_URL.replace(/\/$/, "");
+const configuredUrl = process.env.QA_SUPABASE_URL;
+let parsedUrl;
+try { parsedUrl = new URL(configuredUrl); } catch {
+  throw new Error("QA_SUPABASE_URL must be a valid URL for the isolated QA project");
+}
+if (parsedUrl.protocol !== "https:" || parsedUrl.hostname !== "uqtsksgypncsbcnuanbk.supabase.co" || parsedUrl.pathname !== "" && parsedUrl.pathname !== "/") {
+  throw new Error("Refusing to run authorization harness: URL must be exactly the isolated AdvocateDesk-Test project (uqtsksgypncsbcnuanbk.supabase.co).");
+}
+const base = configuredUrl.replace(/\\/$/, "");
 const anonKey = process.env.QA_SUPABASE_ANON_KEY;
 const workspace = process.env.QA_WORKSPACE_ID;
 const cases = {
