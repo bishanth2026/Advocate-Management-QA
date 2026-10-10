@@ -4,12 +4,12 @@
   // parity, authorization and regression tests pass.
   const TYPES = Object.freeze({
     cases: "case", clients: "client", hearings: "hearing", tasks: "task",
-    invoices: "invoice", payments: "payment", meetings: "meeting",
+    invoices: "invoice", payments: "payment", transactions: "transaction", meetings: "meeting",
     discussions: "discussion", courts: "court"
   });
   const EMPTY = Object.freeze({
     cases: [], clients: [], hearings: [], tasks: [], invoices: [],
-    payments: [], meetings: [], discussions: [], courts: []
+    payments: [], transactions: [], meetings: [], discussions: [], courts: []
   });
   function requireClient(client, workspaceId) {
     if (!client || typeof client.from !== "function") throw new Error("Supabase client is required.");
@@ -30,6 +30,17 @@
     return item.id;
   }
   function normalize(v) { return String(v == null ? "" : v).trim().toLowerCase(); }
+  // Stable non-cryptographic checksum for change/provenance tracking. This is
+  // not used for authorization or tamper-proof audit guarantees.
+  function sourceHash(value) {
+    const input = JSON.stringify(value);
+    let hash = 2166136261;
+    for (let i = 0; i < input.length; i++) {
+      hash ^= input.charCodeAt(i);
+      hash = Math.imul(hash, 16777619);
+    }
+    return (hash >>> 0).toString(16).padStart(8, "0");
+  }
   function buildRelationships(state) {
     const cases = Array.isArray(state.cases) ? state.cases : [];
     const byLabel = new Map();
@@ -116,6 +127,7 @@
           resource_id: stableId(type, item),
           case_id: caseId(type, item, rel),
           payload: item,
+          source_hash: sourceHash(item),
           updated_at: new Date().toISOString()
         });
       });
