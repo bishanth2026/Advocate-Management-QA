@@ -9,6 +9,7 @@ on:
       - "tests/resource-policy-draft.test.js"
       - "tests/transactional-save-contract.test.js"
       - "tests/qa-authz-http.test.js"
+      - "tests/qa-authz-http-contract.test.js"
       - "supabase/drafts/20261010_phase_c7h_task_permission_and_unlinked_scope_draft.sql"
       - ".github/workflows/resource-store-tests.yml"
   pull_request:
@@ -33,4 +34,5 @@ jobs:
           node tests/resource-store.test.js
           node tests/resource-policy-draft.test.js
           node tests/transactional-save-contract.test.js
+          node tests/qa-authz-http-contract.test.js
           node tests/qa-authz-http.test.js
