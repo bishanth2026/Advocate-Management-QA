@@ -90,3 +90,12 @@ The final concurrency fix must be a single authenticated database transaction. A
 Acceptance checks: stale revision conflicts; no revision advancement when any resource write fails; whole-batch rollback; unauthenticated and non-member requests denied; finance/case permissions enforced independently; two simultaneous requests cannot both claim the same revision; real authenticated PostgREST sessions used for verification.
 
 The proposed separate design document and draft migration could not be created because repository write operations were blocked. No schema was changed in this attempt. Treat this checklist as planning guidance only, not implemented concurrency protection.
+
+
+## Additional live RLS review — 10 October 2026
+
+A read-only query of `pg_policies` confirms the main release blocker remains active: `practice_records` has SELECT and UPDATE policies based on workspace membership only. Those policies do not inspect case IDs inside the `workspace_state` JSON. Thus the resource-level policies on `practice_resources` cannot protect screens while the UI continues to load/save the aggregate record.
+
+The current `practice_resources` policies are resource-type aware for SELECT/INSERT/UPDATE/DELETE, and the assignment table has scoped SELECT with no direct client mutation policies. However, this policy inspection is not a substitute for signed-in browser tests. The revision/RPC design must preserve these resource-level policies and must not make the revision table a way to mutate resources without their normal permissions.
+
+No policy was modified in this review. The next safe step is an authenticated UI/DB acceptance suite against the isolated QA project, followed by the atomic save design; do not cut over or weaken aggregate policies until parity is demonstrated.
