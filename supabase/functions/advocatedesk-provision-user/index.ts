@@ -128,19 +128,35 @@ Deno.serve(async (req: Request) => {
 
   // Super-admin invitations are deliberately not supported by this endpoint.
   // Admin invitations retain existing behavior; invite_member is restricted to approved non-Admin roles.
+  if (action === "list_workspaces") {
+    const { data: workspaces, error } = await admin.from("workspaces")
+      .select("id,name,status").eq("status", "active").order("name");
+    if (error) {
+      console.error("QA workspace list failed:", error.message);
+      return json(500, { error: "Could not load active QA workspaces." });
+    }
+    return json(200, { workspaces: workspaces || [] });
+  }
   if (action !== "invite_admin" && action !== "invite_member") return json(400, { error: "Unsupported action." });
 
   const fullName = clean(body.full_name, 120);
   const email = clean(body.email, 254).toLowerCase();
   const workspaceName = clean(body.workspace_name, 160);
+  const requestedWorkspaceId = clean(body.workspace_id, 80);
   const requestedRole = clean(body.role, 40);
   const allowedMemberRoles = ["advocate", "junior_advocate", "clerk", "accountant", "staff"];
   const workspaceRole = action === "invite_member" ? requestedRole : "admin";
   if (action === "invite_member" && !allowedMemberRoles.includes(workspaceRole)) {
     return json(400, { error: "Choose an approved non-Admin workspace role." });
   }
-  if (!fullName || !workspaceName || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {
-    return json(400, { error: "A valid email, full name, and workspace name are required." });
+  if (!fullName || (action === "invite_admin" && !workspaceName) || (action === "invite_member" && !requestedWorkspaceId) || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {
+    return json(400, { error: action === "invite_member" ? "A valid email, full name, and existing QA workspace are required." : "A valid email, full name, and workspace name are required." });
+  }
+  let selectedWorkspace: { id: string; name: string; status: string } | null = null;
+  if (action === "invite_member") {
+    const { data, error } = await admin.from("workspaces").select("id,name,status").eq("id", requestedWorkspaceId).eq("status", "active").maybeSingle();
+    if (error || !data) return json(400, { error: "Choose an existing active QA workspace." });
+    selectedWorkspace = data;
   }
 
   const { data: invitation, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, {
@@ -163,10 +179,14 @@ Deno.serve(async (req: Request) => {
     if (insertProfileError) throw new Error("Profile creation failed: " + insertProfileError.message);
     profileCreated = true;
 
-    const { data: workspace, error: workspaceInsertError } = await admin.from("workspaces")
-      .insert({ name: workspaceName, owner_id: userId, status: "active" }).select("id").single();
-    if (workspaceInsertError || !workspace) throw new Error("Workspace creation failed: " + (workspaceInsertError?.message || "No workspace returned."));
-    workspaceId = workspace.id;
+    if (action === "invite_member") {
+      workspaceId = selectedWorkspace!.id;
+    } else {
+      const { data: workspace, error: workspaceInsertError } = await admin.from("workspaces")
+        .insert({ name: workspaceName, owner_id: userId, status: "active" }).select("id").single();
+      if (workspaceInsertError || !workspace) throw new Error("Workspace creation failed: " + (workspaceInsertError?.message || "No workspace returned."));
+      workspaceId = workspace.id;
+    }
 
     const { error: memberInsertError } = await admin.from("workspace_members").insert({
       workspace_id: workspaceId, user_id: userId, role: workspaceRole,
@@ -176,12 +196,12 @@ Deno.serve(async (req: Request) => {
   } catch (provisionError) {
     console.error("Admin provisioning failed; attempting compensating cleanup:", provisionError);
     if (membershipCreated && workspaceId) await admin.from("workspace_members").delete().eq("workspace_id", workspaceId).eq("user_id", userId);
-    if (workspaceId) await admin.from("workspaces").delete().eq("id", workspaceId);
+    if (workspaceId && action === "invite_admin") await admin.from("workspaces").delete().eq("id", workspaceId);
     if (profileCreated) await admin.from("profiles").delete().eq("user_id", userId);
     const { error: cleanupError } = await admin.auth.admin.deleteUser(userId);
     if (cleanupError) console.error("Compensating Auth cleanup failed:", cleanupError.message);
     return json(500, { error: "Administrator setup did not complete. Cleanup was attempted; verify the test account list before retrying." });
   }
 
-  return json(200, { success: true, invited: true, role: workspaceRole, user_id: userId });
+  return json(200, { success: true, invited: true, role: workspaceRole, workspace_id: workspaceId, workspace_name: selectedWorkspace?.name || workspaceName, user_id: userId });
 });
