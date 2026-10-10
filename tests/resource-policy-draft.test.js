@@ -17,11 +17,11 @@ for (const type of ["client", "hearing", "task", "meeting", "discussion", "case_
   assert.ok(sql.includes("WHEN '" + type + "'"), "missing policy branch for " + type);
 }
 assert.ok((sql.match(/case_id IS NOT NULL/g) || []).length >= 12, "read/write paths must guard unlinked records");
-assert.ok((sql.match(/private\\.can_access_case/g) || []).length >= 12, "read/write paths must call case assignment helper");
+assert.ok((sql.match(/private[.]can_access_case/g) || []).length >= 12, "read/write paths must call case assignment helper");
 
 const update = sql.split("CREATE POLICY practice_resources_update_authorized")[1].split("DROP POLICY IF EXISTS practice_resources_delete_authorized")[0];
 assert.ok(update.includes("USING ("), "UPDATE must authorize the existing row");
 assert.ok(update.includes("WITH CHECK ("), "UPDATE must authorize the proposed row");
-assert.ok(!/CREATE\\s+(OR REPLACE\\s+)?FUNCTION/i.test(sql), "draft must not contain an unreviewed privileged RPC");
+assert.ok(!sql.includes("CREATE FUNCTION") && !sql.includes("CREATE OR REPLACE FUNCTION"), "draft must not contain an unreviewed privileged RPC");
 assert.ok(sql.includes("Do not apply until real JWT authorization and"));
 console.log("resource policy draft static contract tests: PASS (not live RLS tests)");
