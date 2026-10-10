@@ -118,14 +118,43 @@ function taskListQuery(caseId) {
     encodeURIComponent(workspace) + "&resource_type=eq.task&case_id=eq." +
     encodeURIComponent(caseId) + "&limit=100";
 }
+function workspaceTaskListQuery() {
+  return "practice_resources?select=resource_id,case_id&workspace_id=eq." +
+    encodeURIComponent(workspace) + "&resource_type=eq.task&limit=100";
+}
+function expectVisibleTaskIds(result, expectedIds, label) {
+  expectAllowed(result, label);
+  assert.ok(Array.isArray(result.body), label + " expected an array response");
+  const ids = result.body.map(row => row.resource_id).sort();
+  assert.deepEqual(ids, [...expectedIds].sort(), label + " visible task set differs from expected");
+}
+
 
 (async () => {
-  const adminRead = await rest("admin", taskListQuery(cases.assigned));
-  expectAllowed(adminRead, "Admin assigned-case task list");
   function expectAllowed(result, label) {
     assert.ok(result.status >= 200 && result.status < 300,
       label + " expected success, got HTTP " + result.status + " " + JSON.stringify(result.body));
   }
+  expectVisibleTaskIds(
+    await rest("admin", workspaceTaskListQuery()),
+    [taskIds.unlinked, taskIds.assigned, taskIds.unassigned],
+    "Admin workspace-wide task list"
+  );
+  expectVisibleTaskIds(
+    await rest("assignedAdvocate", workspaceTaskListQuery()),
+    [taskIds.assigned],
+    "Assigned Advocate workspace-wide task list"
+  );
+  expectVisibleTaskIds(
+    await rest("unassignedAdvocate", workspaceTaskListQuery()),
+    [taskIds.unassigned],
+    "Unassigned Advocate workspace-wide task list"
+  );
+  expectVisibleTaskIds(
+    await rest("accountant", workspaceTaskListQuery()),
+    [],
+    "Accountant workspace-wide task list"
+  );
 
   expectDenied(await rest("nonmember", taskListQuery(cases.assigned)), "Non-member task read");
   expectDenied(await rest("anonymous", taskListQuery(cases.assigned)), "Anonymous task read");
