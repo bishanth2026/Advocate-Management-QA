@@ -163,3 +163,17 @@ No privileges or policies were changed by this read-only inspection.
 - It revokes all direct table privileges on `public.practice_resources` from `anon`; it does not alter the authenticated grants or any RLS policies.
 - Post-migration read-only verification shows no direct `anon` table grants for `practice_resources`; the existing authenticated grants remain. This verifies the SQL grant change, not end-to-end anonymous HTTP behavior or authenticated case authorization.
 - No other tables, Storage grants, production projects, or production code were changed.
+
+
+## Legacy aggregate policy confirmation — 10 October 2026
+
+A fresh read-only query of `pg_policies` confirms that `practice_records` still has these authenticated policies:
+
+- SELECT: `private.is_workspace_member(workspace_id)`
+- UPDATE: `private.is_workspace_member(workspace_id)` for both row visibility and the resulting row check
+- DELETE: `private.is_workspace_member(workspace_id)`
+- INSERT: workspace membership plus `created_by = auth.uid()`
+
+This policy design is workspace-member-scoped, not case-assignment-scoped. Because the current UI's legacy workspace-state path stores a whole workspace payload in a `practice_records` row, an authenticated workspace member with table access may read or overwrite the aggregate payload without going through the finer `practice_resources` per-resource policies. This is a cutover blocker, not proof of a successful exploit or of access between different workspaces. The resource-store migration must be completed and tested before the aggregate row can be retired; do not weaken the resource policies to accommodate the legacy path.
+
+The same catalog query confirmed `practice_resources` policies are explicitly for `authenticated` and use resource-type permission checks. Catalog inspection is not a substitute for signed-in HTTP tests using accounts with different permissions and case assignments.
