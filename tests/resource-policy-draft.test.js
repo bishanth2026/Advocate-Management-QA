@@ -64,8 +64,9 @@ for (const policyName of [
   "practice_resources_delete_authorized"
 ]) {
   const start = sql.indexOf("CREATE POLICY " + policyName);
-  const next = sql.indexOf("\\nDROP POLICY IF EXISTS", start);
-  const end = next < 0 ? sql.indexOf("\\nCOMMIT;", start) : next;
+  const next = sql.indexOf("\nDROP POLICY IF EXISTS practice_resources_", start + ("CREATE POLICY " + policyName).length);
+  const commit = sql.indexOf("\nCOMMIT;", start);
+  const end = next < 0 || (commit >= 0 && commit < next) ? commit : next;
   const body = sql.slice(start, end < 0 ? sql.length : end);
   for (const [type, permission] of Object.entries(expectedScopeByType)) {
     assert.ok(body.includes("WHEN '" + type + "' THEN private.has_workspace_permission(workspace_id,'" + permission + "')"),
