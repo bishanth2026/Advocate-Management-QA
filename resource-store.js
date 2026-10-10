@@ -5,11 +5,11 @@
   const TYPES = Object.freeze({
     cases: "case", clients: "client", hearings: "hearing", tasks: "task",
     invoices: "invoice", payments: "payment", transactions: "transaction", meetings: "meeting",
-    discussions: "discussion", courts: "court"
+    discussions: "discussion", courts: "court", caseParties: "case_party"
   });
   const EMPTY = Object.freeze({
     cases: [], clients: [], hearings: [], tasks: [], invoices: [],
-    payments: [], transactions: [], meetings: [], discussions: [], courts: []
+    payments: [], transactions: [], meetings: [], discussions: [], courts: [], caseParties: []
   });
   function requireClient(client, workspaceId) {
     if (!client || typeof client.from !== "function") throw new Error("Supabase client is required.");
