@@ -11,6 +11,7 @@ on:
       - "tests/qa-authz-http.test.js"
       - "tests/qa-authz-http-contract.test.js"
       - "tests/qa-authz-workspace-list-contract.test.js"
+      - "tests/qa-fixture-template-contract.test.js"
       - "supabase/drafts/20261010_phase_c7h_task_permission_and_unlinked_scope_draft.sql"
       - ".github/workflows/resource-store-tests.yml"
   pull_request:
@@ -37,4 +38,5 @@ jobs:
           node tests/transactional-save-contract.test.js
           node tests/qa-authz-http-contract.test.js
           node tests/qa-authz-workspace-list-contract.test.js
+          node tests/qa-fixture-template-contract.test.js
           node tests/qa-authz-http.test.js
