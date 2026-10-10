@@ -50,6 +50,14 @@ Do not enable the resource-scoped store in the live QA UI until the blockers bel
 QA-only. Stable-ID handling has been improved and automated checks/deployment pass, but the app still uses the legacy aggregate state and `resource-store.js` is not loaded by `app.html`. The authorization, complete-state mapping, migration reconciliation and authenticated browser tests remain release blockers. No production changes are authorized by this report.
 
 
+## Follow-up findings — schema review for concurrency control (10 October 2026)
+
+- Read-only inspection of the isolated QA database confirms `practice_resources` currently has no version/revision column; its resource key is workspace + resource type + resource ID, and it stores payload, case link, source hash and timestamps.
+- Therefore the current adapter cannot perform reliable compare-and-swap using a row version. Client-side timestamp checks alone would still race between two sessions.
+- The safe implementation direction is a QA-only, authenticated, transaction-atomic RPC that checks a workspace revision, validates the caller's permissions for every submitted resource, applies all upserts as one transaction, and advances the revision only if the expected revision matches. It must never trust a client-supplied workspace or role without checking membership/permissions in the database.
+- Do not deploy a partial RPC or grant broad `SECURITY DEFINER` privileges merely to get concurrency working. Before implementing it, inspect existing helper-function definitions, grants, and RLS policies so the RPC reuses the existing permission model. Real authenticated-session tests are still required.
+- This was a read-only schema inspection; no QA database schema or production database was changed by this review.
+
 ## Follow-up findings — duplicate resource IDs and latest CI (10 October 2026)
 
 - Added pre-write duplicate-ID validation per resource collection. If two records in the same module resolve to the same stable resource ID, save rejects the state before sending any upsert request. This prevents silent same-key overwrites inside a batch and is covered by a regression test.
