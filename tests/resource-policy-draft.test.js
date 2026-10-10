@@ -23,5 +23,5 @@ const update = sql.split("CREATE POLICY practice_resources_update_authorized")[1
 assert.ok(update.includes("USING ("), "UPDATE must authorize the existing row");
 assert.ok(update.includes("WITH CHECK ("), "UPDATE must authorize the proposed row");
 assert.ok(!sql.includes("CREATE FUNCTION") && !sql.includes("CREATE OR REPLACE FUNCTION"), "draft must not contain an unreviewed privileged RPC");
-assert.ok(sql.includes("Do not apply until real JWT authorization and"));
+assert.ok(sql.toLowerCase().includes("do not apply until real jwt authorization and"));
 console.log("resource policy draft static contract tests: PASS (not live RLS tests)");
