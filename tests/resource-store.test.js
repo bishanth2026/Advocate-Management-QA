@@ -126,6 +126,18 @@ const store = sandbox.window.ADResourceStore;
   );
   assert.equal(oversizedClient.calls.length, 0, "oversized save must make zero database writes");
 
+  const longIdClient = makeClient();
+  await assert.rejects(
+    () => store.save(longIdClient, "ws-1", {
+      cases: [{ id: "X".repeat(201) }], clients: [], hearings: [], tasks: [],
+      invoices: [], payments: [], transactions: [], meetings: [], discussions: [],
+      courts: [], caseParties: []
+    }),
+    /Resource ID exceeds the database limit of 200 characters for case/,
+    "overlong IDs must fail locally rather than reach a database constraint"
+  );
+  assert.equal(longIdClient.calls.length, 0, "invalid ID must be rejected before any write");
+
   const denied = makeClient([], true);
   await assert.rejects(() => store.save(denied, "ws-1", {
     cases: [{ id: "CASE-1" }], clients: [], hearings: [], tasks: [], invoices: [], payments: [], transactions: [], meetings: [], discussions: [], courts: [], caseParties: []
