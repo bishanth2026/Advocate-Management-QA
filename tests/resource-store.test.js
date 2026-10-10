@@ -35,6 +35,13 @@ const store = sandbox.window.ADResourceStore;
     { workspace_id: "ws-1", resource_type: "hearing", resource_id: "HEAR-1", case_id: "CASE-1", payload: {} },
     { workspace_id: "ws-2", resource_type: "case", resource_id: "SECRET", case_id: null, payload: { id: "SECRET" } }
   ]);
+  await assert.rejects(
+    () => store.load(makeClient([
+      { workspace_id: "ws-1", resource_type: "future_module", resource_id: "X-1", case_id: null, payload: { id: "X-1" } }
+    ]), "ws-1"),
+    /Unsupported resource type returned by database: future_module/,
+    "unknown resource types must fail closed rather than silently disappear"
+  );
   const loaded = await store.load(client, "ws-1");
   assert.equal(loaded.cases.length, 1, "maps rows returned for requested workspace");
   assert.equal(loaded.hearings.length, 1);
