@@ -111,6 +111,21 @@ const store = sandbox.window.ADResourceStore;
     /Unsupported non-empty resource collections: customModuleRecords/,
     "unknown module collections must fail closed instead of being silently dropped"
   );
+  // A multi-batch save is not atomic with direct PostgREST upserts. Until a
+  // transactional RPC exists, reject >100 rows before issuing any write.
+  const oversizedClient = makeClient();
+  const oversizedState = {
+    cases: Array.from({ length: 101 }, (_, i) => ({ id: "BULK-" + i })),
+    clients: [], hearings: [], tasks: [], invoices: [], payments: [],
+    transactions: [], meetings: [], discussions: [], courts: [], caseParties: []
+  };
+  await assert.rejects(
+    () => store.save(oversizedClient, "ws-1", oversizedState),
+    /Atomic save unavailable for more than 100 resources; no rows were written/,
+    "must reject oversized saves before partial batch persistence can occur"
+  );
+  assert.equal(oversizedClient.calls.length, 0, "oversized save must make zero database writes");
+
   const denied = makeClient([], true);
   await assert.rejects(() => store.save(denied, "ws-1", {
     cases: [{ id: "CASE-1" }], clients: [], hearings: [], tasks: [], invoices: [], payments: [], transactions: [], meetings: [], discussions: [], courts: [], caseParties: []
