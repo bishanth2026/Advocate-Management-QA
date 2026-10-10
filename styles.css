@@ -950,3 +950,7 @@ th{background:linear-gradient(90deg,#f1f5ff,#f7fbff);color:#526174}
   .report-mode .report-filter{display:none!important;}
   .report-mode #financialClientReport{display:block!important;}
 }
+
+
+/* QA member portal card */
+.portal-card.member{background:linear-gradient(135deg,#78350f,#b45309,#d97706)}
