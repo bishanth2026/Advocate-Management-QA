@@ -49,7 +49,16 @@ async function signIn(email, password, expectedUid) {
 }
 
 (async () => {
-  const childEnv = { ...process.env, QA_ANON_JWT: anonKey };
+  const childEnv = {
+    ...process.env,
+    QA_ANON_JWT: anonKey,
+    QA_WORKSPACE_ID: process.env.QA_WORKSPACE_ID || "e183d24d-9f64-4283-af54-571f83ca7e3d",
+    QA_ASSIGNED_CASE_ID: process.env.QA_ASSIGNED_CASE_ID || "qa-c7h-20261011-run-001-case-assigned",
+    QA_UNASSIGNED_CASE_ID: process.env.QA_UNASSIGNED_CASE_ID || "qa-c7h-20261011-run-001-case-unassigned",
+    QA_UNLINKED_TASK_ID: process.env.QA_UNLINKED_TASK_ID || "qa-c7h-20261011-run-001-task-unlinked",
+    QA_LINKED_ASSIGNED_TASK_ID: process.env.QA_LINKED_ASSIGNED_TASK_ID || "qa-c7h-20261011-run-001-task-assigned",
+    QA_LINKED_UNASSIGNED_TASK_ID: process.env.QA_LINKED_UNASSIGNED_TASK_ID || "qa-c7h-20261011-run-001-task-unassigned"
+  };
   for (const [role, envName, email, uid] of actors) {
     childEnv["QA_" + role.replace(/[A-Z]/g, m => "_" + m).toUpperCase() + "_JWT"] =
       await signIn(email, process.env[envName], uid);
