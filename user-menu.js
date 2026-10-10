@@ -32,7 +32,17 @@
     menu.setAttribute('role','menu');
     const auth=window.ADAuth&&typeof window.ADAuth.get==='function'?window.ADAuth.get():null;
     const profileName=(auth&&auth.name)||'Advocate Admin';
-    const profileRole=(auth&&auth.role==='super_admin')?'System Owner':'Office Administrator';
+    const roleKey=String((auth&&auth.workspaceRole)||(auth&&auth.role)||'').toLowerCase();
+    const roleLabels={
+      super_admin:'System Owner',
+      admin:'Office Administrator',
+      advocate:'Advocate',
+      staff:'Staff',
+      paralegal:'Paralegal',
+      clerk:'Clerk',
+      secretary:'Secretary'
+    };
+    const profileRole=roleLabels[roleKey]||'Workspace Member';
     menu.innerHTML='<div class="profile-menu-head"><strong>'+window.esc(profileName)+'</strong><small>'+window.esc(profileRole)+'</small></div>'+
       ''+
       '<button type="button" class="profile-menu-item danger" data-profile-action="logout">↪ Logout</button>';
