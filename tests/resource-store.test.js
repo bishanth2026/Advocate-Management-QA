@@ -48,9 +48,10 @@ const store = sandbox.window.ADResourceStore;
     hearings: [{ case: "OS 1/2026" }],
     invoices: [{ id: "INV-1", case: "OS 1/2026" }],
     payments: [{ id: "PAY-1", invoiceId: "INV-1" }],
+    transactions: [{ id: "TX-1", case: "OS 1/2026", amount: 100 }],
     tasks: [], meetings: [], discussions: [], courts: []
   });
-  assert.equal(result.saved, 5);
+  assert.equal(result.saved, 6);
   assert.equal(result.destructiveDeletes, 0, "never bulk-deletes hidden records");
   assert.equal(saveClient.calls.length, 1);
   assert.equal(saveClient.calls[0].options.onConflict, "workspace_id,resource_type,resource_id");
@@ -61,6 +62,8 @@ const store = sandbox.window.ADResourceStore;
   assert.equal(savedRows.find(r => r.resource_type === "client").case_id, "CASE-1");
   assert.equal(savedRows.find(r => r.resource_type === "invoice").case_id, "CASE-1");
   assert.equal(savedRows.find(r => r.resource_type === "payment").case_id, "CASE-1");
+  assert.equal(savedRows.find(r => r.resource_type === "transaction").case_id, "CASE-1");
+  assert.ok(savedRows.every(r => typeof r.source_hash === "string" && r.source_hash.length > 0), "supplies required source_hash for real database writes");
 
   await assert.rejects(() => store.load(client, ""), /workspace ID/);
   const idClient = makeClient();
@@ -71,7 +74,7 @@ const store = sandbox.window.ADResourceStore;
   await assert.rejects(() => store.save(client, "ws-1", { cases: "not-an-array" }), /Expected cases to be an array/);
   const denied = makeClient([], true);
   await assert.rejects(() => store.save(denied, "ws-1", {
-    cases: [{ id: "CASE-1" }], clients: [], hearings: [], tasks: [], invoices: [], payments: [], meetings: [], discussions: [], courts: []
+    cases: [{ id: "CASE-1" }], clients: [], hearings: [], tasks: [], invoices: [], payments: [], transactions: [], meetings: [], discussions: [], courts: []
   }), err => err && err.message === "simulated RLS denial" && err.code === "42501");
   console.log("resource-store adapter unit tests: PASS (fake Supabase only)");
 })().catch(err => { console.error(err); process.exitCode = 1; });
