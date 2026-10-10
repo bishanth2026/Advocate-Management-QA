@@ -63,7 +63,11 @@ const store = sandbox.window.ADResourceStore;
   assert.equal(savedRows.find(r => r.resource_type === "payment").case_id, "CASE-1");
 
   await assert.rejects(() => store.load(client, ""), /workspace ID/);
-  await assert.rejects(() => store.save(client, "ws-1", { cases: [{ title: "Missing stable ID" }] }), /stable ID/);
+  const idClient = makeClient();
+  const legacyRecord = { title: "Legacy-style hearing" };
+  await store.save(idClient, "ws-1", { hearings: [legacyRecord] });
+  assert.ok(legacyRecord.id, "generates and persists an ID on legacy-style records");
+  assert.equal(idClient.calls[0].batch[0].resource_id, legacyRecord.id);
   await assert.rejects(() => store.save(client, "ws-1", { cases: "not-an-array" }), /Expected cases to be an array/);
   const denied = makeClient([], true);
   await assert.rejects(() => store.save(denied, "ws-1", {
