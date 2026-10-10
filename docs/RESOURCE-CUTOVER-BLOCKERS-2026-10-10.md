@@ -55,3 +55,10 @@ QA-only. Stable-ID handling has been improved and automated checks/deployment pa
 - Added an adapter unit test for duplicate case labels; the hearing relationship remains null rather than arbitrarily choosing one case. Validation, QA Pages deployment, and the related workflow completed successfully on commit `5583d9ab0f7b909e8e2b3f5a94612660f59005c6`.
 - Read-only inspection of the isolated QA policy catalog confirmed the aggregate `practice_records` policies remain workspace-member scoped, while `practice_resources` has per-resource permission policies. This reinforces that the UI must not cut over until complete-state parity and authenticated tests are finished.
 - Current unresolved blocker highlighted: client-to-case link normalization for assigned-only client visibility. No production database was accessed or changed.
+
+
+## Follow-up implementation guard — 10 October 2026
+
+- Updated `resource-store.js` to fail closed when it receives a non-empty array for a module collection not present in the adapter's explicit resource map. This prevents a future module from being silently omitted during a proposed cutover.
+- Added a unit test proving that an unknown collection such as `customModuleRecords` rejects the save. This is a defensive guard, not evidence that every non-array setting or every module field has been mapped.
+- The adapter remains intentionally disconnected from `app.html`. Continue to block cutover until the canonical state contract, relationships, deletes, concurrency handling, and authenticated RLS/Storage tests are complete.
