@@ -62,6 +62,26 @@ const tokens = {
   anonymous: process.env.QA_ANON_JWT
 };
 
+/*
+ * Catch fixture mix-ups before sending even a read request. These checks are
+ * deliberately local-only and do not reveal tokens or query the database.
+ */
+const taskFixtureIds = Object.values(taskIds);
+if (new Set(taskFixtureIds).size !== taskFixtureIds.length) {
+  throw new Error("QA task fixture IDs must be three distinct resource_id values.");
+}
+if (cases.assigned === cases.unassigned) {
+  throw new Error("QA assigned and unassigned case fixtures must be different cases.");
+}
+if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(workspace)) {
+  throw new Error("QA_WORKSPACE_ID must be a UUID for the isolated QA workspace.");
+}
+for (const [name, value] of Object.entries(tokens)) {
+  if (/^(replace|your-|changeme|todo|example)/i.test(value.trim())) {
+    throw new Error("Refusing to run with placeholder credential in " + name + ".");
+  }
+}
+
 async function rest(role, path) {
   const response = await fetch(base + "/rest/v1/" + path, {
     method: "GET",
