@@ -32,4 +32,8 @@ assert.match(source, /QA_SUPABASE_URL/, "must require explicit QA URL");
 assert.ok(source.includes("uqtsksgypncsbcnuanbk.supabase.co"), "must fail closed unless targeting the isolated QA project");
 assert.match(source, /Refusing to run authorization harness/, "must reject non-QA URLs at runtime");
 assert.match(source, /Never point this harness at production/, "must document production exclusion");
+assert.match(source, /new Set\(taskFixtureIds\)\.size !== taskFixtureIds\.length/, "must reject duplicate task fixture IDs");
+assert.match(source, /cases\.assigned === cases\.unassigned/, "must reject identical assigned/unassigned case fixtures");
+assert.match(source, /QA_WORKSPACE_ID must be a UUID/, "must validate workspace UUID locally");
+assert.match(source, /placeholder credential in/, "must reject placeholder credentials before HTTP requests");
 console.log("PASS QA HTTP authorization harness static coverage contract (not live RLS)");
