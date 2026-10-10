@@ -150,6 +150,12 @@
         });
       });
     });
+    // Until the database exposes a transactional bulk-save RPC, multiple PostgREST
+    // batches can partially commit if a later batch fails. Fail before any write
+    // rather than reporting a failed save after persisting only part of the state.
+    if (rows.length > 100) {
+      throw new Error("Atomic save unavailable for more than 100 resources; no rows were written. Use the transactional save RPC before retrying.");
+    }
     // Upsert only: never delete rows omitted from potentially role-filtered state.
     for (let i = 0; i < rows.length; i += 100) {
       const result = await client.from("practice_resources")
