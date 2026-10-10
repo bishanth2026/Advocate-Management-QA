@@ -15,7 +15,7 @@ The Phase C1 resource policies had gaps:
 
 ## Change
 
-Migration file: `supabase/migrations/20261010000600_scope_case_linked_resource_policies.sql`
+Migration file: `supabase/migrations/20261010000505_phase_c6_scope_case_linked_resource_policies.sql` (matches recorded Supabase migration version)
 
 The migration updates SELECT, INSERT, UPDATE, and DELETE policies on `public.practice_resources`:
 - Assigned-only meetings/discussions require the relevant assigned-view permission, a non-null `case_id`, and `private.can_access_case(...)`.
