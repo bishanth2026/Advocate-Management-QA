@@ -88,6 +88,17 @@ const store = sandbox.window.ADResourceStore;
   const ambiguousHearing = ambiguousClient.calls[0].batch.find(r => r.resource_type === "hearing");
   assert.equal(ambiguousHearing.case_id, null, "ambiguous case labels must remain unresolved instead of linking to an arbitrary case");
 
+  const duplicateClient = makeClient();
+  await assert.rejects(
+    () => store.save(duplicateClient, "ws-1", {
+      cases: [{ id: "DUP-1", title: "First" }, { id: "DUP-1", title: "Second" }],
+      clients: [], hearings: [], tasks: [], invoices: [], payments: [],
+      transactions: [], meetings: [], discussions: [], courts: [], caseParties: []
+    }),
+    /Duplicate cases resource ID: DUP-1/,
+    "duplicate IDs must be rejected before conflicting rows reach the database"
+  );
+  assert.equal(duplicateClient.calls.length, 0, "duplicate validation must happen before any write");
   await assert.rejects(() => store.load(client, ""), /workspace ID/);
   const idClient = makeClient();
   const legacyRecord = { title: "Legacy-style hearing" };
