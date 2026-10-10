@@ -155,3 +155,11 @@ Read-only catalog inspection confirmed row-level security is enabled on `practic
 The privilege catalog also reports direct table privileges for the `anon` role on `practice_resources` and `storage.objects`. The inspected `practice_resources` policies and document-storage policies are scoped to `authenticated`, so the grants alone do not demonstrate anonymous data access; RLS remains a separate enforcement layer. Still, this is a least-privilege review item: confirm whether these anonymous grants are necessary and, if not, revoke them through a reviewed QA migration after checking Supabase Storage's expected grants. Do not assume that enabling RLS removes SQL privileges, and do not change grants in production as part of this QA task.
 
 No privileges or policies were changed by this read-only inspection.
+
+
+## QA-only least-privilege remediation — 10 October 2026
+
+- A reviewed migration `supabase/migrations/20261010070000_revoke_anon_practice_resource_grants.sql` was added and applied to the isolated QA project `uqtsksgypncsbcnuanbk` only.
+- It revokes all direct table privileges on `public.practice_resources` from `anon`; it does not alter the authenticated grants or any RLS policies.
+- Post-migration read-only verification shows no direct `anon` table grants for `practice_resources`; the existing authenticated grants remain. This verifies the SQL grant change, not end-to-end anonymous HTTP behavior or authenticated case authorization.
+- No other tables, Storage grants, production projects, or production code were changed.
