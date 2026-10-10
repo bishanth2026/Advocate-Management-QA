@@ -81,3 +81,12 @@ QA-only. Stable-ID handling has been improved and automated checks/deployment pa
 - Updated `resource-store.js` to fail closed when it receives a non-empty array for a module collection not present in the adapter's explicit resource map. This prevents a future module from being silently omitted during a proposed cutover.
 - Added a unit test proving that an unknown collection such as `customModuleRecords` rejects the save. This is a defensive guard, not evidence that every non-array setting or every module field has been mapped.
 - The adapter remains intentionally disconnected from `app.html`. Continue to block cutover until the canonical state contract, relationships, deletes, concurrency handling, and authenticated RLS/Storage tests are complete.
+
+
+## Concurrency implementation checklist — 10 October 2026
+
+The final concurrency fix must be a single authenticated database transaction. A workspace revision check must be combined with all resource writes in that same transaction; a revision-only RPC is not sufficient. Use the authenticated caller identity and existing resource-level RLS policies. Do not use a privileged function to bypass RLS.
+
+Acceptance checks: stale revision conflicts; no revision advancement when any resource write fails; whole-batch rollback; unauthenticated and non-member requests denied; finance/case permissions enforced independently; two simultaneous requests cannot both claim the same revision; real authenticated PostgREST sessions used for verification.
+
+The proposed separate design document and draft migration could not be created because repository write operations were blocked. No schema was changed in this attempt. Treat this checklist as planning guidance only, not implemented concurrency protection.
