@@ -20,7 +20,13 @@
     const candidate = type === "case"
       ? (item.id || item.caseId || item.number || item.caseNumber)
       : (item.id || item.key || item[type + "Id"]);
-    if (candidate != null && String(candidate).trim() !== "") return String(candidate).trim();
+    if (candidate != null && String(candidate).trim() !== "") {
+      const normalized = String(candidate).trim();
+      if (normalized.length > 200) {
+        throw new Error("Resource ID exceeds the database limit of 200 characters for " + type + ".");
+      }
+      return normalized;
+    }
     // Legacy UI modules sometimes create hearings/tasks without IDs. Assign the
     // ID onto the object before upsert so subsequent saves reuse the same key.
     const randomPart = global.crypto && typeof global.crypto.randomUUID === "function"
