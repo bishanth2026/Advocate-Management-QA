@@ -10,7 +10,10 @@ INSERT INTO public.role_permissions(role, permission_key, allowed) VALUES
  ('admin','tasks.manage',true),
  ('advocate','tasks.manage',true),
  ('junior_advocate','tasks.manage',true),
- ('clerk','tasks.manage',true)
+ ('clerk','tasks.manage',true),
+ ('admin','tasks.view_all',true),
+ ('advocate','tasks.view_assigned',true),
+ ('junior_advocate','tasks.view_assigned',true)
 ON CONFLICT (role, permission_key)
 DO UPDATE SET allowed=EXCLUDED.allowed, updated_at=now();
 
