@@ -51,6 +51,15 @@
     return resourceType + "::" + String(resourceId);
   }
 
+  function courtResourceId(name) {
+    const normalized = String(name || "").trim().toLocaleLowerCase();
+    if (!normalized) throw new Error("Court name cannot be empty.");
+    const encoded = encodeURIComponent(normalized);
+    const id = "court:" + encoded;
+    if (id.length > 200) throw new Error("Court name is too long to create a stable resource ID.");
+    return id;
+  }
+
   function indexCases(state) {
     const byReference = new Map();
     const byClient = new Map();
@@ -121,7 +130,13 @@
       if (row.payload.id == null || String(row.payload.id) !== String(row.resource_id)) {
         throw new Error("Resource ID does not match its payload ID for " + row.resource_id + ".");
       }
-      state[stateKey].push(clone(row.payload));
+      if (stateKey === "courts") {
+        const name = row.payload.name ?? row.payload.value ?? row.payload.label;
+        if (typeof name !== "string" || !name.trim()) throw new Error("Court resource is missing its display name.");
+        state.courts.push(name.trim());
+      } else {
+        state[stateKey].push(clone(row.payload));
+      }
     }
     return state;
   }
@@ -134,10 +149,18 @@
     const desired = new Map();
     for (const [stateKey, resourceType] of Object.entries(STATE_TO_TYPE)) {
       if (!Array.isArray(state[stateKey])) throw new Error("State collection '" + stateKey + "' is missing or is not an array; save was stopped to prevent accidental deletion.");
-      for (const payload of state[stateKey]) {
-        if (!isRecord(payload)) throw new Error("Collection '" + stateKey + "' contains a non-object item.");
-        if (payload.id == null || String(payload.id).trim() === "") throw new Error("A record in '" + stateKey + "' has no stable ID; save was stopped.");
-        const resourceId = String(payload.id).trim();
+      for (const item of state[stateKey]) {
+        let payload = item;
+        let resourceId;
+        if (stateKey === "courts" && typeof item === "string") {
+          const name = item.trim();
+          resourceId = courtResourceId(name);
+          payload = { id: resourceId, name };
+        } else {
+          if (!isRecord(payload)) throw new Error("Collection '" + stateKey + "' contains a non-object item.");
+          if (payload.id == null || String(payload.id).trim() === "") throw new Error("A record in '" + stateKey + "' has no stable ID; save was stopped.");
+          resourceId = String(payload.id).trim();
+        }
         if (resourceId.length > 200) throw new Error("Record ID exceeds 200 characters: " + resourceId.slice(0, 40) + "…");
         const key = recordKey(resourceType, resourceId);
         if (desired.has(key)) throw new Error("Duplicate record ID in collection '" + stateKey + "': " + resourceId);
