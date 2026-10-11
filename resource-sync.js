@@ -300,8 +300,15 @@
       request.catch(function (error) {
         console.error("AdvocateDesk per-resource sync failed", error);
         if (version === sequence) {
-          if (error && error.code === "AD_CLOUD_CONFLICT") status("Cloud: Conflict — refresh required", "#b91c1c");
-          else status("Cloud: Sync error — retry after checking connection", "#b91c1c");
+          if (error && error.code === "AD_CLOUD_CONFLICT") {
+            status("Cloud: Conflict — refresh required", "#b91c1c");
+          } else {
+            const detail = String(error && (error.message || error.details || error.hint) || "Unknown sync error").replace(/\\s+/g, " ").trim();
+            const label = "Cloud: Sync error — " + detail.slice(0, 52) + (detail.length > 52 ? "…" : "");
+            status(label, "#b91c1c");
+            const statusNode = document.getElementById("cloudSyncStatus");
+            if (statusNode) statusNode.title = detail;
+          }
         }
       });
       return request;
