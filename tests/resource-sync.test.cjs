@@ -58,6 +58,7 @@ test("load/save uses only practice_resources and never deletes rows hidden by RL
   const backingRows = [
     { id: "row-visible", workspace_id: workspaceId, resource_type: "case", resource_id: "CS-1", case_id: null, payload: { id: "CS-1", number: "OS 1/2026" }, legacy_record_id: "legacy-1", updated_at: "2026-10-11T00:00:00.000Z" },
     { id: "row-hidden", workspace_id: workspaceId, resource_type: "case", resource_id: "CS-2", case_id: null, payload: { id: "CS-2", number: "OS 2/2026" }, legacy_record_id: "legacy-1", updated_at: "2026-10-11T00:00:00.000Z" },
+    { id: "row-task", workspace_id: workspaceId, resource_type: "task", resource_id: "TASK-1", case_id: "CS-1", payload: { id: "TASK-1", title: "Task with DB-only case link" }, legacy_record_id: "legacy-1", updated_at: "2026-10-11T00:00:00.000Z" },
   ];
   const visibleRows = () => backingRows.filter((row) => row.resource_id !== "CS-2");
   class Query {
@@ -93,9 +94,11 @@ test("load/save uses only practice_resources and never deletes rows hidden by RL
   const sync = create(client, { workspaceId });
   const state = await sync.load();
   assert.deepEqual(state.cases.map((item) => item.id), ["CS-1"]);
+  assert.equal(state.tasks[0].id, "TASK-1");
   state.cases[0].title = "Edited assigned case";
   await sync.save(state);
   assert.equal(backingRows.find((row) => row.resource_id === "CS-1").payload.title, "Edited assigned case");
   assert.ok(backingRows.some((row) => row.resource_id === "CS-2"), "RLS-hidden row must not be deleted");
+  assert.equal(backingRows.find((row) => row.resource_id === "TASK-1").case_id, "CS-1", "a DB-only case link must be preserved");
   assert.ok(calls.every((call) => call.table === "practice_resources"), "legacy snapshot table must never be queried or mutated");
 });
