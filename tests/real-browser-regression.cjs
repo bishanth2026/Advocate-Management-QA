@@ -51,7 +51,7 @@ async function login(page, email, password) {
   await page.waitForFunction(() => {
     const node = document.getElementById("cloudSyncStatus");
     return node && /Cloud: Synced/.test(node.textContent || "");
-  }, { timeout: 30000 });
+  }, undefined, { timeout: 30000 });
   await page.waitForFunction(() => !document.getElementById("cloudLoading"), { timeout: 15000 }).catch(() => {});
   assert.deepEqual(authRequests, [], "The application must not query legacy practice_records during login/bootstrap.");
 }
@@ -128,7 +128,7 @@ async function run() {
       await page.waitForFunction(() => {
         const error = document.getElementById("error");
         return error && error.textContent.trim().length > 0;
-      }, { timeout: 20000 });
+      }, undefined, { timeout: 20000 });
       assert.ok(!/app\.html/.test(page.url()), "Non-member must not reach the app.");
       log("PASS", "non-member: sign-in rejected; app not opened.");
     } catch (error) {
