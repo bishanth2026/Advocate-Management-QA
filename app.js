@@ -653,9 +653,14 @@ window.saveInvoice=function(index){
 window.sendInvoiceWhatsApp=function(index){
   const invoice=state.invoices[index];
   if(!invoice)return;
-  const client=state.clients.find(c=>c.name===invoice.client||c.id===invoice.clientId);
-  const phone=String(client?.phone||invoice.phone||"").replace(/\D/g,"");
-  if(!phone){alert("This client does not have a valid WhatsApp/mobile number. Please update the client record.");return;}
+  const financeClients=Array.isArray(window.ADFinanceClientDirectory)?window.ADFinanceClientDirectory:[];
+  const client=state.clients.find(c=>c.name===invoice.client||c.id===invoice.clientId)
+    ||financeClients.map(c=>({id:String(c.client_id||""),name:String(c.client_name||""),phone:String(c.client_phone||"")}))
+      .find(c=>c.name===invoice.client||c.id===String(invoice.clientId||""));
+  let phone=String(client?.phone||invoice.phone||"").trim().replace(/\D/g,"");
+  if(phone.startsWith("00"))phone=phone.slice(2);
+  if(phone.length===10&&/^[6-9]/.test(phone))phone="91"+phone;
+  if(!phone||phone.length<10||phone.length>15){alert("No valid WhatsApp/mobile number is available for "+String(invoice.client||"this client")+". Please check the phone number in the client record, including the country code if required.");return;}
   const text=`Invoice ${invoice.id}\nClient: ${invoice.client}\nCase: ${invoice.case||"—"}\nAdvocate Fee: ₹${Number(invoice.advocateFee||0).toLocaleString("en-IN")}\nClerk Fee: ₹${Number(invoice.clerkFee||0).toLocaleString("en-IN")}\nCourt Fees: ₹${Number(invoice.courtFees||0).toLocaleString("en-IN")}\nOther Charges: ₹${Number(invoice.otherCharges||0).toLocaleString("en-IN")}\nTotal: ₹${Number(invoice.amount||0).toLocaleString("en-IN")}\nPaid: ₹${Number(invoice.paid||0).toLocaleString("en-IN")}\nOutstanding: ₹${Math.max(0,Number(invoice.amount||0)-Number(invoice.paid||0)).toLocaleString("en-IN")}`;
   window.open("https://wa.me/"+phone+"?text="+encodeURIComponent(text),"_blank","noopener,noreferrer");
 };
