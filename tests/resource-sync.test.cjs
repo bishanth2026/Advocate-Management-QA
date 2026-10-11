@@ -18,12 +18,16 @@ test("buildInitialState maps every supported type and preserves custom payload f
     { resource_type: "client", resource_id: "CL-1", payload: { id: "CL-1", name: "Example" } },
     { resource_type: "transaction", resource_id: "TX-1", payload: { id: "TX-1", amount: 100 } },
     { resource_type: "case_party", resource_id: "CP-1", payload: { id: "CP-1", role: "Petitioner" } },
+    { resource_type: "court", resource_id: "court:district%20court", payload: { id: "court:district%20court", name: "District Court" } },
   ];
   const state = buildInitialState(rows);
   assert.equal(state.cases[0].custom.keep, true);
   assert.equal(state.clients[0].id, "CL-1");
   assert.equal(state.transactions[0].id, "TX-1");
   assert.equal(state.caseParties[0].id, "CP-1");
+  assert.deepEqual(state.courts, ["District Court"]);
+  const desired = buildDesiredRows(state);
+  assert.equal(desired.get("court::court:district%20court").payload.name, "District Court");
   assert.deepEqual(state.hearings, []);
 });
 
