@@ -161,6 +161,30 @@ async function run() {
           await page.getByRole("button",{name:"Cancel",exact:true}).click();
           await page.getByText("Create Invoice",{exact:true}).waitFor({state:"hidden",timeout:10000});
           assert.equal(pageErrors.length,0,"Accountant invoice open/close produced browser errors: "+pageErrors.join(" | "));
+          const waTarget=await page.evaluate(()=>{
+            const clients=Array.isArray(window.ADFinanceClientDirectory)?window.ADFinanceClientDirectory:[];
+            const rows=Array.from(document.querySelectorAll(".finance-main-table tbody tr"));
+            for(const client of clients){
+              const name=String(client.client_name||"").trim(), phone=String(client.client_phone||"").replace(/\\D/g,"");
+              if(!name||phone.length<10||phone.length>15)continue;
+              const row=rows.find(r=>(r.cells[1]?.textContent||"").trim()===name);
+              if(row)return {name,phone};
+            }
+            return null;
+          });
+          if(waTarget){
+            const row=page.locator(".finance-main-table tbody tr").filter({has:page.locator("td").filter({hasText:waTarget.name})}).first();
+            const popupPromise=page.waitForEvent("popup",{timeout:10000});
+            await page.locator(".finance-main-table tbody tr").filter({hasText:waTarget.name}).first().getByRole("button",{name:"WhatsApp",exact:true}).click();
+            const popup=await popupPromise;
+            await popup.waitForLoadState("domcontentloaded").catch(()=>{});
+            const waUrl=popup.url();
+            assert.match(waUrl,/^https:\\/\\/wa\\.me\\//,"WhatsApp action should open wa.me.");
+            const normalized=waTarget.phone.length===10&&/^[6-9]/.test(waTarget.phone)?"91"+waTarget.phone:waTarget.phone;
+            assert.ok(waUrl.includes("/"+normalized+"?text="),"WhatsApp URL should use the client's saved phone number.");
+            await popup.close();
+            log("PASS","accountant WhatsApp: opens wa.me with the matching finance-directory phone number; no message is sent automatically.");
+          }
           log("PASS","accountant invoice: client/case dropdowns populated and Cancel closes the modal.");
         }
         log("PASS", actor.role + ": sign-in, per-resource bootstrap, role-scoped fixture visibility, 11 navigation pages, no uncaught JS errors.");
