@@ -69,6 +69,31 @@ function buildMigrationAudit(rows) {
       continue;
     }
 
+    const casesByClient = new Map();
+    const caseIdsByReference = new Map();
+    const caseItems = Array.isArray(snapshot.payload.cases) ? snapshot.payload.cases : [];
+    for (const caseItem of caseItems) {
+      if (!asObject(caseItem) || caseItem.id == null) continue;
+      const caseId = String(caseItem.id).trim();
+      for (const ref of [caseId, caseItem.number, caseItem.caseNumber, caseItem.case_number]) {
+        if (ref == null || String(ref).trim() === "") continue;
+        const key = String(ref).trim();
+        const refs = caseIdsByReference.get(key) || [];
+        if (!refs.includes(caseId)) refs.push(caseId);
+        caseIdsByReference.set(key, refs);
+      }
+      const clientRefs = [
+        caseItem.clientId,
+        ...(Array.isArray(caseItem.clientIds) ? caseItem.clientIds : []),
+        ...(Array.isArray(caseItem.clients) ? caseItem.clients.map((client) => asObject(client) ? (client.id ?? client.clientId ?? client.client_id) : client) : []),
+      ].filter((ref) => ref != null && String(ref).trim() !== "").map((ref) => String(ref).trim());
+      for (const clientId of clientRefs) {
+        const links = casesByClient.get(clientId) || [];
+        if (!links.includes(caseId)) links.push(caseId);
+        casesByClient.set(clientId, links);
+      }
+    }
+
     const collectionReport = {};
     const keys = Object.keys(snapshot.payload);
     for (const key of keys) {
@@ -109,8 +134,28 @@ function buildMigrationAudit(rows) {
           continue;
         }
         seenResources.add(uniqueKey);
-        const caseIdValue = type === "case" ? resourceId : (item.case_id ?? item.caseId ?? item.case_id_text ?? null);
-        const caseId = caseIdValue == null || String(caseIdValue).trim() === "" ? null : String(caseIdValue).trim();
+        let caseId = null;
+        if (type !== "case") {
+          const directCaseRef = item.case_id ?? item.caseId ?? item.case_id_text ?? null;
+          const displayCaseRef = item.case ?? item.caseNumber ?? item.case_number ?? null;
+          const candidate = directCaseRef ?? displayCaseRef;
+          if (candidate != null && String(candidate).trim() !== "") {
+            const ref = String(candidate).trim();
+            const resolved = caseIdsByReference.get(ref) || [];
+            caseId = resolved.length === 1 ? resolved[0] : ref;
+            if (resolved.length > 1) {
+              report.blockers.push({ workspaceId, collection: key, resourceId, reason: "Case reference resolves to multiple cases; manual review required." });
+              continue;
+            }
+          } else if (type === "client") {
+            const linkedCases = casesByClient.get(resourceId) || [];
+            if (linkedCases.length === 1) caseId = linkedCases[0];
+            else if (linkedCases.length > 1) {
+              report.blockers.push({ workspaceId, collection: key, resourceId, reason: "Client is linked from multiple cases but target schema supports only one case_id; manual review required." });
+              continue;
+            }
+          }
+        }
         if (caseId && caseId.length > 200) {
           report.blockers.push({ workspaceId, collection: key, resourceId, reason: "case_id exceeds the target table's 200-character limit." });
           continue;
@@ -174,6 +219,7 @@ function runSelfTest() {
   if (result.report.workspaceSnapshots !== 2) throw new Error("Self-test failed: snapshot count.");
   if (result.report.planEntryCount !== 3) throw new Error("Self-test failed: expected three plan entries.");
   if (caseA?.payload?.extraCustomField?.keep !== true) throw new Error("Self-test failed: unknown object fields were not preserved.");
+  if (caseA?.case_id !== null) throw new Error("Self-test failed: case rows should not point case_id to themselves.");
   if (clientA?.case_id !== "CASE-1" || clientA?.payload?.custom !== "preserve") throw new Error("Self-test failed: relation/custom field preservation.");
   if (!result.report.blockers.some((item) => item.reason?.includes("stable ID"))) throw new Error("Self-test failed: missing ID was not blocked.");
   if (!result.report.unknownTopLevelKeys.some((item) => item.key === "customSettings")) throw new Error("Self-test failed: unknown top-level key was not reported.");
