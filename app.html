@@ -39,10 +39,18 @@
      if(!window.ADResourceSync||typeof window.ADResourceSync.create!=="function")throw new Error('Per-resource cloud sync adapter failed to load.');
      const resourceSync=window.ADResourceSync.create(client,auth,{onStatus:setSyncStatus});
      window.ADCloudInitialState=await resourceSync.load();
+window.ADFinanceClientDirectory=[];window.ADFinanceCaseDirectory=[];
+if(auth.role==='accountant'){
+const rr=await Promise.all([client.rpc('finance_client_directory',{p_workspace_id:auth.workspaceId}),client.rpc('finance_case_directory',{p_workspace_id:auth.workspaceId})]);
+if(rr[0].error)throw rr[0].error;if(rr[1].error)throw rr[1].error;
+window.ADFinanceClientDirectory=Array.isArray(rr[0].data)?rr[0].data:[];
+const names=new Map(window.ADFinanceClientDirectory.map(x=>[String(x.client_id),String(x.client_name||'')]));
+window.ADFinanceCaseDirectory=(Array.isArray(rr[1].data)?rr[1].data:[]).map(x=>({id:String(x.case_id||''),number:String(x.case_number||''),title:String(x.case_title||''),clientId:String(x.client_id||''),client:String(x.client_name||names.get(String(x.client_id||''))||'')}));}
+
      window.ADCloudSync=resourceSync;
    }
    window.ADCloudVersion=null;
-   const scripts=['app-core-fixes.js?v=20261003-02','app.js?v=20261011-accountant-nav-fix','user-roles.js?v=20261010-01','hearing-filter.js?v=20260927-2','cases.js?v=20261001-01','calendar.js?v=20261001-01','task.js?v=20261001-02','mobile-keyboard.js?v=20260926-1','finance.js?v=20261003-05','client-management.js?v=20260926-1','user-menu.js?v=20261010-role-label'];
+   const scripts=['app-core-fixes.js?v=20261003-02','app.js?v=20261011-accountant-nav-fix','user-roles.js?v=20261010-01','hearing-filter.js?v=20260927-2','cases.js?v=20261001-01','calendar.js?v=20261001-01','task.js?v=20261001-02','mobile-keyboard.js?v=20260926-1','finance.js?v=20261011-finance-directory-fix','client-management.js?v=20260926-1','user-menu.js?v=20261010-role-label'];
    for(const src of scripts)await new Promise(function(resolve,reject){const s=document.createElement('script');s.src=src;s.onload=resolve;s.onerror=function(){reject(new Error('Unable to load '+src))};document.body.appendChild(s)});
    gate.remove();
    if(typeof window.__advocateDeskRestoreRoute==='function')window.__advocateDeskRestoreRoute();else if(typeof window.navigate==='function')window.navigate('dashboard');
