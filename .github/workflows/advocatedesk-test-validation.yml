@@ -28,6 +28,8 @@ jobs:
         run: node --check app.js
       - name: Check resource-store module syntax
         run: node --check resource-store.js
+      - name: Check real-browser regression test syntax
+        run: node --check tests/real-browser-regression.cjs
       - name: Run resource-store unit tests
         run: node tests/resource-store.test.js
       - name: Run resource-policy draft static contract tests
