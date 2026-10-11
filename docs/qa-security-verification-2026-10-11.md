@@ -42,6 +42,13 @@ Post-policy database role simulation:
 
 The synthetic accountant invoice probe ran in a transaction and was rolled back. After the policy was installed, the accountant could still read the synthetic finance invoice, could not read case resources, and could not read the legacy snapshot. The anonymous query failed with permission denied on `practice_records`, as expected. The non-member saw no snapshot or resource rows.
 
+Additional post-policy checks for the accountant confirmed:
+- SELECT: 0 legacy snapshot rows.
+- UPDATE: 0 affected legacy snapshot rows.
+- DELETE: 0 affected legacy snapshot rows.
+- INSERT of a replacement `workspace_state` row: rejected by `practice_records_workspace_state_admin_only` with SQLSTATE `42501`.
+- Anonymous SELECT is denied by table grants before row access.
+
 The policy is now active in QA only. It is also recorded in `supabase/migrations/20261011012626_restrict_legacy_workspace_state_to_admins_qa.sql`. Production remains untouched.
 
 ## Application changes deployed to isolated QA
