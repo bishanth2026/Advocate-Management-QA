@@ -173,16 +173,13 @@ async function run() {
             return null;
           });
           if(waTarget){
-            const row=page.locator(".finance-main-table tbody tr").filter({has:page.locator("td").filter({hasText:waTarget.name})}).first();
-            const popupPromise=page.waitForEvent("popup",{timeout:10000});
+            await page.evaluate(()=>{window.__qaOpenedWhatsAppUrl=null;window.open=(url)=>{window.__qaOpenedWhatsAppUrl=String(url);return null;};});
             await page.locator(".finance-main-table tbody tr").filter({hasText:waTarget.name}).first().getByRole("button",{name:"WhatsApp",exact:true}).click();
-            const popup=await popupPromise;
-            await popup.waitForLoadState("domcontentloaded").catch(()=>{});
-            const waUrl=popup.url();
+            const waUrl=await page.evaluate(()=>window.__qaOpenedWhatsAppUrl);
+            assert.ok(waUrl,"WhatsApp action should attempt to open a URL.");
             assert.match(waUrl,/^https:\\/\\/wa\\.me\\//,"WhatsApp action should open wa.me.");
             const normalized=waTarget.phone.length===10&&/^[6-9]/.test(waTarget.phone)?"91"+waTarget.phone:waTarget.phone;
             assert.ok(waUrl.includes("/"+normalized+"?text="),"WhatsApp URL should use the client's saved phone number.");
-            await popup.close();
             log("PASS","accountant WhatsApp: opens wa.me with the matching finance-directory phone number; no message is sent automatically.");
           }
           log("PASS","accountant invoice: client/case dropdowns populated and Cancel closes the modal.");
