@@ -52,6 +52,12 @@ The policy is now active in QA only. It is also recorded in `supabase/migrations
 - Mock-client tests verify that only `practice_resources` is used and that a row hidden by RLS is not deleted.
 - GitHub Actions per-resource sync tests passed on the final code commit. The staging branch validation workflow and isolated GitHub Pages deployment both completed successfully after PR #13 was merged.
 
+## Remaining Supabase Security Advisor findings
+
+- `assign_case_to_member` and `unassign_case_from_member` remain SECURITY DEFINER functions and are still reported by the advisor. Their definitions were reviewed: they require an authenticated caller, verify the caller is an Admin in the selected active workspace, validate case/target membership, and write an audit log. Simulated direct calls by a non-admin advocate were denied with SQLSTATE `42501`; an admin assignment call succeeded inside a transaction that was rolled back.
+- The functions are intentionally SECURITY DEFINER at present because `authenticated` has SELECT-only grants on `case_assignments` and `workspace_audit_log`; switching them to SECURITY INVOKER without first designing and testing admin-only write policies/grants would break assignment operations. Do not blindly revoke EXECUTE. A separate hardening change should either add narrowly scoped admin-only table policies/grants and convert to invoker, or route assignment through a trusted server/Edge Function.
+- Supabase Auth also reports leaked-password protection disabled. This project setting was not changed by the database migration and requires a separate Auth configuration change.
+
 ## Release gate still open
 
 1. Complete browser-session regression tests on the QA site for admin, accountant, assigned advocate, unassigned advocate, non-member, and anonymous actors.
