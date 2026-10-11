@@ -1,0 +1,81 @@
+name: Real browser role and module regression
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - staging/advocatedesk-test
+    paths:
+      - "tests/real-browser-regression.cjs"
+      - ".github/workflows/real-browser-regression.yml"
+      - "app.html"
+      - "resource-sync.js"
+      - "auth.js"
+      - "app.js"
+      - "cases.js"
+      - "calendar.js"
+      - "client-management.js"
+      - "finance.js"
+      - "task.js"
+
+permissions:
+  contents: read
+
+jobs:
+  browser-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out QA staging
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Check whether disposable QA credentials are configured
+        id: credentials
+        env:
+          QA_ADMIN_PASSWORD: ${{ secrets.QA_ADMIN_PASSWORD }}
+          QA_ASSIGNED_ADVOCATE_PASSWORD: ${{ secrets.QA_ASSIGNED_ADVOCATE_PASSWORD }}
+          QA_UNASSIGNED_ADVOCATE_PASSWORD: ${{ secrets.QA_UNASSIGNED_ADVOCATE_PASSWORD }}
+          QA_ACCOUNTANT_PASSWORD: ${{ secrets.QA_ACCOUNTANT_PASSWORD }}
+          QA_NONMEMBER_PASSWORD: ${{ secrets.QA_NONMEMBER_PASSWORD }}
+        shell: bash
+        run: |
+          missing=()
+          for name in QA_ADMIN_PASSWORD QA_ASSIGNED_ADVOCATE_PASSWORD QA_UNASSIGNED_ADVOCATE_PASSWORD QA_ACCOUNTANT_PASSWORD QA_NONMEMBER_PASSWORD; do
+            if [ -z "${!name}" ]; then missing+=("$name"); fi
+          done
+          if [ "${#missing[@]}" -eq 0 ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+            echo "All disposable QA role credentials are configured. Values are never printed."
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            {
+              echo "## Real-browser regression blocked"
+              echo
+              echo "No passwords were exposed. Add the following **disposable QA-only account passwords** under repository Settings → Secrets and variables → Actions, then rerun this workflow:"
+              for name in "${missing[@]}"; do echo "- `$name`"; done
+              echo
+              echo "Do not use production credentials or paste passwords into issues, commits, or chat."
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "::warning::Browser suite skipped because one or more disposable QA credentials are not configured."
+          fi
+      - name: Install Playwright
+        if: steps.credentials.outputs.ready == 'true'
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+      - name: Run real browser role and module tests
+        if: steps.credentials.outputs.ready == 'true'
+        env:
+          QA_BASE_URL: https://bishanth2026.github.io/Advocate-Management-QA
+          QA_ADMIN_PASSWORD: ${{ secrets.QA_ADMIN_PASSWORD }}
+          QA_ASSIGNED_ADVOCATE_PASSWORD: ${{ secrets.QA_ASSIGNED_ADVOCATE_PASSWORD }}
+          QA_UNASSIGNED_ADVOCATE_PASSWORD: ${{ secrets.QA_UNASSIGNED_ADVOCATE_PASSWORD }}
+          QA_ACCOUNTANT_PASSWORD: ${{ secrets.QA_ACCOUNTANT_PASSWORD }}
+          QA_NONMEMBER_PASSWORD: ${{ secrets.QA_NONMEMBER_PASSWORD }}
+        run: node tests/real-browser-regression.cjs
+      - name: Report result when credentials are unavailable
+        if: steps.credentials.outputs.ready != 'true'
+        run: echo "Browser automation was not run because disposable QA account secrets are missing. This is not a browser-test pass."
