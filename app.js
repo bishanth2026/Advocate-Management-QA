@@ -749,6 +749,13 @@ if(auth.role==="super_admin") pages["central-control"]=function(){
 };
 function navigate(page,fromHistory){
   if(!pages[page]) return;
+  // Accountants are restricted to the Finance module. Enforce this at the
+  // router as well as in the navigation UI so a manually edited URL/hash
+  // cannot open case, client, document, task, hearing or report screens.
+  if(auth.role==="accountant" && page!=="finance"){
+    page="finance";
+    try{if(location.hash!=="#finance")history.replaceState(null,"","#finance")}catch(e){}
+  }
   if(page!=="case-details") window.case360ActiveCaseId=null;
   // Persist the active SPA route so refresh restores the same module. Normal
   // module clicks create browser history entries; Back/Forward replays them.
@@ -873,6 +880,20 @@ async function provisionPlatformUser(action){
 function addSuperAdminDemo(){provisionPlatformUser("invite_super_admin");}
 function addAdminDemo(){provisionPlatformUser("invite_admin");}
 document.querySelectorAll(".nav-item").forEach(b=>b.addEventListener("click",()=>navigate(b.dataset.page)));
+// Keep the Accountant navigation minimal. Finance is the only permitted
+// module; routing and record-action guards above enforce the same boundary.
+if(auth.role==="accountant"){
+  document.querySelectorAll(".nav-item").forEach(b=>{
+    const allowed=b.dataset.page==="finance";
+    b.hidden=!allowed;
+    b.setAttribute("aria-hidden",allowed?"false":"true");
+    if(!allowed)b.tabIndex=-1;
+  });
+  document.querySelectorAll("[onclick*='openModal']").forEach(b=>{
+    const call=String(b.getAttribute("onclick")||"");
+    if(!call.includes("invoice")&&!call.includes("payment")) b.hidden=true;
+  });
+}
 const mobileMenu=document.getElementById("mobileMenu");
 const mobileOverlay=document.getElementById("mobileOverlay");
 function setMobileMenu(open){
@@ -891,6 +912,12 @@ document.getElementById("globalSearch").addEventListener("keydown",e=>{if(e.key=
 
 function filterTable(id,q){q=q.toLowerCase();document.querySelectorAll(`#${id} tbody tr`).forEach(r=>r.style.display=r.innerText.toLowerCase().includes(q)?"":"none")}
 function openModal(type){
+ // Accountants may manage invoices and payments only; they cannot create
+ // practice records through quick actions or direct JavaScript calls.
+ if(auth.role==="accountant" && !["invoice","payment"].includes(type)){
+   alert("Access denied: Accountant accounts can only manage Finance records.");
+   return;
+ }
  const titles={case:"Create New Case",client:"Create New Client",hearing:"Schedule Hearing",task:"Create Task",document:"Add Document",discussion:"Add Client Discussion",meeting:"Schedule Client Meeting",invoice:"Create Invoice",payment:"Record Client Payment"};
  document.getElementById("modalTitle").textContent=titles[type];
  const forms={
@@ -970,6 +997,10 @@ function openEditModal(type,index){
 }
 function esc(v){return String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 function updateRecord(type,index){
+ if(auth.role==="accountant" && !["invoice"].includes(type)){
+   alert("Access denied: Accountant accounts can only update Finance records.");
+   return;
+ }
  const key=type==='case'?'cases':type==='client'?'clients':type==='hearing'?'hearings':type==='task'?'tasks':type==='discussion'?'discussions':type==='meeting'?'meetings':'invoices';
  const item=state[key][index];
  if(!item) return;
@@ -1035,6 +1066,10 @@ function updateRecord(type,index){
  if(type==='hearing'){ if(!Array.isArray(state.hearings)||!state.hearings[index]){alert('Unable to save this hearing because the hearing record could not be found.');return;} window.hearingFilter='all'; } save(); closeModal(); navigate(type==='case'?'cases':type==='client'?'clients':type==='hearing'?'hearings':type==='discussion'||type==='meeting'?'client-management':'tasks');
 }
 function deleteRecord(type,index){
+ if(auth.role==="accountant" && type!=="invoice"){
+   alert("Access denied: Accountant accounts can only manage Finance records.");
+   return;
+ }
  const collections={case:"cases",client:"clients",hearing:"hearings",task:"tasks",discussion:"discussions",meeting:"meetings",invoice:"invoices"};
  const key=collections[type]; if(!key) return;
  const item=state[key][index]; if(!item) return;
@@ -1154,6 +1189,10 @@ function toggleCivilCategory(){const t=document.getElementById("f6");const w=doc
 window.toggleQuickCaseClient=function(){const p=document.getElementById("quickCaseClient");if(p)p.style.display=p.style.display==="none"?"block":"none";};
 window.quickAddCaseClient=function(){const name=(document.getElementById("quickClientName")?.value||"").trim();if(!name){alert("Please enter the client name.");return;}const phone=(document.getElementById("quickClientPhone")?.value||"").trim();const email=(document.getElementById("quickClientEmail")?.value||"").trim();const role=document.getElementById("quickClientRole")?.value||"Petitioner";const duplicate=state.clients.find(x=>String(x.name||"").trim().toLowerCase()===name.toLowerCase()&&(phone?String(x.phone||"").trim()===phone:true));if(duplicate){const sel=document.getElementById("f2");const opt=Array.from(sel.options).find(o=>o.value===duplicate.id);if(opt)opt.selected=true;alert("This client already exists and has been selected.");document.getElementById("quickCaseClient").style.display="none";return;}const id="CL-"+String(Date.now()).slice(-8);const client={id,name,phone:phone||"—",email:email||"—",role,cases:0,status:"Active"};state.clients.unshift(client);const sel=document.getElementById("f2");const opt=document.createElement("option");opt.value=id;opt.textContent=name+" ("+id+") — "+role;opt.selected=true;sel.insertBefore(opt,sel.firstChild);sel.dispatchEvent(new Event("change",{bubbles:true}));save();document.getElementById("quickCaseClient").style.display="none";document.getElementById("quickClientName").value="";document.getElementById("quickClientPhone").value="";document.getElementById("quickClientEmail").value="";};
 function addRecord(type){
+ if(auth.role==="accountant" && !["invoice","payment"].includes(type)){
+   alert("Access denied: Accountant accounts can only manage Finance records.");
+   return;
+ }
  if(type==="case"){
   const selectedClientIds=Array.from(document.getElementById("f2").selectedOptions).map(o=>o.value).filter(Boolean);
   const selectedClients=state.clients.filter(c=>selectedClientIds.includes(c.id));
