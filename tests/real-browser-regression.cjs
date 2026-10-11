@@ -140,6 +140,24 @@ async function run() {
           const caseOptions=await page.locator("#modalBody #f2 option").count();
           assert.ok(clientOptions>0,"Accountant invoice form should offer finance-authorized client choices.");
           assert.ok(caseOptions>0,"Accountant invoice form should offer finance-authorized case choices.");
+          const linkedCase=await page.evaluate(()=>{
+            const cases=Array.isArray(window.ADFinanceCaseDirectory)?window.ADFinanceCaseDirectory:[];
+            const clients=Array.isArray(window.ADFinanceClientDirectory)?window.ADFinanceClientDirectory:[];
+            const nameOf=c=>String(c.client||c.client_name||"").trim();
+            const idOf=c=>String(c.clientId||c.client_id||"").trim();
+            const c=cases.find(x=>(idOf(x)&&clients.some(y=>String(y.client_id)===idOf(x)))||(nameOf(x)&&clients.some(y=>String(y.client_name||"").trim()===nameOf(x))));
+            if(!c)return null;
+            return {label:[String(c.number||c.caseNumber||c.case_id||c.id||""),String(c.title||"")].filter(Boolean).join(" — "),clientName:nameOf(c)};
+          });
+          if(linkedCase){
+            const caseInput=page.locator("#modalBody .finance-case-autocomplete input").first();
+            await caseInput.fill(linkedCase.label);
+            await page.getByRole("option").first().click();
+            await page.waitForTimeout(200);
+            const selectedClient=await page.locator("#modalBody #f1").inputValue();
+            assert.ok(selectedClient,"Selecting a linked case should prefill the invoice client.");
+            if(linkedCase.clientName)assert.equal(selectedClient,linkedCase.clientName,"Invoice client should match the selected case's linked client.");
+          }
           await page.getByRole("button",{name:"Cancel",exact:true}).click();
           await page.getByText("Create Invoice",{exact:true}).waitFor({state:"hidden",timeout:10000});
           assert.equal(pageErrors.length,0,"Accountant invoice open/close produced browser errors: "+pageErrors.join(" | "));
