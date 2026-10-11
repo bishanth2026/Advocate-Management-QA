@@ -25,29 +25,39 @@ Tests used database transactions with `SET LOCAL ROLE authenticated` and the rel
 
 The synthetic accountant probe ran inside a transaction and was rolled back. It confirmed the accountant could read a finance invoice resource and could not read case resources, while still seeing the whole legacy snapshot. This isolates the bypass: the resource policies scope data correctly, but the legacy snapshot policy defeats those restrictions.
 
-## Draft snapshot-policy validation
+## Snapshot-policy validation and QA deployment
 
-A restrictive policy requiring `private.has_workspace_permission(workspace_id, 'users.manage')` for the exact `other/workspace_state` record was created and tested inside a transaction, then rolled back.
+The restrictive policy requiring `private.has_workspace_permission(workspace_id, 'users.manage')` for the exact `other/workspace_state` record was first tested inside a transaction and rolled back. After the new application bootstrap was deployed to the isolated QA site, the policy was applied persistently to the QA database via migration `20261011012626_restrict_legacy_workspace_state_to_admins_qa`.
 
-- Accountant: snapshot rows visible = 0.
-- Admin: snapshot rows visible = 1.
-- The policy is only a draft under `supabase/drafts/`; it is not installed in the QA database.
-- It must be applied only after the new application bootstrap is deployed and real-session tests confirm that the app no longer depends on the legacy snapshot.
+Post-policy database role simulation:
 
-## Application changes in draft PR #13
+| Actor | Snapshot rows visible | Resource rows visible |
+|---|---:|---:|
+| Workspace admin | 1 | 7 |
+| Accountant | 0 | 0 existing rows; synthetic finance-only probe was visible |
+| Advocate A | 0 | 2 (assigned case + linked task) |
+| Advocate B | 0 | 2 (their assigned case + linked task) |
+| Non-member | 0 | 0 |
+| Anonymous | No SELECT grant; request denied | No protected rows |
+
+The synthetic accountant invoice probe ran in a transaction and was rolled back. After the policy was installed, the accountant could still read the synthetic finance invoice, could not read case resources, and could not read the legacy snapshot. The anonymous query failed with permission denied on `practice_records`, as expected. The non-member saw no snapshot or resource rows.
+
+The policy is now active in QA only. It is also recorded in `supabase/migrations/20261011012626_restrict_legacy_workspace_state_to_admins_qa.sql`. Production remains untouched.
+
+## Application changes deployed to isolated QA
 
 - `app.html` no longer requests `practice_records.workspace_state`.
 - `resource-sync.js` loads only rows returned by `practice_resources` RLS and writes per-record inserts/updates/deletes with optimistic concurrency.
 - The adapter rejects unknown state properties, missing IDs, duplicate IDs, and ambiguous case references. It preserves database case links when a legacy payload omits the relation.
 - Mock-client tests verify that only `practice_resources` is used and that a row hidden by RLS is not deleted.
-- GitHub Actions per-resource sync tests passed on commit `575712dbf1948132b70e04517c85ce562638510b`; the latest policy-draft commit's check should also be confirmed before promotion.
+- GitHub Actions per-resource sync tests passed on the final code commit. The staging branch validation workflow and isolated GitHub Pages deployment both completed successfully after PR #13 was merged.
 
 ## Release gate still open
 
 1. Complete browser-session regression tests on the QA site for admin, accountant, assigned advocate, unassigned advocate, non-member, and anonymous actors.
 2. Verify create/edit/delete operations for every module, including finance, cases, clients, hearings, tasks, calendar, courts, transactions, meetings, discussions, and case parties.
 3. Verify conflict handling, refresh persistence, and that no role can recover the full snapshot through direct REST calls.
-4. Only then apply the restrictive snapshot policy in QA and repeat direct REST/RPC tests.
+4. The restrictive snapshot policy is now active in QA; continue direct REST/RPC tests and browser-session regression checks.
 5. Do not promote to production until all QA tests pass and rollback is verified.
 
-No policy change was left installed by the transactional policy test. Production remains untouched.
+The transactional policy test was rolled back; the separate QA migration was then applied and verified. Production remains untouched.
