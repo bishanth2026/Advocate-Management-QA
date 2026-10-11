@@ -102,10 +102,11 @@
     }
     if (resourceType === "client") {
       const matches = indexes.byClient.get(String(payload.id)) || [];
-      if (matches.length > 1) {
-        throw new Error("Client " + payload.id + " is linked to multiple cases; the current case_id model cannot represent this safely.");
-      }
       if (matches.length === 1) return matches[0];
+      // Existing clients may legitimately be related to multiple cases. The
+      // existing row's case_id is preserved during sync; a new ambiguous client
+      // is blocked below because the current schema stores only one case_id.
+      if (matches.length > 1) return null;
     }
     return null;
   }
@@ -184,15 +185,25 @@
       // Only rows returned by RLS are in baseline. Omitted/unauthorized rows are
       // never inferred as deletions because they were never placed in baseline.
       const changes = [];
+      const caseIndexes = indexCases(snapshot);
       for (const [key, next] of desired) {
         const previous = baseline.get(key);
         if (!previous) {
+          if (next.resource_type === "client" && (caseIndexes.byClient.get(next.resource_id) || []).length > 1) {
+            throw new Error("New client " + next.resource_id + " is linked to multiple cases; manual relationship handling is required.");
+          }
           changes.push({ kind: "insert", key, next });
-        } else if (
-          stableStringify(previous.payload) !== stableStringify(next.payload) ||
-          (previous.case_id ?? null) !== (next.case_id ?? null)
-        ) {
-          changes.push({ kind: "update", key, next, previous });
+        } else {
+          // Do not erase a valid database case link merely because a legacy
+          // payload omits the relationship field or the linked case is not in
+          // the current authorized result set.
+          if (next.case_id == null && previous.case_id != null) next.case_id = previous.case_id;
+          if (
+            stableStringify(previous.payload) !== stableStringify(next.payload) ||
+            (previous.case_id ?? null) !== (next.case_id ?? null)
+          ) {
+            changes.push({ kind: "update", key, next, previous });
+          }
         }
       }
       const desiredKeys = new Set(desired.keys());
