@@ -12,6 +12,7 @@
  * legal/client data. Store it securely and do not commit exports or plans.
  */
 import fs from "node:fs";
+import { createHash } from "node:crypto";
 
 const COLLECTION_TYPES = Object.freeze({
   cases: "case",
@@ -28,8 +29,6 @@ const COLLECTION_TYPES = Object.freeze({
   caseParties: "case_party",
 });
 
-const ALLOWED_TYPES = new Set(Object.values(COLLECTION_TYPES));
-const own = (value, key) => Object.prototype.hasOwnProperty.call(value, key);
 const asObject = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
 const stableStringify = (value) => {
   if (Array.isArray(value)) return "[" + value.map(stableStringify).join(",") + "]";
@@ -135,7 +134,7 @@ function buildMigrationAudit(rows) {
       updatedAt: snapshot.updated_at ?? null,
       sourcePayloadKeys: keys.sort(),
       collectionReport,
-      normalizedPayload: stableStringify(snapshot.payload),
+      normalizedPayloadSha256: createHash("sha256").update(stableStringify(snapshot.payload)).digest("hex"),
     });
   }
 
@@ -146,7 +145,7 @@ function buildMigrationAudit(rows) {
   if (rowsWithoutSnapshot.length) {
     report.warnings.push({ count: rowsWithoutSnapshot.length, reason: "Other practice_records exist; this tool intentionally leaves them unchanged." });
   }
-  report.readiness = report.blockers.length === 0 && report.unsupportedCollectionKeys.length === 0 ? "review-required" : "blocked";
+  report.readiness = report.blockers.length === 0 && report.unknownTopLevelKeys.length === 0 ? "review-required" : "blocked";
   report.notes = [
     "This report is not permission to write data or switch application reads.",
     "Unknown top-level keys are intentionally not discarded; they require an explicit metadata strategy.",
