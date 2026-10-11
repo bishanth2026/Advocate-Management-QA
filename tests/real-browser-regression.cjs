@@ -97,13 +97,13 @@ async function run() {
     const legacyRequests = [];
     publicPage.on("pageerror", (error) => publicErrors.push(error.message));
     publicPage.on("request", (request) => {
-      if (/\\/rest\\/v1\\/practice_records(?:\\?|$)/i.test(request.url())) legacyRequests.push(request.url());
+      if (/\/rest\/v1\/practice_records(?:\?|$)/i.test(request.url())) legacyRequests.push(request.url());
     });
     try {
       await publicPage.goto(BASE_URL + "/login.html", { waitUntil: "domcontentloaded", timeout: 30000 });
       assert.ok((await publicPage.locator('a[href="member-login.html"]').count()) > 0, "Portal selection should offer Team Member Login.");
       await publicPage.goto(BASE_URL + "/app.html#dashboard", { waitUntil: "domcontentloaded", timeout: 30000 });
-      await publicPage.waitForURL(/login\\.html(?:[?#].*)?$/, { timeout: 20000 });
+      await publicPage.waitForURL(/login\.html(?:[?#].*)?$/, { timeout: 20000 });
       assert.deepEqual(legacyRequests, [], "Anonymous bootstrap must not query the legacy workspace snapshot.");
       assert.deepEqual(publicErrors, [], "Anonymous page flow must not produce uncaught browser errors.");
       log("PASS", "anonymous Chromium smoke: portal page renders, protected app redirects to login, no legacy snapshot request.");
