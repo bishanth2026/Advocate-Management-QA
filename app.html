@@ -23,62 +23,25 @@
      if(platformResult.data&&platformResult.data.error)throw new Error(platformResult.data.error);
      window.ADPlatformAccounts=Array.isArray(platformResult.data.users)?platformResult.data.users:[];
    }
-   // Platform Super Admins must not read a law-office workspace state.
-   const result=auth.role==="super_admin"?{data:null,error:null}:await client.from('practice_records').select('id,payload,updated_at').eq('workspace_id',auth.workspaceId).eq('record_type','other').eq('record_key','workspace_state').maybeSingle();
-   if(result.error)throw result.error;
-   const empty={cases:[],clients:[],hearings:[],tasks:[],discussions:[],meetings:[],payments:[],invoices:[]};
-   window.ADCloudInitialState=result.data&&result.data.payload&&typeof result.data.payload==='object'?result.data.payload:empty;
-   window.ADCloudVersion=result.data?{id:result.data.id,updated_at:result.data.updated_at}:null;
+   // Never load or save the shared workspace_state snapshot. The per-resource
+   // table applies row-level role/case authorization before records reach the UI.
    const syncStatus=document.getElementById('cloudSyncStatus');
-   let saveQueue=Promise.resolve(),saveVersion=0;
    function setSyncStatus(label,color){
      if(!syncStatus)return;
      syncStatus.textContent=label;syncStatus.style.color=color;
      syncStatus.setAttribute('aria-label','Cloud sync status: '+label);
    }
-   setSyncStatus('Cloud: Synced','#15803d');
-   window.ADCloudSync={
-     save:function(state){
-       const snapshot=JSON.parse(JSON.stringify(state)),version=++saveVersion;
-       setSyncStatus('Cloud: Saving…','#a16207');
-       const request=saveQueue.catch(function(){return null;}).then(async function(){
-         const previous=window.ADCloudVersion;
-         let response;
-         if(previous&&previous.id&&previous.updated_at){
-           const nextUpdatedAt=new Date().toISOString();
-           response=await client.from('practice_records').update({payload:snapshot,updated_at:nextUpdatedAt})
-             .eq('id',previous.id).eq('updated_at',previous.updated_at).select('id,updated_at').maybeSingle();
-           if(response.error)throw response.error;
-           if(!response.data){
-             const conflict=new Error('This workspace was changed in another session. Refresh the page before saving more changes to avoid overwriting newer data.');
-             conflict.code='AD_CLOUD_CONFLICT';throw conflict;
-           }
-         }else{
-           response=await client.from('practice_records').insert({workspace_id:auth.workspaceId,record_type:'other',record_key:'workspace_state',payload:snapshot})
-             .select('id,updated_at').single();
-           if(response.error){
-             if(response.error.code==='23505'){
-               const conflict=new Error('This workspace was initialized in another session. Refresh the page before continuing.');
-               conflict.code='AD_CLOUD_CONFLICT';throw conflict;
-             }
-             throw response.error;
-           }
-         }
-         window.ADCloudVersion=response.data;
-         if(version===saveVersion)setSyncStatus('Cloud: Synced','#15803d');
-         return response.data;
-       });
-       saveQueue=request;
-       request.catch(function(err){
-         console.error('AdvocateDesk cloud sync failed',err);
-         if(version===saveVersion){
-           if(err&&err.code==='AD_CLOUD_CONFLICT')setSyncStatus('Cloud: Conflict — refresh required','#b91c1c');
-           else setSyncStatus('Cloud: Sync error — retry after checking connection','#b91c1c');
-         }
-       });
-       return request;
-     }
-   };
+   const empty={cases:[],clients:[],hearings:[],tasks:[],discussions:[],meetings:[],payments:[],invoices:[],transactions:[],courts:[],caseParties:[]};
+   if(auth.role==="super_admin"){
+     window.ADCloudInitialState=empty;
+     window.ADCloudSync={save:function(){return Promise.resolve({saved:0});}};
+   }else{
+     if(!window.ADResourceSync||typeof window.ADResourceSync.create!=="function")throw new Error('Per-resource cloud sync adapter failed to load.');
+     const resourceSync=window.ADResourceSync.create(client,auth,{onStatus:setSyncStatus});
+     window.ADCloudInitialState=await resourceSync.load();
+     window.ADCloudSync=resourceSync;
+   }
+   window.ADCloudVersion=null;
    const scripts=['app-core-fixes.js?v=20261003-02','app.js?v=20261009-superadmin-fix','user-roles.js?v=20261010-01','hearing-filter.js?v=20260927-2','cases.js?v=20261001-01','calendar.js?v=20261001-01','task.js?v=20261001-02','mobile-keyboard.js?v=20260926-1','finance.js?v=20261003-05','client-management.js?v=20260926-1','user-menu.js?v=20261010-role-label'];
    for(const src of scripts)await new Promise(function(resolve,reject){const s=document.createElement('script');s.src=src;s.onload=resolve;s.onerror=function(){reject(new Error('Unable to load '+src))};document.body.appendChild(s)});
    gate.remove();
