@@ -132,6 +132,19 @@ async function run() {
           assert.ok(contentText.length > 0, actor.role + " navigation page is blank: " + pageName);
           assert.equal(pageErrors.length, 0, actor.role + " raised uncaught browser errors on " + pageName + ": " + pageErrors.join(" | "));
         }
+        if(actor.key==="ACCOUNTANT"){
+          await page.locator('.nav-item[data-page="finance"]').click();
+          await page.getByRole("button",{name:/New/i}).click();
+          await page.getByText("Create Invoice",{exact:true}).waitFor({state:"visible",timeout:10000});
+          const clientOptions=await page.locator("#modalBody #f1 option").count();
+          const caseOptions=await page.locator("#modalBody #f2 option").count();
+          assert.ok(clientOptions>0,"Accountant invoice form should offer finance-authorized client choices.");
+          assert.ok(caseOptions>0,"Accountant invoice form should offer finance-authorized case choices.");
+          await page.getByRole("button",{name:"Cancel",exact:true}).click();
+          await page.getByText("Create Invoice",{exact:true}).waitFor({state:"hidden",timeout:10000});
+          assert.equal(pageErrors.length,0,"Accountant invoice open/close produced browser errors: "+pageErrors.join(" | "));
+          log("PASS","accountant invoice: client/case dropdowns populated and Cancel closes the modal.");
+        }
         log("PASS", actor.role + ": sign-in, per-resource bootstrap, role-scoped fixture visibility, 11 navigation pages, no uncaught JS errors.");
       } catch (error) {
         log("FAIL", actor.role + ": " + error.message);
