@@ -886,12 +886,18 @@ if(auth.role==="accountant"){
   document.querySelectorAll(".nav-item").forEach(b=>{
     const allowed=b.dataset.page==="finance";
     b.hidden=!allowed;
+    // The app stylesheet sets .nav-item to display:flex, which can override
+    // the browser's default [hidden] styling. Force the restricted links off.
+    b.style.setProperty("display",allowed?"flex":"none","important");
     b.setAttribute("aria-hidden",allowed?"false":"true");
     if(!allowed)b.tabIndex=-1;
   });
   document.querySelectorAll("[onclick*='openModal']").forEach(b=>{
     const call=String(b.getAttribute("onclick")||"");
-    if(!call.includes("invoice")&&!call.includes("payment")) b.hidden=true;
+    if(!call.includes("invoice")&&!call.includes("payment")){
+      b.hidden=true;
+      b.style.setProperty("display","none","important");
+    }
   });
 }
 const mobileMenu=document.getElementById("mobileMenu");
