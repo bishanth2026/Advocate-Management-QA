@@ -65,9 +65,17 @@ The policy is now active in QA only. It is also recorded in `supabase/migrations
 - The functions are intentionally SECURITY DEFINER at present because `authenticated` has SELECT-only grants on `case_assignments` and `workspace_audit_log`; switching them to SECURITY INVOKER without first designing and testing admin-only write policies/grants would break assignment operations. Do not blindly revoke EXECUTE. A separate hardening change should either add narrowly scoped admin-only table policies/grants and convert to invoker, or route assignment through a trusted server/Edge Function.
 - Supabase Auth also reports leaked-password protection disabled. This project setting was not changed by the database migration and requires a separate Auth configuration change.
 
+## Real-browser regression status
+
+- GitHub Actions ran Chromium against the deployed QA GitHub Pages site.
+- **PASS — anonymous browser smoke:** portal-selection page rendered, unauthenticated navigation to `app.html` redirected to `login.html`, no request to the legacy `practice_records` snapshot endpoint was observed, and no uncaught browser errors were recorded.
+- **BLOCKED — authenticated role/module regression:** not run because these repository Actions secrets are not configured: `QA_ADMIN_PASSWORD`, `QA_ASSIGNED_ADVOCATE_PASSWORD`, `QA_UNASSIGNED_ADVOCATE_PASSWORD`, `QA_ACCOUNTANT_PASSWORD`, `QA_NONMEMBER_PASSWORD`. The test workflow intentionally never prints or stores the values in the repository.
+- The committed Playwright suite will sign in to the five disposable QA identities, verify assigned vs. unassigned case/task visibility, exercise 11 navigation pages for Admin, assigned Advocate, unassigned Advocate, and Accountant, watch for legacy snapshot requests, and verify the non-member cannot enter the app.
+- To unblock, add the five passwords as repository Actions secrets in **Settings → Secrets and variables → Actions**, using disposable QA-only accounts. Do not use production credentials or put passwords in chat/issues/commits. Then rerun **Real browser role and module regression** from the Actions tab.
+
 ## Release gate still open
 
-1. Complete browser-session regression tests on the QA site for admin, accountant, assigned advocate, unassigned advocate, non-member, and anonymous actors.
+1. Configure the five disposable QA account secrets and complete the authenticated Playwright browser regression tests for admin, accountant, assigned advocate, unassigned advocate, and non-member; anonymous smoke already passed.
 2. Verify create/edit/delete operations for every module, including finance, cases, clients, hearings, tasks, calendar, courts, transactions, meetings, discussions, and case parties.
 3. Verify conflict handling, refresh persistence, and that no role can recover the full snapshot through direct REST calls.
 4. The restrictive snapshot policy is now active in QA; continue direct REST/RPC tests and browser-session regression checks.
