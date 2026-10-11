@@ -1,0 +1,37 @@
+name: Per-resource sync tests
+
+on:
+  pull_request:
+    paths:
+      - "app.html"
+      - "resource-sync.js"
+      - "tests/resource-sync.test.cjs"
+      - ".github/workflows/resource-sync-tests.yml"
+  push:
+    branches:
+      - security/resource-sync-cutover
+    paths:
+      - "app.html"
+      - "resource-sync.js"
+      - "tests/resource-sync.test.cjs"
+      - ".github/workflows/resource-sync-tests.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  resource-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Syntax check
+        run: |
+          node --check resource-sync.js
+          node --check tests/resource-sync.test.cjs
+      - name: Run per-resource sync tests
+        run: node --test tests/resource-sync.test.cjs
