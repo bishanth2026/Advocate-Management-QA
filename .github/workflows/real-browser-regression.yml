@@ -62,12 +62,10 @@ jobs:
             echo "::warning::Browser suite skipped because one or more disposable QA credentials are not configured."
           fi
       - name: Install Playwright
-        if: steps.credentials.outputs.ready == 'true'
         run: |
           npm install --no-save playwright
           npx playwright install --with-deps chromium
       - name: Run real browser role and module tests
-        if: steps.credentials.outputs.ready == 'true'
         env:
           QA_BASE_URL: https://bishanth2026.github.io/Advocate-Management-QA
           QA_ADMIN_PASSWORD: ${{ secrets.QA_ADMIN_PASSWORD }}
@@ -78,4 +76,4 @@ jobs:
         run: node tests/real-browser-regression.cjs
       - name: Report result when credentials are unavailable
         if: steps.credentials.outputs.ready != 'true'
-        run: echo "Browser automation was not run because disposable QA account secrets are missing. This is not a browser-test pass."
+        run: echo "Anonymous Chromium smoke ran, but authenticated role tests were skipped because disposable QA account secrets are missing. This is not a full regression pass."
