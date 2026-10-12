@@ -1204,22 +1204,33 @@ function syncInvoiceCaseClient(){
   const relatedCase=caseSource.find(c=>String(c.number||c.caseNumber||c.case_no||c.caseNo||c.case_number||"").trim()===value||String(c.id||c.case_id||c.caseId||"").trim()===value);
   if(!relatedCase) return;
   let client=null;
-  const linkedIds=Array.isArray(relatedCase.clientIds)?relatedCase.clientIds:[];
-  const linkedId=String(relatedCase.clientId||relatedCase.client_id||linkedIds[0]||"");
-  if(linkedId) client=clientSource.find(c=>String(c.id||"")===linkedId)||null;
-  if(!client&&Array.isArray(relatedCase.clients)&&relatedCase.clients.length){
-    client=clientSource.find(c=>c.name===relatedCase.clients[0])||null;
+  const linkedIds=[
+    ...(Array.isArray(relatedCase.clientIds)?relatedCase.clientIds:[]),
+    ...(Array.isArray(relatedCase.client_ids)?relatedCase.client_ids:[]),
+    relatedCase.clientId,relatedCase.client_id,
+    relatedCase.client&&typeof relatedCase.client==="object"?(relatedCase.client.id||relatedCase.client.client_id):""
+  ].map(v=>String(v||"").trim()).filter(Boolean);
+  for(const linkedId of linkedIds){
+    client=clientSource.find(c=>String(c.id||c.client_id||"").trim()===linkedId)||null;
+    if(client) break;
   }
-  if(!client&&relatedCase.client){
-    const relatedName=typeof relatedCase.client==="string"?relatedCase.client:relatedCase.client.name;
-    client=clientSource.find(c=>c.name===relatedName)||null;
+  const linkedNames=[
+    ...(Array.isArray(relatedCase.clients)?relatedCase.clients:[]),
+    relatedCase.client,relatedCase.client_name,relatedCase.clientName,
+    ...(Array.isArray(relatedCase.client_names)?relatedCase.client_names:[])
+  ].map(v=>String(v&&typeof v==="object"?(v.name||v.client_name||""):v||"").trim()).filter(Boolean);
+  if(!client){
+    for(const linkedName of linkedNames){
+      client=clientSource.find(c=>String(c.name||c.client_name||"").trim().toLowerCase()===linkedName.toLowerCase())||null;
+      if(client) break;
+    }
   }
-  if(!client&&relatedCase.client_name){
-    client=clientSource.find(c=>c.name===relatedCase.client_name)||null;
-  }
-  if(client&&Array.from(clientSelect.options).some(o=>o.value===client.name)){
-    clientSelect.value=client.name;
-    clientSelect.dispatchEvent(new Event("change",{bubbles:true}));
+  if(client){
+    const clientName=String(client.name||client.client_name||"").trim();
+    if(clientName&&Array.from(clientSelect.options).some(o=>o.value===clientName)){
+      clientSelect.value=clientName;
+      clientSelect.dispatchEvent(new Event("change",{bubbles:true}));
+    }
   }
 }
 function clearHearingCaseSelection(){
