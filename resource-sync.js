@@ -277,13 +277,21 @@
           p_changes: batch,
         });
         if (response.error) {
-          const code = response.error.code;
-          if (code === "40001" || code === "23505") {
-            const conflict = new Error("The records changed in another session or a save conflict occurred. Refresh and review before retrying.");
+          const serverError = response.error;
+          const code = String(serverError.code || "UNKNOWN");
+          const detail = String(serverError.message || serverError.details || serverError.hint || "No server detail returned").replace(/\\s+/g, " ").trim();
+          if (code === "40001" || code === "23505" || code === "409") {
+            // Preserve the database's safe diagnostic instead of collapsing every
+            // HTTP 409 into an indistinguishable refresh warning.
+            const conflict = new Error("Cloud save conflict (" + code + "): " + detail);
             conflict.code = "AD_CLOUD_CONFLICT";
+            conflict.serverCode = code;
+            conflict.serverDetails = String(serverError.details || "");
+            conflict.serverHint = String(serverError.hint || "");
+            conflict.serverMessage = detail;
             throw conflict;
           }
-          throw response.error;
+          throw serverError;
         }
         if (!response.data || response.data.atomic !== true || Number(response.data.applied) !== changes.length) {
           throw new Error("The server did not confirm the complete atomic batch. Refresh before continuing.");
@@ -353,6 +361,14 @@
         if (version === sequence) {
           if (error && error.code === "AD_CLOUD_CONFLICT") {
             status("Cloud: Conflict — refresh required", "#b91c1c");
+            const statusNode = typeof document !== "undefined" ? document.getElementById("cloudSyncStatus") : null;
+            if (statusNode) statusNode.title = String(error.message || "Cloud save conflict");
+            console.error("AdvocateDesk conflict diagnostics", {
+              code: error.serverCode || error.code,
+              message: error.serverMessage || error.message,
+              details: error.serverDetails || "",
+              hint: error.serverHint || ""
+            });
           } else {
             const detail = String(error && (error.message || error.details || error.hint) || "Unknown sync error").replace(/\\s+/g, " ").trim();
             const label = "Cloud: Sync error — " + detail.slice(0, 52) + (detail.length > 52 ? "…" : "");
