@@ -1,0 +1,32 @@
+name: Workspace migration audit self-test
+
+on:
+  pull_request:
+    paths:
+      - "scripts/workspace-state-migration-audit.mjs"
+      - ".github/workflows/workspace-state-migration-audit.yml"
+  push:
+    branches:
+      - staging/advocatedesk-test
+      - security/per-record-migration-tooling
+    paths:
+      - "scripts/workspace-state-migration-audit.mjs"
+      - ".github/workflows/workspace-state-migration-audit.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  read-only-migration-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Syntax check
+        run: node --check scripts/workspace-state-migration-audit.mjs
+      - name: Run converter audit self-tests
+        run: node scripts/workspace-state-migration-audit.mjs --self-test
