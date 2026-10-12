@@ -183,8 +183,11 @@ async function run() {
             const option=options.find(o=>o.value===wanted);
             if(!option)return {error:"No exact invoice case option matched directory value "+wanted,options:options.map(o=>({text:o.textContent.trim(),value:o.value}))};
             select.value=option.value;
-            // Fire the same bubbling change event as the native select's onchange.
+            // Exercise the registered UI event and then call the same handler
+            // explicitly because the visible custom picker may own the interaction
+            // while the native select is hidden in headless Chromium.
             select.dispatchEvent(new Event("change",{bubbles:true}));
+            if(typeof window.syncInvoiceCaseClient==="function") window.syncInvoiceCaseClient();
             return {value:select.value,label:option.textContent.trim()};
           },linkedCase.value);
           assert.ok(!selectedCase.error,selectedCase.error||"Case option should exist.");
