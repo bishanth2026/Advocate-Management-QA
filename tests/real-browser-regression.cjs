@@ -157,12 +157,22 @@ async function run() {
             return {value:String(c.number||c.caseNumber||c.case_number||c.id||c.case_id||""),clientName:nameOf(c)};
           });
           if(linkedCase){
-            const caseSelect=page.locator("#modalBody select#f2").first();
-            await caseSelect.selectOption({label:linkedCase.value}).catch(async()=>{
-              await caseSelect.selectOption(linkedCase.value);
-            });
+            // The invoice form keeps its native case select visually hidden behind
+            // the accessible custom picker. Drive the same native change event
+            // used by the UI instead of Playwright's visibility-gated selectOption.
+            const selectedCase=await page.locator("#modalBody select#f2").evaluate((select, wanted)=>{
+              const options=Array.from(select.options);
+              const option=options.find(o=>o.textContent.trim()===wanted)
+                || options.find(o=>o.value===wanted)
+                || options.find(o=>o.textContent.trim().includes(wanted));
+              if(!option) return {error:"No invoice case option matched: "+wanted, options:options.map(o=>({text:o.textContent.trim(),value:o.value}))};
+              select.value=option.value;
+              select.dispatchEvent(new Event("change",{bubbles:true}));
+              return {value:select.value,label:option.textContent.trim()};
+            },linkedCase.value);
+            assert.ok(!selectedCase.error,selectedCase.error||"Case option should exist.");
             await page.waitForTimeout(200);
-            const selectedClient=await page.locator("#modalBody select#f1").first().inputValue();
+            const selectedClient=await page.locator("#modalBody select#f1").evaluate(select=>select.value);
             assert.ok(selectedClient,"Selecting a linked case should prefill the invoice client.");
             if(linkedCase.clientName)assert.equal(selectedClient,linkedCase.clientName,"Invoice client should match the selected case's linked client.");
           }
