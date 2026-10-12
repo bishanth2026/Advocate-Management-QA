@@ -139,6 +139,13 @@ async function run() {
         if (actor.key === "ACCOUNTANT") {
           assert.deepEqual(visibleNavPages, ["finance"], "Accountant should see only the Finance navigation item.");
         }
+        if (actor.key !== "ADMIN" && actor.key !== "ACCOUNTANT") {
+          const financeNav = page.locator('.nav-item[data-page="finance"]').first();
+          assert.equal(await financeNav.isVisible(), false, actor.role + " must not see the Finance navigation item.");
+          await page.evaluate(() => navigate("finance"));
+          await page.waitForTimeout(100);
+          assert.equal(new URL(page.url()).hash, "#dashboard", actor.role + " must be redirected away from direct Finance route access.");
+        }
         if(actor.key==="ACCOUNTANT"){
           await page.locator('.nav-item[data-page="finance"]').click();
           await page.getByRole("button",{name:/New/i}).click();
