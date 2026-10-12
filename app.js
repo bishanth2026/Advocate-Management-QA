@@ -814,6 +814,13 @@ if(auth.role==="super_admin") pages["central-control"]=function(){
 };
 function navigate(page,fromHistory){
   if(!pages[page]) return;
+  // Finance is restricted to workspace Admin and Accountant roles. This is
+  // a client-side defense-in-depth guard; Supabase RLS/RPC permissions remain authoritative.
+  if(page==="finance" && !["admin","accountant"].includes(String(auth.role||"").toLowerCase())){
+    page="dashboard";
+    try{if(location.hash!=="#dashboard")history.replaceState(null,"","#dashboard")}catch(e){}
+    if(typeof window.showToast==="function")window.showToast("Access denied: Finance is available only to Admin and Accountant.");
+  }
   // Accountants are restricted to the Finance module. Enforce this at the
   // router as well as in the navigation UI so a manually edited URL/hash
   // cannot open case, client, document, task, hearing or report screens.
@@ -945,6 +952,12 @@ async function provisionPlatformUser(action){
 function addSuperAdminDemo(){provisionPlatformUser("invite_super_admin");}
 function addAdminDemo(){provisionPlatformUser("invite_admin");}
 document.querySelectorAll(".nav-item").forEach(b=>b.addEventListener("click",()=>navigate(b.dataset.page)));
+// Finance navigation is shown only to workspace Admin and Accountant roles.
+if(!["admin","accountant"].includes(String(auth.role||"").toLowerCase())){
+  document.querySelectorAll('.nav-item[data-page="finance"]').forEach(b=>{
+    b.hidden=true;b.style.setProperty("display","none","important");b.setAttribute("aria-hidden","true");b.tabIndex=-1;
+  });
+}
 // Keep the Accountant navigation minimal. Finance is the only permitted
 // module; routing and record-action guards above enforce the same boundary.
 if(auth.role==="accountant"){
