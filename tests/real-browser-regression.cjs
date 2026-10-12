@@ -195,7 +195,8 @@ async function run() {
           const autoFillState=await page.evaluate(()=>({
             selectedClient:document.querySelector("#modalBody select#f1")?.value||"",
             clientOptions:Array.from(document.querySelectorAll("#modalBody select#f1 option")).map(o=>o.value),
-            syncFunction:typeof window.syncInvoiceCaseClient
+            syncFunction:typeof window.syncInvoiceCaseClient,
+            autofillDebug:window.__invoiceAutofillDebug||null
           }));
           assert.ok(autoFillState.selectedClient,
             "Selecting linked case "+selectedCase.label+" should prefill its client "+linkedCase.clientName+
