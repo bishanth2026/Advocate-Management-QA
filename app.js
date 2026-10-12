@@ -1330,6 +1330,11 @@ function caseDetails360Enhanced(query="", selectedId="") {
     const parties=linked(active);
     const byCase=(arr)=>arr.filter(x=>x.caseId===active.id||x.caseNumber===active.number||x.case===active.id||x.case===active.number||x.case===active.title);
     const hearings=byCase(Array.isArray(state.hearings)?state.hearings:[]);
+    // A case can store its next hearing date/time without a separate hearing row.
+    // Surface that saved schedule in Case 360 instead of incorrectly showing an empty list.
+    if(!hearings.length && active.next){
+      hearings.push({date:active.next,time:active.hearingTime||"",case:active.number||active.id,caseId:active.id,caseNumber:active.number,title:active.title||"",court:active.court||"",stage:active.hearingStage||"Scheduled",_derivedFromCase:true});
+    }
     const hearingForCase=hearings.slice().sort((a,b)=>String(a.date||"").localeCompare(String(b.date||"")))[0];
     const caseHearingTime=active.hearingTime||hearingForCase?.time||"";
     const displayCaseHearingTime=hearingTimeDisplayValue(caseHearingTime)||"Not scheduled";
