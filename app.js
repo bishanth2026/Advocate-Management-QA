@@ -757,6 +757,13 @@ function reportShell(title,subtitle,body){
  content.innerHTML=`<div class="report-page"><header class="report-header"><div class="report-brand"><div class="report-logo">⚖</div><div><strong>AdvocateDesk</strong><span>Practice Management</span></div></div><div class="report-heading"><h1>${esc(title)}</h1><p>${esc(subtitle)}</p></div><div class="report-actions"><button class="secondary" onclick="reports()">← Reports</button><button class="primary" onclick="window.print()">🖨 Print / Save PDF</button></div></header><main class="report-content">${body}</main><footer class="report-footer"><span>AdvocateDesk · Confidential Office Report</span><span>Generated on ${new Date().toLocaleDateString('en-IN')}</span></footer></div>`;
 }
 function openReport(type){
+ // Reports are a UI convenience; sensitive financial data must remain role-restricted.
+ // Supabase RLS remains the authoritative data boundary.
+ if(type==='finance' && !["admin","accountant"].includes(String(auth.role||"").toLowerCase())){
+  reports();
+  if(typeof window.showToast==="function")window.showToast("Access denied: Financial reports are available only to Admin and Accountant.");
+  return;
+ }
  const money=v=>"₹"+Number(v||0).toLocaleString("en-IN");
  if(type==='cases'){
   reportShell('Case Report','All cases with current status',`<table><thead><tr><th>Case Number</th><th>Title</th><th>Client</th><th>Court</th><th>Type</th><th>Status</th></tr></thead><tbody>${state.cases.map(c=>`<tr><td><strong>${esc(c.number||'—')}</strong></td><td>${esc(c.title||'—')}</td><td>${esc(c.client||'—')}</td><td>${esc(c.court||'—')}</td><td>${esc(c.type||'—')}</td><td>${badge(c.status||'Pending')}</td></tr>`).join('')}</tbody></table>`);
@@ -774,6 +781,11 @@ function openReport(type){
  }
 }
 function generateFinancialReport(clientQuery){
+ if(!["admin","accountant"].includes(String(auth.role||"").toLowerCase())){
+  reports();
+  if(typeof window.showToast==="function")window.showToast("Access denied: Financial reports are available only to Admin and Accountant.");
+  return;
+ }
  const query=String(clientQuery||'').trim().toLowerCase();
  if(!query){alert('Please type or select a client name.');return;}
  const invoices=state.invoices.filter(x=>String(x.client||'').trim().toLowerCase()===query);
@@ -790,6 +802,8 @@ function generateFinancialReport(clientQuery){
 }
 
 function generateCase360Report(id){
+ // The case selector is built from the RLS-filtered case collection. Never
+ // fetch or render a case by an identifier that is absent from that collection.
  const query=String(id||'').trim().toLowerCase();
  const c=state.cases.find(x=>String(x.id||'').toLowerCase()===query||String(x.number||'').toLowerCase()===query||String(x.client||'').toLowerCase()===query||`${x.number||x.id} — ${x.client||x.title||'No client'}`.toLowerCase()===query||String(x.number||'').toLowerCase().includes(query)||String(x.client||'').toLowerCase().includes(query));
  if(!c){alert('Please type or select a valid client name or case number.');return;}
