@@ -93,6 +93,48 @@ window.advocateDeskDataKey=dataKey;
 window.saveAdvocateDeskState=save;
 if(stateChangedByDemoMigration && !auth.cloudAuth) save();
 window.appState=state;
+// Keep each case's saved next hearing linked to a persistent hearing record.
+// Only one record is treated as the case's "next hearing"; unrelated future hearings remain untouched.
+function syncCaseNextHearing(caseRecord, options={}){
+  if(!caseRecord || !Array.isArray(state.hearings)) state.hearings=Array.isArray(state.hearings)?state.hearings:[];
+  const caseId=String(caseRecord.id||"");
+  const caseNumber=String(caseRecord.number||caseRecord.caseNumber||"");
+  const matches=h=>(caseId && String(h.caseId||"")===caseId) ||
+    (caseNumber && (String(h.caseNumber||"")===caseNumber || String(h.case||"")===caseNumber));
+  let linked=state.hearings.find(h=>h._caseNextHearing===true && matches(h)) || state.hearings.find(matches);
+  const nextDate=String(caseRecord.next||"").slice(0,10);
+  if(!nextDate){
+    if(options.removeGeneratedOnly) state.hearings=state.hearings.filter(h=>!(h._caseNextHearing===true&&matches(h)));
+    return false;
+  }
+  if(!linked){
+    linked={id:"HEAR-CASE-"+caseId,date:nextDate,time:caseRecord.hearingTime||"",case:caseNumber,caseId,caseNumber,title:caseRecord.title||"Court Hearing",court:caseRecord.court||"",stage:caseRecord.hearingStage||"Scheduled",clientId:caseRecord.clientId||"",clientIds:Array.isArray(caseRecord.clientIds)?caseRecord.clientIds:[],clients:Array.isArray(caseRecord.clients)?caseRecord.clients:[],_caseNextHearing:true};
+    state.hearings.push(linked);
+  }else{
+    linked.date=nextDate;
+    linked.time=caseRecord.hearingTime||"";
+    linked.case=caseNumber||linked.case;
+    linked.caseNumber=caseNumber||linked.caseNumber;
+    linked.caseId=caseId||linked.caseId;
+    linked.title=caseRecord.title||linked.title||"Court Hearing";
+    linked.court=caseRecord.court||linked.court||"";
+    linked.stage=caseRecord.hearingStage||linked.stage||"Scheduled";
+    linked.clientId=caseRecord.clientId||linked.clientId||"";
+    linked.clientIds=Array.isArray(caseRecord.clientIds)?caseRecord.clientIds:linked.clientIds;
+    linked.clients=Array.isArray(caseRecord.clients)?caseRecord.clients:linked.clients;
+    linked._caseNextHearing=true;
+  }
+  return true;
+}
+let stateChangedByHearingLinkMigration=false;
+if(auth.role!=="super_admin" && Array.isArray(state.cases)){
+  state.cases.forEach(c=>{
+    if(c && c.next && !state.hearings.some(h=>(h.caseId&&h.caseId===c.id)||(h.caseNumber&&h.caseNumber===c.number)||h.case===c.id||h.case===c.number)){
+      if(syncCaseNextHearing(c)) stateChangedByHearingLinkMigration=true;
+    }
+  });
+}
+if(stateChangedByHearingLinkMigration) save();
 if(storedData===null && !auth.cloudAuth) save();
 const fmtDate=d=>new Date(d+"T00:00:00").toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"});
 const KOZHIKODE_COURTS = [
