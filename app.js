@@ -1192,48 +1192,35 @@ function deleteRecord(type,index){
  navigate(type==="case"||type==="client"?"cases":type==="hearing"?"hearings":type==="task"?"tasks":type==="invoice"?"finance":"client-management");
 }
 function syncInvoiceCaseClient(){
-  // Prefer the active modal's invoice controls; duplicate form IDs may exist
-  // in the page shell and document.getElementById can otherwise target a stale form.
   const invoiceRoot=document.querySelector("#modalBody select#f2")?.closest("#modalBody")
-    ||document.querySelector("#modalBody")
-    ||document;
+    ||document.querySelector("#modalBody")||document;
   const caseInput=invoiceRoot.querySelector("select#f2")||document.getElementById("f2");
   const clientSelect=invoiceRoot.querySelector("select#f1")||document.getElementById("f1");
   if(!caseInput||!clientSelect) return;
   const value=String(caseInput.value||"").trim();
-  const accountant=auth&&auth.role==="accountant";
-  const caseSource=accountant&&Array.isArray(window.ADFinanceCaseDirectory)?window.ADFinanceCaseDirectory:state.cases;
-  const clientSource=accountant&&Array.isArray(window.ADFinanceClientDirectory)
-    ?window.ADFinanceClientDirectory.map(c=>({id:String(c.client_id||""),name:String(c.client_name||"")}))
-    :state.clients;
-  const relatedCase=caseSource.find(c=>String(c.number||c.caseNumber||c.case_no||c.caseNo||c.case_number||"").trim()===value||String(c.id||c.case_id||c.caseId||"").trim()===value);
+  const financeCases=Array.isArray(window.ADFinanceCaseDirectory)?window.ADFinanceCaseDirectory:[];
+  const financeClients=Array.isArray(window.ADFinanceClientDirectory)?window.ADFinanceClientDirectory:[];
+  const relatedCase=financeCases.find(c=>String(c.number||c.caseNumber||c.case_no||c.caseNo||c.case_number||"").trim()===value||String(c.id||c.case_id||c.caseId||"").trim()===value);
   if(!relatedCase) return;
-  let client=null;
   const linkedIds=[
     ...(Array.isArray(relatedCase.clientIds)?relatedCase.clientIds:[]),
     ...(Array.isArray(relatedCase.client_ids)?relatedCase.client_ids:[]),
     relatedCase.clientId,relatedCase.client_id,
     relatedCase.client&&typeof relatedCase.client==="object"?(relatedCase.client.id||relatedCase.client.client_id):""
   ].map(v=>String(v||"").trim()).filter(Boolean);
-  for(const linkedId of linkedIds){
-    client=clientSource.find(c=>String(c.id||c.client_id||"").trim()===linkedId)||null;
-    if(client) break;
-  }
   const linkedNames=[
-    ...(Array.isArray(relatedCase.clients)?relatedCase.clients:[]),
-    relatedCase.client,relatedCase.client_name,relatedCase.clientName,
+    ...(Array.isArray(relatedCase.clients)?relatedCase.clients:[]),relatedCase.client,
+    relatedCase.client_name,relatedCase.clientName,
     ...(Array.isArray(relatedCase.client_names)?relatedCase.client_names:[])
-  ].map(v=>String(v&&typeof v==="object"?(v.name||v.client_name||""):v||"").trim()).filter(Boolean);
-  if(!client){
-    for(const linkedName of linkedNames){
-      client=clientSource.find(c=>String(c.name||c.client_name||"").trim().toLowerCase()===linkedName.toLowerCase())||null;
-      if(client) break;
-    }
-  }
-  if(client){
-    const clientName=String(client.name||client.client_name||"").trim();
-    if(clientName&&Array.from(clientSelect.options).some(o=>o.value===clientName)){
-      clientSelect.value=clientName;
+  ].map(v=>String(v&&typeof v==="object"?(v.name||v.client_name||v.clientName||""):v||"").trim()).filter(Boolean);
+  let client=financeClients.find(c=>linkedIds.includes(String(c.client_id||c.id||"").trim()))||null;
+  if(!client) client=financeClients.find(c=>linkedNames.some(n=>n.toLowerCase()===String(c.client_name||c.name||"").trim().toLowerCase()))||null;
+  const clientName=String(client?.client_name||client?.name||"").trim();
+  window.__invoiceAutofillDebug={role:auth?.role||"",caseValue:value,matchedCaseNumber:relatedCase.number||"",linkedIds,linkedNames,clientRows:financeClients.map(c=>({id:String(c.client_id||c.id||""),name:String(c.client_name||c.name||"")})),resolvedClient:clientName,optionValues:Array.from(clientSelect.options).map(o=>o.value)};
+  if(clientName){
+    const option=Array.from(clientSelect.options).find(o=>o.value.trim().toLowerCase()===clientName.toLowerCase());
+    if(option){
+      clientSelect.value=option.value;
       clientSelect.dispatchEvent(new Event("change",{bubbles:true}));
     }
   }
