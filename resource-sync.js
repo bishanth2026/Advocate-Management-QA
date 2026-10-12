@@ -244,6 +244,57 @@
         return a.key.localeCompare(b.key);
       });
 
+      // Supabase clients use the atomic RPC. The direct-write path below is
+      // retained only for older unit-test doubles that do not implement rpc().
+      if (typeof client.rpc === "function" && changes.length) {
+        const batch = changes.map((change) => {
+          if (change.kind === "insert") return {
+            op: "insert",
+            resource_type: change.next.resource_type,
+            resource_id: change.next.resource_id,
+            case_id: change.next.case_id,
+            payload: change.next.payload,
+          };
+          if (change.kind === "update") return {
+            op: "update",
+            id: change.previous.id,
+            expected_updated_at: change.previous.updated_at,
+            resource_type: change.previous.resource_type,
+            resource_id: change.previous.resource_id,
+            case_id: change.next.case_id,
+            payload: change.next.payload,
+          };
+          return {
+            op: "delete",
+            id: change.previous.id,
+            expected_updated_at: change.previous.updated_at,
+            resource_type: change.previous.resource_type,
+            resource_id: change.previous.resource_id,
+          };
+        });
+        const response = await client.rpc("apply_practice_resource_batch", {
+          p_workspace_id: workspaceId,
+          p_changes: batch,
+        });
+        if (response.error) {
+          const code = response.error.code;
+          if (code === "40001" || code === "23505") {
+            const conflict = new Error("The records changed in another session or a save conflict occurred. Refresh and review before retrying.");
+            conflict.code = "AD_CLOUD_CONFLICT";
+            throw conflict;
+          }
+          throw response.error;
+        }
+        if (!response.data || response.data.atomic !== true || Number(response.data.applied) !== changes.length) {
+          throw new Error("The server did not confirm the complete atomic batch. Refresh before continuing.");
+        }
+        // The transaction committed as a unit; reload canonical rows and
+        // updated_at values before the next queued save uses optimistic locking.
+        await load();
+        if (version === sequence) status("Cloud: Synced", "#15803d");
+        return { saved: changes.length, atomic: true };
+      }
+
       for (const change of changes) {
         if (change.kind === "insert") {
           const response = await client.from("practice_resources").insert({
