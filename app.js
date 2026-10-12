@@ -1221,7 +1221,11 @@ function syncInvoiceCaseClient(){
     const option=Array.from(clientSelect.options).find(o=>o.value.trim().toLowerCase()===clientName.toLowerCase());
     if(option){
       clientSelect.value=option.value;
+      window.__invoiceAutofillDebug.afterSetBeforeChange=clientSelect.value;
       clientSelect.dispatchEvent(new Event("change",{bubbles:true}));
+      window.__invoiceAutofillDebug.afterChange=clientSelect.value;
+      window.__invoiceAutofillDebug.clientSelectConnected=clientSelect.isConnected;
+      window.__invoiceAutofillDebug.activeModalClientValues=Array.from(document.querySelectorAll("#modalBody select#f1")).map(s=>({value:s.value,connected:s.isConnected,options:Array.from(s.options).map(o=>o.value)}));
     }
   }
 }
