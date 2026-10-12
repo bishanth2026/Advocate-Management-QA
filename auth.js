@@ -12,7 +12,7 @@
   }
   function cache(profile,member,workspace){
     var role=profile.platform_role==="super_admin"?"super_admin":member.role;
-    var a={role:role,workspaceRole:member.role,name:profile.full_name||profile.email,email:profile.email,workspaceId:workspace.id,workspaceName:workspace.name,cloudAuth:true,loginAt:new Date().toISOString()};
+    var a={role:role,workspaceRole:member.role,userId:profile.user_id,name:profile.full_name||profile.email,email:profile.email,workspaceId:workspace.id,workspaceName:workspace.name,cloudAuth:true,loginAt:new Date().toISOString()};
     localStorage.setItem("advocateDeskAuth",JSON.stringify(a));return a;
   }
   async function resolveAccess(user,portal){
