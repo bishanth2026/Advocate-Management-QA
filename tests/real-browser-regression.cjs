@@ -154,12 +154,13 @@ async function run() {
             const idOf=c=>String(c.clientId||c.client_id||"").trim();
             const c=cases.find(x=>(idOf(x)&&clients.some(y=>String(y.client_id)===idOf(x)))||(nameOf(x)&&clients.some(y=>String(y.client_name||"").trim()===nameOf(x))));
             if(!c)return null;
-            return {label:[String(c.number||c.caseNumber||c.case_id||c.id||""),String(c.title||"")].filter(Boolean).join(" — "),clientName:nameOf(c)};
+            return {value:String(c.number||c.caseNumber||c.case_number||c.id||c.case_id||""),clientName:nameOf(c)};
           });
           if(linkedCase){
-            const caseInput=page.locator("#modalBody .finance-case-autocomplete input").first();
-            await caseInput.fill(linkedCase.label);
-            await page.getByRole("option").first().click();
+            const caseSelect=page.locator("#modalBody #f2");
+            await caseSelect.selectOption({label:linkedCase.value}).catch(async()=>{
+              await caseSelect.selectOption(linkedCase.value);
+            });
             await page.waitForTimeout(200);
             const selectedClient=await page.locator("#modalBody #f1").inputValue();
             assert.ok(selectedClient,"Selecting a linked case should prefill the invoice client.");
