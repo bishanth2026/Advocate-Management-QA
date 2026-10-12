@@ -21,6 +21,8 @@ DECLARE
   v_payload jsonb;
   v_applied integer := 0;
   v_rows integer;
+  v_seen text[] := ARRAY[]::text[];
+  v_identity text;
 BEGIN
   IF auth.uid() IS NULL THEN
     RAISE EXCEPTION 'Authentication required' USING ERRCODE = '42501';
@@ -59,12 +61,17 @@ BEGIN
       v_payload := v_change->'payload';
       v_case_id := NULLIF(btrim(v_change->>'case_id'), '');
 
-      IF v_resource_type NOT IN (
+      IF v_resource_type IS NULL OR v_resource_type NOT IN (
         'case','client','hearing','task','invoice','payment','transaction',
         'meeting','discussion','court','case_party'
       ) OR v_resource_id = '' OR length(v_resource_id) > 200 THEN
         RAISE EXCEPTION 'Invalid resource type or resource ID' USING ERRCODE = '22023';
       END IF;
+      v_identity := v_resource_type || '::' || v_resource_id;
+      IF v_identity = ANY(v_seen) THEN
+        RAISE EXCEPTION 'Duplicate resource in batch: %', v_identity USING ERRCODE = '22023';
+      END IF;
+      v_seen := array_append(v_seen, v_identity);
       IF jsonb_typeof(v_payload) <> 'object'
          OR v_payload->>'id' IS DISTINCT FROM v_resource_id THEN
         RAISE EXCEPTION 'Payload ID must match resource_id' USING ERRCODE = '22023';
@@ -86,12 +93,17 @@ BEGIN
       v_case_id := NULLIF(btrim(v_change->>'case_id'), '');
 
       IF v_row_id IS NULL OR v_expected_updated_at IS NULL
-         OR v_resource_type NOT IN (
+         OR v_resource_type IS NULL OR v_resource_type NOT IN (
            'case','client','hearing','task','invoice','payment','transaction',
            'meeting','discussion','court','case_party'
          ) OR v_resource_id = '' OR length(v_resource_id) > 200 THEN
         RAISE EXCEPTION 'Update requires row ID, expected version, resource type and resource ID' USING ERRCODE = '22023';
       END IF;
+      v_identity := v_resource_type || '::' || v_resource_id;
+      IF v_identity = ANY(v_seen) THEN
+        RAISE EXCEPTION 'Duplicate resource in batch: %', v_identity USING ERRCODE = '22023';
+      END IF;
+      v_seen := array_append(v_seen, v_identity);
       IF jsonb_typeof(v_payload) <> 'object'
          OR v_payload->>'id' IS DISTINCT FROM v_resource_id THEN
         RAISE EXCEPTION 'Payload ID must match resource_id' USING ERRCODE = '22023';
@@ -117,14 +129,27 @@ BEGIN
     ELSIF v_op = 'delete' THEN
       v_row_id := NULLIF(v_change->>'id', '')::uuid;
       v_expected_updated_at := NULLIF(v_change->>'expected_updated_at', '')::timestamptz;
+      v_resource_type := v_change->>'resource_type';
+      v_resource_id := btrim(COALESCE(v_change->>'resource_id', ''));
 
-      IF v_row_id IS NULL OR v_expected_updated_at IS NULL THEN
-        RAISE EXCEPTION 'Delete requires row ID and expected version' USING ERRCODE = '22023';
+      IF v_row_id IS NULL OR v_expected_updated_at IS NULL
+         OR v_resource_type IS NULL OR v_resource_type NOT IN (
+           'case','client','hearing','task','invoice','payment','transaction',
+           'meeting','discussion','court','case_party'
+         ) OR v_resource_id = '' OR length(v_resource_id) > 200 THEN
+        RAISE EXCEPTION 'Delete requires row ID, expected version, resource type and resource ID' USING ERRCODE = '22023';
       END IF;
+      v_identity := v_resource_type || '::' || v_resource_id;
+      IF v_identity = ANY(v_seen) THEN
+        RAISE EXCEPTION 'Duplicate resource in batch: %', v_identity USING ERRCODE = '22023';
+      END IF;
+      v_seen := array_append(v_seen, v_identity);
 
       DELETE FROM public.practice_resources
        WHERE id = v_row_id
          AND workspace_id = p_workspace_id
+         AND resource_type = v_resource_type
+         AND resource_id = v_resource_id
          AND updated_at = v_expected_updated_at;
 
       GET DIAGNOSTICS v_rows = ROW_COUNT;
