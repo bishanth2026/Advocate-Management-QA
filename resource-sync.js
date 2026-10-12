@@ -279,6 +279,12 @@
         if (response.error) {
           const serverError = response.error;
           const code = String(serverError.code || "UNKNOWN");
+          const failedBatchSummary = batch.map((item) => ({
+            op: item.op,
+            resource_type: item.resource_type,
+            resource_id: String(item.resource_id || "").slice(0, 80),
+            has_expected_version: Boolean(item.expected_updated_at),
+          }));
           const detail = String(serverError.message || serverError.details || serverError.hint || "No server detail returned").replace(/\\s+/g, " ").trim();
           if (code === "40001" || code === "23505" || code === "409") {
             // Preserve the database's safe diagnostic instead of collapsing every
@@ -289,6 +295,7 @@
             conflict.serverDetails = String(serverError.details || "");
             conflict.serverHint = String(serverError.hint || "");
             conflict.serverMessage = detail;
+            conflict.batchSummary = failedBatchSummary;
             throw conflict;
           }
           throw serverError;
@@ -367,7 +374,8 @@
               code: error.serverCode || error.code,
               message: error.serverMessage || error.message,
               details: error.serverDetails || "",
-              hint: error.serverHint || ""
+              hint: error.serverHint || "",
+              batch: error.batchSummary || []
             });
           } else {
             const detail = String(error && (error.message || error.details || error.hint) || "Unknown sync error").replace(/\\s+/g, " ").trim();
