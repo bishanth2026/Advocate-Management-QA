@@ -52,7 +52,7 @@ const store = sandbox.window.ADResourceStore;
   const result = await store.save(saveClient, "ws-1", {
     cases: [{ id: "CASE-1", number: "OS 1/2026", clientId: "CL-1" }],
     clients: [{ id: "CL-1", name: "Client" }],
-    hearings: [{ case: "OS 1/2026" }],
+    hearings: [{ id: "HEAR-TIME-1", case: "OS 1/2026", caseId: "CASE-1", date: "2026-10-12", time: "10:10" }],
     invoices: [{ id: "INV-1", case: "OS 1/2026" }],
     payments: [{ id: "PAY-1", invoiceId: "INV-1" }],
     transactions: [{ id: "TX-1", case: "OS 1/2026", amount: 100 }],
@@ -65,6 +65,13 @@ const store = sandbox.window.ADResourceStore;
   assert.equal(saveClient.calls[0].options.onConflict, "workspace_id,resource_type,resource_id");
   const savedRows = saveClient.calls[0].batch;
   assert.equal(savedRows.find(r => r.resource_type === "hearing").case_id, "CASE-1");
+  assert.equal(savedRows.find(r => r.resource_type === "hearing").payload.date, "2026-10-12", "writes the hearing date to the saved payload");
+  assert.equal(savedRows.find(r => r.resource_type === "hearing").payload.time, "10:10", "writes the hearing time to the saved payload");
+  const persistedHearing = savedRows.find(r => r.resource_type === "hearing");
+  const reloadedState = await store.load(makeClient(savedRows.map(r => ({ ...r, workspace_id: "ws-1" }))), "ws-1");
+  const reloadedHearing = reloadedState.hearings.find(h => h.id === persistedHearing.resource_id);
+  assert.equal(reloadedHearing.date, "2026-10-12", "saved hearing date survives adapter reload");
+  assert.equal(reloadedHearing.time, "10:10", "saved hearing time survives adapter reload");
   assert.ok(savedRows.find(r => r.resource_type === "hearing").resource_id, "generates a stable ID for new legacy-style hearing");
   assert.equal(savedRows.find(r => r.resource_type === "hearing").payload.id, savedRows.find(r => r.resource_type === "hearing").resource_id, "writes generated ID into payload");
   assert.equal(savedRows.find(r => r.resource_type === "client").case_id, "CASE-1");
