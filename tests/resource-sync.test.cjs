@@ -161,3 +161,88 @@ test("save round-trip persists linked hearing date and time without changing liv
   assert.equal(reloaded.hearings[0].date, "2026-10-13", "linked hearing date should survive reload");
   assert.equal(reloaded.hearings[0].time, "10:10", "linked hearing time should survive reload");
 });
+
+
+test("atomic RPC batches changes and reloads canonical baseline after success", async () => {
+  const workspaceId = "ws-atomic";
+  const backingRows = [
+    { id: "row-case", workspace_id: workspaceId, resource_type: "case", resource_id: "CASE-1", case_id: null, payload: { id: "CASE-1", title: "Before" }, updated_at: "2026-10-12T00:00:00.000Z" }
+  ];
+  const rpcCalls = [];
+  const client = {
+    from(table) {
+      assert.equal(table, "practice_resources");
+      return {
+        select() { return this; },
+        eq(key, value) {
+          assert.equal(key, "workspace_id");
+          assert.equal(value, workspaceId);
+          return Promise.resolve({ data: backingRows.map(row => ({...row})), error: null });
+        }
+      };
+    },
+    async rpc(name, args) {
+      rpcCalls.push({ name, args });
+      assert.equal(name, "apply_practice_resource_batch");
+      const next = backingRows.map(row => ({...row}));
+      for (const change of args.p_changes) {
+        if (change.op === "update") {
+          const row = next.find(r => r.id === change.id && r.updated_at === change.expected_updated_at);
+          if (!row) return { data: null, error: { code: "40001", message: "stale" } };
+          row.payload = change.payload;
+          row.case_id = change.case_id;
+          row.updated_at = "2026-10-12T00:01:00.000Z";
+        } else if (change.op === "insert") {
+          next.push({ id: "row-" + change.resource_id, workspace_id: workspaceId, resource_type: change.resource_type, resource_id: change.resource_id, case_id: change.case_id, payload: change.payload, updated_at: "2026-10-12T00:01:00.000Z" });
+        } else if (change.op === "delete") {
+          const index = next.findIndex(r => r.id === change.id && r.updated_at === change.expected_updated_at && r.resource_type === change.resource_type && r.resource_id === change.resource_id);
+          if (index < 0) return { data: null, error: { code: "40001", message: "stale" } };
+          next.splice(index, 1);
+        }
+      }
+      backingRows.splice(0, backingRows.length, ...next);
+      return { data: { atomic: true, applied: args.p_changes.length }, error: null };
+    }
+  };
+  const sync = create(client, { workspaceId });
+  const state = await sync.load();
+  state.cases[0].title = "After";
+  state.clients.push({ id: "CLIENT-1", name: "New client" });
+  const result = await sync.save(state);
+  assert.deepEqual(result, { saved: 2, atomic: true });
+  assert.equal(rpcCalls.length, 1, "all writes should use one atomic RPC call");
+  assert.equal(rpcCalls[0].args.p_changes.length, 2);
+  assert.equal(rpcCalls[0].args.p_changes.find(x => x.op === "update").expected_updated_at, "2026-10-12T00:00:00.000Z");
+  assert.equal(backingRows.find(r => r.resource_id === "CASE-1").payload.title, "After");
+  assert.ok(backingRows.some(r => r.resource_id === "CLIENT-1"));
+  // Successful save reloads the server's updated_at version; unchanged save is a no-op.
+  await sync.save(await sync.load());
+  assert.equal(rpcCalls.length, 1);
+});
+
+test("atomic RPC failure reports conflict and does not advance client baseline", async () => {
+  const workspaceId = "ws-atomic-rollback";
+  const backingRows = [
+    { id: "row-case", workspace_id: workspaceId, resource_type: "case", resource_id: "CASE-1", case_id: null, payload: { id: "CASE-1", title: "Original" }, updated_at: "2026-10-12T00:00:00.000Z" }
+  ];
+  const before = JSON.stringify(backingRows);
+  let rpcCount = 0;
+  const client = {
+    from() {
+      return { select() { return this; }, eq() { return Promise.resolve({ data: backingRows.map(row => ({...row})), error: null }); } };
+    },
+    async rpc() {
+      rpcCount++;
+      // Represents a PostgreSQL transaction returning a stale-version error:
+      // no partial mutation is committed to the backing store.
+      return { data: null, error: { code: "40001", message: "stale version" } };
+    }
+  };
+  const sync = create(client, { workspaceId });
+  const state = await sync.load();
+  state.cases[0].title = "Must not partially commit";
+  state.clients.push({ id: "CLIENT-NEW", name: "New client" });
+  await assert.rejects(sync.save(state), error => error.code === "AD_CLOUD_CONFLICT");
+  assert.equal(rpcCount, 1);
+  assert.equal(JSON.stringify(backingRows), before, "failed atomic RPC must leave all rows unchanged");
+});
