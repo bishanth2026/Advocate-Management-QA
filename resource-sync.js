@@ -361,7 +361,7 @@
         if (version === sequence) {
           if (error && error.code === "AD_CLOUD_CONFLICT") {
             status("Cloud: Conflict — refresh required", "#b91c1c");
-            const statusNode = document.getElementById("cloudSyncStatus");
+            const statusNode = typeof document !== "undefined" ? document.getElementById("cloudSyncStatus") : null;
             if (statusNode) statusNode.title = String(error.message || "Cloud save conflict");
             console.error("AdvocateDesk conflict diagnostics", {
               code: error.serverCode || error.code,
