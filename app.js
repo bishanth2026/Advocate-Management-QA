@@ -112,7 +112,8 @@ function syncCaseNextHearing(caseRecord, options={}){
     state.hearings.push(linked);
   }else{
     linked.date=nextDate;
-    linked.time=caseRecord.hearingTime||"";
+    // Legacy cases may not have hearingTime even when the linked hearing has a saved time; never erase that time just because the case field is blank.
+    linked.time=String(caseRecord.hearingTime||"").trim() || linked.time || "";
     linked.case=caseNumber||linked.case;
     linked.caseNumber=caseNumber||linked.caseNumber;
     linked.caseId=caseId||linked.caseId;
