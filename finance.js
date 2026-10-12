@@ -77,6 +77,8 @@ function k(v){return s(v).toLowerCase().replace(/\s+/g,' ');}
 function data(){return window.appState||{};}
 function arr(n){var d=data();return Array.isArray(d[n])?d[n]:[];}
 function num(c){return s(c.number||c.caseNumber||c.case_no||c.caseNo||c.case_number||c.displayNumber);}
+function title(c){return s(c.title||c.caseTitle||c.name||c.case_name);}
+function label(c){return s(c.label||c.text)||[num(c),title(c)].filter(Boolean).join(' — ')||num(c);}
 function cid(c){return s(c.id||c.caseId||c.case_id||c.value);}
 function cname(c){return s(c.name||c.clientName||c.client_name||c.fullName||c.full_name);}
 function clientLink(c){return s(c.clientId||c.client_id||c.clientName||c.client_name||c.client||c.party||c.partyName);}
