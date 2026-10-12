@@ -203,7 +203,7 @@ async function run() {
             "; actual client value="+JSON.stringify(autoFillState.selectedClient)+
             "; client options="+JSON.stringify(autoFillState.clientOptions)+
             "; sync function="+autoFillState.syncFunction+
-            "; case directory fields="+JSON.stringify(linkedCase.caseFields));
+            "; case directory fields="+JSON.stringify(linkedCase.caseFields)+"; autofill debug="+JSON.stringify(autoFillState.autofillDebug));
           if(linkedCase.clientName)assert.equal(autoFillState.selectedClient,linkedCase.clientName,"Invoice client should match the selected case's linked client.");
           await page.getByRole("button",{name:"Cancel",exact:true}).click();
           await page.getByText("Create Invoice",{exact:true}).waitFor({state:"hidden",timeout:10000});
