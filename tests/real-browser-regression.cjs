@@ -227,6 +227,60 @@ async function run() {
           }
           log("PASS","accountant invoice: client/case dropdowns populated and Cancel closes the modal.");
         }
+        if(actor.key==="ADMIN"){
+          const syncFixture=await page.evaluate(()=>{
+            const s=window.appState;
+            if(!s||!Array.isArray(s.cases)||!Array.isArray(s.hearings))throw new Error("App state arrays are unavailable for hearing sync test.");
+            const id="qa-sync-case-20261012";
+            s.cases=s.cases.filter(x=>x.id!==id);
+            s.hearings=s.hearings.filter(x=>x.caseId!==id&&x.caseNumber!=="QA-SYNC/2026");
+            s.cases.push({id,number:"QA-SYNC/2026",title:"QA Hearing Sync Case",court:"QA Court",status:"Active",next:"2026-10-12",hearingTime:"10:10"});
+            s.hearings.push({id:"qa-sync-hearing-20261012",caseId:id,caseNumber:"QA-SYNC/2026",case:"QA-SYNC/2026",title:"QA Hearing Sync Case",court:"QA Court",stage:"Scheduled",date:"2026-10-12",time:"10:10"});
+            return {caseCount:s.cases.filter(x=>x.id===id).length,hearingCount:s.hearings.filter(x=>x.caseId===id).length};
+          });
+          try{
+            assert.equal(syncFixture.caseCount,1,"QA fixture case should be injected once.");
+            assert.equal(syncFixture.hearingCount,1,"QA fixture hearing should be injected once.");
+            await page.evaluate(()=>window.caseDetails("", "qa-sync-case-20261012"));
+            const case360Text=(await page.locator("#content").innerText()).replace(/\\s+/g," ");
+            assert.ok(case360Text.includes("QA-SYNC/2026"),"Case 360 should display the synchronized test case.");
+            assert.ok(case360Text.includes("10:10 AM")||case360Text.includes("10:10"),"Case 360 should display hearing time 10:10.");
+            await page.evaluate(()=>navigate("hearings"));
+            await page.waitForTimeout(250);
+            const hearingText=(await page.locator("#content").innerText()).replace(/\\s+/g," ");
+            assert.ok(hearingText.includes("QA-SYNC/2026"),"Hearings module should display the linked case.");
+            assert.ok(hearingText.includes("10:10"),"Hearings module should display hearing time 10:10.");
+            await page.evaluate(()=>{window.openCalendarDate("2026-10-12");});
+            await page.waitForTimeout(150);
+            await page.locator("#calendarSearch").fill("QA-SYNC/2026");
+            await page.locator("#calendarSearchBtn").click();
+            const calendarText=(await page.locator("#calendarSearchResult").innerText()).replace(/\\s+/g," ");
+            assert.ok(calendarText.includes("QA Hearing Sync Case"),"Calendar search should find the synchronized hearing.");
+            assert.ok(calendarText.includes("10:10 AM")||calendarText.includes("10:10"),"Calendar search should show hearing time 10:10.");
+            await page.evaluate(()=>{
+              const host=document.createElement("div");
+              host.id="qa-dashboard-calendar";
+              document.body.appendChild(host);
+              if(typeof window.renderDashboardTodayCalendarInto!=="function")throw new Error("Dashboard calendar renderer is unavailable.");
+              window.renderDashboardTodayCalendarInto(host);
+            });
+            const dashboardCalendar=page.locator("#qa-dashboard-calendar");
+            assert.ok(await dashboardCalendar.locator('[data-date="2026-10-12"] .cal-dot.hearing').count()>0,
+              "Dashboard calendar should mark the test hearing date.");
+            log("PASS","Case–Hearing–Calendar–Dashboard sync: Case 360 date/time, Hearings row, Calendar search and Dashboard date marker verified.");
+          }catch(error){
+            log("FAIL","Case–Hearing–Calendar–Dashboard sync: "+error.message);
+            errors.push("Case-hearing-calendar-dashboard sync: "+error.stack);
+          }finally{
+            await page.evaluate(()=>{
+              const s=window.appState;
+              if(!s)return;
+              s.cases=s.cases.filter(x=>x.id!=="qa-sync-case-20261012");
+              s.hearings=s.hearings.filter(x=>x.id!=="qa-sync-hearing-20261012"&&x.caseId!=="qa-sync-case-20261012"&&x.caseNumber!=="QA-SYNC/2026");
+              document.getElementById("qa-dashboard-calendar")?.remove();
+            }).catch(()=>{});
+          }
+        }
         log("PASS", actor.role + ": sign-in, per-resource bootstrap, role-scoped fixture visibility, 11 navigation pages, no uncaught JS errors.");
       } catch (error) {
         log("FAIL", actor.role + ": " + error.message);
