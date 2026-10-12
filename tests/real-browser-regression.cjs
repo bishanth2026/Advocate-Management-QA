@@ -157,12 +157,13 @@ async function run() {
             return {value:String(c.number||c.caseNumber||c.case_number||c.id||c.case_id||""),clientName:nameOf(c)};
           });
           if(linkedCase){
-            const caseSelect=page.locator("#modalBody #f2");
+            const caseSelect=page.locator("#modalBody #f2:visible").first();
+            await caseSelect.waitFor({state:"visible",timeout:10000});
             await caseSelect.selectOption({label:linkedCase.value}).catch(async()=>{
               await caseSelect.selectOption(linkedCase.value);
             });
             await page.waitForTimeout(200);
-            const selectedClient=await page.locator("#modalBody #f1").inputValue();
+            const selectedClient=await page.locator("#modalBody #f1:visible").first().inputValue();
             assert.ok(selectedClient,"Selecting a linked case should prefill the invoice client.");
             if(linkedCase.clientName)assert.equal(selectedClient,linkedCase.clientName,"Invoice client should match the selected case's linked client.");
           }
