@@ -203,7 +203,7 @@
       return state;
     }
 
-    async function persist(snapshot, version) {
+    async function persist(snapshot, version, retriedAfterDuplicate) {
       const desired = buildDesiredRows(snapshot);
       // Only rows returned by RLS are in baseline. Omitted/unauthorized rows are
       // never inferred as deletions because they were never placed in baseline.
@@ -279,6 +279,13 @@
         if (response.error) {
           const serverError = response.error;
           const code = String(serverError.code || "UNKNOWN");
+          // A duplicate identity can mean this session's RLS-visible baseline
+          // became stale after another authorized session created the same row.
+          // Refresh once and recompute the diff; never upsert or bypass RLS.
+          if (code === "23505" && !retriedAfterDuplicate) {
+            await load();
+            return persist(snapshot, version, true);
+          }
           const failedBatchSummary = batch.map((item) => ({
             op: item.op,
             resource_type: item.resource_type,
