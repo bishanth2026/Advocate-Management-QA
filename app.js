@@ -1192,8 +1192,13 @@ function deleteRecord(type,index){
  navigate(type==="case"||type==="client"?"cases":type==="hearing"?"hearings":type==="task"?"tasks":type==="invoice"?"finance":"client-management");
 }
 function syncInvoiceCaseClient(){
-  const caseInput=document.getElementById("f2");
-  const clientSelect=document.getElementById("f1");
+  // Prefer the active modal's invoice controls; duplicate form IDs may exist
+  // in the page shell and document.getElementById can otherwise target a stale form.
+  const invoiceRoot=document.querySelector("#modalBody select#f2")?.closest("#modalBody")
+    ||document.querySelector("#modalBody")
+    ||document;
+  const caseInput=invoiceRoot.querySelector("select#f2")||document.getElementById("f2");
+  const clientSelect=invoiceRoot.querySelector("select#f1")||document.getElementById("f1");
   if(!caseInput||!clientSelect) return;
   const value=String(caseInput.value||"").trim();
   const accountant=auth&&auth.role==="accountant";
