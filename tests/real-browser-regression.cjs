@@ -157,11 +157,18 @@ async function run() {
           const linkedCase=await page.evaluate(()=>{
             const cases=Array.isArray(window.ADFinanceCaseDirectory)?window.ADFinanceCaseDirectory:[];
             const clients=Array.isArray(window.ADFinanceClientDirectory)?window.ADFinanceClientDirectory:[];
-            const nameOf=c=>String(c.client||c.client_name||"").trim();
-            const idOf=c=>String(c.clientId||c.client_id||"").trim();
-            const c=cases.find(x=>(idOf(x)&&clients.some(y=>String(y.client_id)===idOf(x)))||(nameOf(x)&&clients.some(y=>String(y.client_name||"").trim()===nameOf(x))));
-            if(!c)return null;
-            return {value:String(c.number||c.caseNumber||c.case_number||c.id||c.case_id||""),clientName:nameOf(c)};
+            for(const c of cases){
+              const linkedIds=Array.isArray(c.clientIds)?c.clientIds.map(String):[];
+              const linkedId=String(c.clientId||c.client_id||linkedIds[0]||"");
+              const linkedName=String(typeof c.client==="string"?c.client:(c.client&&c.client.name)||c.client_name||"").trim();
+              const client=clients.find(y=>String(y.client_id||"")===linkedId)
+                ||clients.find(y=>String(y.client_name||"").trim()===linkedName)
+                ||(Array.isArray(c.clients)&&clients.find(y=>c.clients.includes(y.client_name)));
+              if(!client)continue;
+              const value=String(c.number||c.caseNumber||c.case_no||c.caseNo||c.case_number||c.id||c.case_id||"");
+              if(value)return {value,clientName:String(client.client_name||"").trim()};
+            }
+            return null;
           });
           if(linkedCase){
             // The invoice form keeps its native case select visually hidden behind
