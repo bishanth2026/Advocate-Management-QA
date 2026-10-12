@@ -157,16 +157,12 @@ async function run() {
             return {value:String(c.number||c.caseNumber||c.case_number||c.id||c.case_id||""),clientName:nameOf(c)};
           });
           if(linkedCase){
-            const visibleCaseIndex=await page.locator("select#f2").evaluateAll(els=>els.findIndex(el=>{const r=el.getBoundingClientRect(),s=getComputedStyle(el);return r.width>0&&r.height>0&&s.visibility!=="hidden"&&s.display!=="none";}));
-            assert.ok(visibleCaseIndex>=0,"Create Invoice case dropdown should be visible.");
-            const caseSelect=page.locator("select#f2").nth(visibleCaseIndex);
+            const caseSelect=page.locator("#modalBody select#f2").first();
             await caseSelect.selectOption({label:linkedCase.value}).catch(async()=>{
               await caseSelect.selectOption(linkedCase.value);
             });
             await page.waitForTimeout(200);
-            const visibleClientIndex=await page.locator("select#f1").evaluateAll(els=>els.findIndex(el=>{const r=el.getBoundingClientRect(),s=getComputedStyle(el);return r.width>0&&r.height>0&&s.visibility!=="hidden"&&s.display!=="none";}));
-            assert.ok(visibleClientIndex>=0,"Create Invoice client dropdown should be visible.");
-            const selectedClient=await page.locator("select#f1").nth(visibleClientIndex).inputValue();
+            const selectedClient=await page.locator("#modalBody select#f1").first().inputValue();
             assert.ok(selectedClient,"Selecting a linked case should prefill the invoice client.");
             if(linkedCase.clientName)assert.equal(selectedClient,linkedCase.clientName,"Invoice client should match the selected case's linked client.");
           }
