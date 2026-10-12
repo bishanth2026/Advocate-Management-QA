@@ -1201,7 +1201,7 @@ function syncInvoiceCaseClient(){
   const clientSource=accountant&&Array.isArray(window.ADFinanceClientDirectory)
     ?window.ADFinanceClientDirectory.map(c=>({id:String(c.client_id||""),name:String(c.client_name||"")}))
     :state.clients;
-  const relatedCase=caseSource.find(c=>String(c.number||c.caseNumber||c.case_number||"").trim()===value||String(c.id||c.case_id||"").trim()===value);
+  const relatedCase=caseSource.find(c=>String(c.number||c.caseNumber||c.case_no||c.caseNo||c.case_number||"").trim()===value||String(c.id||c.case_id||c.caseId||"").trim()===value);
   if(!relatedCase) return;
   let client=null;
   const linkedIds=Array.isArray(relatedCase.clientIds)?relatedCase.clientIds:[];
