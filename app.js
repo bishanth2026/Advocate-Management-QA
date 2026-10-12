@@ -126,6 +126,7 @@ function syncCaseNextHearing(caseRecord, options={}){
   }
   return true;
 }
+state.hearings=Array.isArray(state.hearings)?state.hearings:[];
 let stateChangedByHearingLinkMigration=false;
 if(auth.role!=="super_admin" && Array.isArray(state.cases)){
   state.cases.forEach(c=>{
