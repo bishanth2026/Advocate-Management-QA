@@ -178,35 +178,29 @@ async function run() {
             return null;
           });
           assert.ok(linkedCase,"Accountant directory should contain at least one case with a resolvable client link.");
-          const selectedCase=await page.locator("#modalBody select#f2").evaluate((select,wanted)=>{
-            const options=Array.from(select.options);
-            const option=options.find(o=>o.value===wanted);
-            if(!option)return {error:"No exact invoice case option matched directory value "+wanted,options:options.map(o=>({text:o.textContent.trim(),value:o.value}))};
-            select.value=option.value;
-            // Exercise the registered UI event and then call the same handler
-            // explicitly because the visible custom picker may own the interaction
-            // while the native select is hidden in headless Chromium.
-            select.dispatchEvent(new Event("change",{bubbles:true}));
-            if(typeof window.syncInvoiceCaseClient==="function") window.syncInvoiceCaseClient();
-            return {value:select.value,label:option.textContent.trim()};
-          },linkedCase.value);
-          assert.ok(!selectedCase.error,selectedCase.error||"Case option should exist.");
-          await page.waitForTimeout(200);
+          // Exercise the actual visible case autocomplete, not the hidden native select.
+          const caseSearch=page.locator("#modalBody .finance-case-autocomplete input").first();
+          await caseSearch.fill(linkedCase.value);
+          const caseChoice=page.locator(".finance-case-results button").filter({hasText:linkedCase.value}).first();
+          await caseChoice.waitFor({state:"visible",timeout:10000});
+          const selectedCaseLabel=(await caseChoice.textContent()||"").trim();
+          await caseChoice.click();
+          await page.waitForTimeout(250);
           const autoFillState=await page.evaluate(()=>({
             selectedClient:document.querySelector("#modalBody select#f1")?.value||"",
             clientOptions:Array.from(document.querySelectorAll("#modalBody select#f1 option")).map(o=>o.value),
             syncFunction:typeof window.syncInvoiceCaseClient,
-            autofillDebug:window.__invoiceAutofillDebug||null,
-            liveClientValues:Array.from(document.querySelectorAll("#modalBody select#f1")).map(s=>({value:s.value,connected:s.isConnected,outer:s.outerHTML.slice(0,500)})),
-            modalBodyCount:document.querySelectorAll("#modalBody").length
+            caseSearchValue:document.querySelector("#modalBody .finance-case-autocomplete input")?.value||"",
+            clientDisplay:document.querySelector("#modalBody [data-finance-client-display='true']")?.value||"",
+            selectedClientId:document.querySelector("#modalBody select#f1")?.dataset.selectedClientId||""
           }));
-          assert.ok(autoFillState.selectedClient,
-            "Selecting linked case "+selectedCase.label+" should prefill its client "+linkedCase.clientName+
+          assert.ok(autoFillState.selectedClient===linkedCase.clientName || autoFillState.clientDisplay===linkedCase.clientName,
+            "Selecting linked case "+selectedCaseLabel+" should prefill its client "+linkedCase.clientName+
             "; actual client value="+JSON.stringify(autoFillState.selectedClient)+
             "; client options="+JSON.stringify(autoFillState.clientOptions)+
             "; sync function="+autoFillState.syncFunction+
-            "; case directory fields="+JSON.stringify(linkedCase.caseFields)+"; autofill debug="+JSON.stringify(autoFillState.autofillDebug)+"; live="+JSON.stringify(autoFillState.liveClientValues)+"; modalBodyCount="+autoFillState.modalBodyCount);
-          if(linkedCase.clientName)assert.equal(autoFillState.selectedClient,linkedCase.clientName,"Invoice client should match the selected case's linked client.");
+            "; case directory fields="+JSON.stringify(linkedCase.caseFields)+"; actual client display="+JSON.stringify(autoFillState.clientDisplay)+"; selected client ID="+JSON.stringify(autoFillState.selectedClientId)+"; case search="+JSON.stringify(autoFillState.caseSearchValue));
+          if(linkedCase.clientName)assert.ok(autoFillState.selectedClient===linkedCase.clientName || autoFillState.clientDisplay===linkedCase.clientName,"Invoice client should match the selected case linked client.");
           await page.getByRole("button",{name:"Cancel",exact:true}).click();
           await page.getByText("Create Invoice",{exact:true}).waitFor({state:"hidden",timeout:10000});
           assert.equal(pageErrors.length,0,"Accountant invoice open/close produced browser errors: "+pageErrors.join(" | "));
