@@ -157,39 +157,50 @@ async function run() {
           const linkedCase=await page.evaluate(()=>{
             const cases=Array.isArray(window.ADFinanceCaseDirectory)?window.ADFinanceCaseDirectory:[];
             const clients=Array.isArray(window.ADFinanceClientDirectory)?window.ADFinanceClientDirectory:[];
-            for(const c of cases){
-              const linkedIds=Array.isArray(c.clientIds)?c.clientIds.map(String):[];
-              const linkedId=String(c.clientId||c.client_id||linkedIds[0]||"");
-              const linkedName=String(typeof c.client==="string"?c.client:(c.client&&c.client.name)||c.client_name||"").trim();
-              const client=clients.find(y=>String(y.client_id||"")===linkedId)
-                ||clients.find(y=>String(y.client_name||"").trim()===linkedName)
-                ||(Array.isArray(c.clients)&&clients.find(y=>c.clients.includes(y.client_name)));
+            for(const item of cases){
+              const ids=[
+                ...(Array.isArray(item.clientIds)?item.clientIds:[]),
+                ...(Array.isArray(item.client_ids)?item.client_ids:[]),
+                item.clientId,item.client_id,
+                item.client&&typeof item.client==="object"?(item.client.id||item.client.client_id):""
+              ].map(v=>String(v||"").trim()).filter(Boolean);
+              const names=[
+                ...(Array.isArray(item.clients)?item.clients:[]),item.client,item.client_name,item.clientName,
+                ...(Array.isArray(item.client_names)?item.client_names:[])
+              ].map(v=>String(v&&typeof v==="object"?(v.name||v.client_name||""):v||"").trim()).filter(Boolean);
+              const client=clients.find(y=>ids.includes(String(y.client_id||"").trim()))
+                ||clients.find(y=>names.some(n=>n.toLowerCase()===String(y.client_name||"").trim().toLowerCase()));
               if(!client)continue;
-              const value=String(c.number||c.caseNumber||c.case_no||c.caseNo||c.case_number||c.id||c.case_id||"");
-              if(value)return {value,clientName:String(client.client_name||"").trim()};
+              // Match the invoice form's exact option-value expression.
+              const value=String(item.number||item.caseNumber||item.case_number||item.id||"").trim();
+              if(value)return {value,clientName:String(client.client_name||"").trim(),caseFields:Object.keys(item)};
             }
             return null;
           });
-          if(linkedCase){
-            // The invoice form keeps its native case select visually hidden behind
-            // the accessible custom picker. Drive the same native change event
-            // used by the UI instead of Playwright's visibility-gated selectOption.
-            const selectedCase=await page.locator("#modalBody select#f2").evaluate((select, wanted)=>{
-              const options=Array.from(select.options);
-              const option=options.find(o=>o.textContent.trim()===wanted)
-                || options.find(o=>o.value===wanted)
-                || options.find(o=>o.textContent.trim().includes(wanted));
-              if(!option) return {error:"No invoice case option matched: "+wanted, options:options.map(o=>({text:o.textContent.trim(),value:o.value}))};
-              select.value=option.value;
-              select.dispatchEvent(new Event("change",{bubbles:true}));
-              return {value:select.value,label:option.textContent.trim()};
-            },linkedCase.value);
-            assert.ok(!selectedCase.error,selectedCase.error||"Case option should exist.");
-            await page.waitForTimeout(200);
-            const selectedClient=await page.locator("#modalBody select#f1").evaluate(select=>select.value);
-            assert.ok(selectedClient,"Selecting a linked case should prefill the invoice client.");
-            if(linkedCase.clientName)assert.equal(selectedClient,linkedCase.clientName,"Invoice client should match the selected case's linked client.");
-          }
+          assert.ok(linkedCase,"Accountant directory should contain at least one case with a resolvable client link.");
+          const selectedCase=await page.locator("#modalBody select#f2").evaluate((select,wanted)=>{
+            const options=Array.from(select.options);
+            const option=options.find(o=>o.value===wanted);
+            if(!option)return {error:"No exact invoice case option matched directory value "+wanted,options:options.map(o=>({text:o.textContent.trim(),value:o.value}))};
+            select.value=option.value;
+            // Fire the same bubbling change event as the native select's onchange.
+            select.dispatchEvent(new Event("change",{bubbles:true}));
+            return {value:select.value,label:option.textContent.trim()};
+          },linkedCase.value);
+          assert.ok(!selectedCase.error,selectedCase.error||"Case option should exist.");
+          await page.waitForTimeout(200);
+          const autoFillState=await page.evaluate(()=>({
+            selectedClient:document.querySelector("#modalBody select#f1")?.value||"",
+            clientOptions:Array.from(document.querySelectorAll("#modalBody select#f1 option")).map(o=>o.value),
+            syncFunction:typeof window.syncInvoiceCaseClient
+          }));
+          assert.ok(autoFillState.selectedClient,
+            "Selecting linked case "+selectedCase.label+" should prefill its client "+linkedCase.clientName+
+            "; actual client value="+JSON.stringify(autoFillState.selectedClient)+
+            "; client options="+JSON.stringify(autoFillState.clientOptions)+
+            "; sync function="+autoFillState.syncFunction+
+            "; case directory fields="+JSON.stringify(linkedCase.caseFields));
+          if(linkedCase.clientName)assert.equal(autoFillState.selectedClient,linkedCase.clientName,"Invoice client should match the selected case's linked client.");
           await page.getByRole("button",{name:"Cancel",exact:true}).click();
           await page.getByText("Create Invoice",{exact:true}).waitFor({state:"hidden",timeout:10000});
           assert.equal(pageErrors.length,0,"Accountant invoice open/close produced browser errors: "+pageErrors.join(" | "));
