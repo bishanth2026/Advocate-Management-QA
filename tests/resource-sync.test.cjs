@@ -106,3 +106,58 @@ test("load/save uses only practice_resources and never deletes rows hidden by RL
   assert.equal(backingRows.find((row) => row.resource_id === "TASK-1").case_id, "CS-1", "a DB-only case link must be preserved");
   assert.ok(calls.every((call) => call.table === "practice_resources"), "legacy snapshot table must never be queried or mutated");
 });
+
+
+test("save round-trip persists linked hearing date and time without changing live QA data", async () => {
+  const workspaceId = "ws-hearing-roundtrip";
+  const backingRows = [
+    { id: "row-case", workspace_id: workspaceId, resource_type: "case", resource_id: "CASE-QA-1", case_id: null, payload: { id: "CASE-QA-1", number: "QA/1/2026", next: "2026-10-12" }, updated_at: "2026-10-12T00:00:00.000Z" },
+    { id: "row-hearing", workspace_id: workspaceId, resource_type: "hearing", resource_id: "HEARING-QA-1", case_id: "CASE-QA-1", payload: { id: "HEARING-QA-1", caseId: "CASE-QA-1", caseNumber: "QA/1/2026", date: "2026-10-12", time: "10:10" }, updated_at: "2026-10-12T00:00:00.000Z" },
+  ];
+  class Query {
+    constructor(table) { this.table = table; this.op = "select"; this.filters = {}; this.values = null; }
+    select() { return this; }
+    eq(key, value) { this.filters[key] = value; return this; }
+    insert(values) { this.op = "insert"; this.values = values; return this; }
+    update(values) { this.op = "update"; this.values = values; return this; }
+    delete() { this.op = "delete"; return this; }
+    async execute() {
+      assert.equal(this.table, "practice_resources", "sync must only use the per-resource table");
+      const matches = () => backingRows.filter(row => Object.entries(this.filters).every(([k,v]) => row[k] === v));
+      if (this.op === "select") return { data: matches().map(row => ({...row})), error: null };
+      if (this.op === "update") {
+        const row = matches()[0];
+        if (!row) return { data: null, error: null };
+        Object.assign(row, this.values);
+        return { data: {...row}, error: null };
+      }
+      if (this.op === "insert") {
+        const row = {...this.values, id: "row-inserted"};
+        backingRows.push(row);
+        return { data: {...row}, error: null };
+      }
+      const row = matches()[0];
+      if (row) backingRows.splice(backingRows.indexOf(row), 1);
+      return { data: row ? {id: row.id} : null, error: null };
+    }
+    then(resolve, reject) { return this.execute().then(resolve, reject); }
+    single() { return this.execute(); }
+    maybeSingle() { return this.execute(); }
+  }
+  const sync = create({ from: table => new Query(table) }, { workspaceId });
+  const state = await sync.load();
+  assert.equal(state.hearings[0].time, "10:10");
+  state.cases[0].next = "2026-10-13";
+  // Mirrors the intended result of case-to-hearing synchronization for a
+  // legacy case with no hearingTime: update the date, retain the saved time.
+  state.hearings[0].date = state.cases[0].next;
+  await sync.save(state);
+  const storedCase = backingRows.find(row => row.resource_id === "CASE-QA-1");
+  const storedHearing = backingRows.find(row => row.resource_id === "HEARING-QA-1");
+  assert.equal(storedCase.payload.next, "2026-10-13", "case date should persist");
+  assert.equal(storedHearing.payload.date, "2026-10-13", "linked hearing date should persist");
+  assert.equal(storedHearing.payload.time, "10:10", "linked hearing time should remain unchanged");
+  const reloaded = await sync.load();
+  assert.equal(reloaded.hearings[0].date, "2026-10-13", "linked hearing date should survive reload");
+  assert.equal(reloaded.hearings[0].time, "10:10", "linked hearing time should survive reload");
+});
