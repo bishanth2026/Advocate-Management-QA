@@ -41,11 +41,20 @@
     const clientName = id => (clients.find(c => String(c.id) === String(id)) || {}).name || '';
     const out = [];
 
-    (Array.isArray(d.hearings) ? d.hearings : []).forEach((h, i) => out.push({
+    const storedHearings = Array.isArray(d.hearings) ? d.hearings : [];
+    storedHearings.forEach((h, i) => out.push({
       ...h, date:h.date, time:h.time || '', title:h.title || 'Court Hearing',
-      caseNo:h.case || '', court:h.court || '', stage:h.stage || '',
+      caseNo:h.case || h.caseNumber || '', court:h.court || '', stage:h.stage || '',
       clientName:clientName(h.clientId), kind:'hearing',
       key:'hearing-' + i, purpose:h.stage || 'Hearing'
+    }));
+    (Array.isArray(d.cases) ? d.cases : []).filter(c => c.next && !storedHearings.some(h =>
+      (h.caseId && h.caseId === c.id) || (h.caseNumber && h.caseNumber === c.number) || h.case === c.id || h.case === c.number
+    )).forEach((c, i) => out.push({
+      date:c.next, time:c.hearingTime || '', title:c.title || 'Court Hearing',
+      caseNo:c.number || c.id || '', court:c.court || '', stage:c.hearingStage || 'Scheduled',
+      clientName:clientName(c.clientId), kind:'hearing', _derivedFromCase:true,
+      key:'case-hearing-' + i, purpose:'Next hearing (from case)'
     }));
 
     (Array.isArray(d.tasks) ? d.tasks : []).forEach((t, i) => out.push({
