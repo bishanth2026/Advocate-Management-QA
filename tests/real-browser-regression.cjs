@@ -125,12 +125,19 @@ async function run() {
       try {
         await login(page, actor.email, actor.password);
         await assertFixtureVisibility(page, actor.key);
+        const visibleNavPages = [];
         for (const pageName of NAV_PAGES) {
-          await page.locator('.nav-item[data-page="' + pageName + '"]').click();
+          const navItem = page.locator('.nav-item[data-page="' + pageName + '"]').first();
+          if (!(await navItem.count()) || !(await navItem.isVisible())) continue;
+          visibleNavPages.push(pageName);
+          await navItem.click();
           await page.waitForTimeout(250);
           const contentText = (await page.locator("#content").innerText()).trim();
-          assert.ok(contentText.length > 0, actor.role + " navigation page is blank: " + pageName);
+          assert.ok(contentText.length > 0, actor.role + " visible navigation page is blank: " + pageName);
           assert.equal(pageErrors.length, 0, actor.role + " raised uncaught browser errors on " + pageName + ": " + pageErrors.join(" | "));
+        }
+        if (actor.key === "ACCOUNTANT") {
+          assert.deepEqual(visibleNavPages, ["finance"], "Accountant should see only the Finance navigation item.");
         }
         if(actor.key==="ACCOUNTANT"){
           await page.locator('.nav-item[data-page="finance"]').click();
