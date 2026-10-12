@@ -196,7 +196,9 @@ async function run() {
             selectedClient:document.querySelector("#modalBody select#f1")?.value||"",
             clientOptions:Array.from(document.querySelectorAll("#modalBody select#f1 option")).map(o=>o.value),
             syncFunction:typeof window.syncInvoiceCaseClient,
-            autofillDebug:window.__invoiceAutofillDebug||null
+            autofillDebug:window.__invoiceAutofillDebug||null,
+            liveClientValues:Array.from(document.querySelectorAll("#modalBody select#f1")).map(s=>({value:s.value,connected:s.isConnected,outer:s.outerHTML.slice(0,500)})),
+            modalBodyCount:document.querySelectorAll("#modalBody").length
           }));
           assert.ok(autoFillState.selectedClient,
             "Selecting linked case "+selectedCase.label+" should prefill its client "+linkedCase.clientName+
