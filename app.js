@@ -740,7 +740,18 @@ function reportShell(title,subtitle,body){
  document.body.classList.add('report-mode');
  content.innerHTML=`<div class="report-page"><header class="report-header"><div class="report-brand"><div class="report-logo">⚖</div><div><strong>AdvocateDesk</strong><span>Practice Management</span></div></div><div class="report-heading"><h1>${esc(title)}</h1><p>${esc(subtitle)}</p></div><div class="report-actions"><button class="secondary" onclick="reports()">← Reports</button><button class="primary" onclick="window.print()">🖨 Print / Save PDF</button></div></header><main class="report-content">${body}</main><footer class="report-footer"><span>AdvocateDesk · Confidential Office Report</span><span>Generated on ${new Date().toLocaleDateString('en-IN')}</span></footer></div>`;
 }
+function reportRole(){
+ return String(auth&&auth.role||"").trim().toLowerCase();
+}
+function canViewFinancialReports(){
+ return ["admin","accountant","super_admin"].includes(reportRole());
+}
 function openReport(type){
+ // QA security guard: finance reports must not be available to assigned advocates/staff.
+ if(type==="finance"&&!canViewFinancialReports()){
+  alert("Access denied: Financial Reports are available only to authorized Admin or Accountant accounts.");
+  return;
+ }
  const money=v=>"₹"+Number(v||0).toLocaleString("en-IN");
  if(type==='cases'){
   reportShell('Case Report','All cases with current status',`<table><thead><tr><th>Case Number</th><th>Title</th><th>Client</th><th>Court</th><th>Type</th><th>Status</th></tr></thead><tbody>${state.cases.map(c=>`<tr><td><strong>${esc(c.number||'—')}</strong></td><td>${esc(c.title||'—')}</td><td>${esc(c.client||'—')}</td><td>${esc(c.court||'—')}</td><td>${esc(c.type||'—')}</td><td>${badge(c.status||'Pending')}</td></tr>`).join('')}</tbody></table>`);
@@ -781,7 +792,10 @@ function generateCase360Report(id){
  const match=arr=>arr.filter(x=>x.caseId===c.id||x.caseNumber===c.number||x.case===c.id||x.case===c.number||x.case===c.title);
  const hearings=match(state.hearings), tasks=match(state.tasks), invoices=state.invoices.filter(x=>x.case===c.id||x.case===c.number||x.case===c.title||x.caseId===c.id||x.caseNumber===c.number);
  const money=v=>"₹"+Number(v||0).toLocaleString('en-IN');
- reportShell('Case 360° Report',c.number||'Complete case report',`<h2>${esc(c.number||'Case')} — ${esc(c.title||'Untitled case')}</h2><p><strong>Court:</strong> ${esc(c.court||'—')} &nbsp; <strong>Status:</strong> ${esc(c.status||'—')} &nbsp; <strong>Type:</strong> ${esc(c.type||'—')}</p><h3>Clients / Parties</h3><table><thead><tr><th>Name</th><th>Role</th><th>Phone</th><th>Email</th></tr></thead><tbody>${parties.map(p=>`<tr><td>${esc(p.name)}</td><td>${esc(p.role||'Party')}</td><td>${esc(p.phone||'—')}</td><td>${esc(p.email||'—')}</td></tr>`).join('')||'<tr><td colspan="4">No linked clients.</td></tr>'}</tbody></table><h3>Hearings</h3><table><thead><tr><th>Date</th><th>Time</th><th>Stage</th><th>Court</th></tr></thead><tbody>${hearings.map(h=>`<tr><td>${fmtDate(h.date)}</td><td>${esc(h.time||'—')}</td><td>${esc(h.stage||h.purpose||'Hearing')}</td><td>${esc(h.court||c.court||'—')}</td></tr>`).join('')||'<tr><td colspan="4">No hearings.</td></tr>'}</tbody></table><h3>Tasks</h3><table><thead><tr><th>Task</th><th>Due Date</th><th>Priority</th><th>Status</th></tr></thead><tbody>${tasks.map(t=>`<tr><td>${esc(t.title||'Task')}</td><td>${fmtDate(t.due||t.dueDate)}</td><td>${esc(t.priority||'—')}</td><td>${esc(t.status||'—')}</td></tr>`).join('')||'<tr><td colspan="4">No tasks.</td></tr>'}</tbody></table><h3>Finance</h3><table><thead><tr><th>Invoice</th><th>Date</th><th>Client</th><th>Total</th><th>Paid</th><th>Outstanding</th></tr></thead><tbody>${invoices.map(x=>`<tr><td>${esc(x.id||'—')}</td><td>${fmtDate(x.date)}</td><td>${esc(x.client||'—')}</td><td>${money(x.amount)}</td><td>${money(x.paid)}</td><td>${money(Math.max(0,Number(x.amount||0)-Number(x.paid||0)))}</td></tr>`).join('')||'<tr><td colspan="6">No invoices or payments.</td></tr>'}</tbody></table>`);
+ const financeSection=canViewFinancialReports()
+  ? `<h3>Finance</h3><table><thead><tr><th>Invoice</th><th>Date</th><th>Client</th><th>Total</th><th>Paid</th><th>Outstanding</th></tr></thead><tbody>${invoices.map(x=>`<tr><td>${esc(x.id||'—')}</td><td>${fmtDate(x.date)}</td><td>${esc(x.client||'—')}</td><td>${money(x.amount)}</td><td>${money(x.paid)}</td><td>${money(Math.max(0,Number(x.amount||0)-Number(x.paid||0)))}</td></tr>`).join('')||'<tr><td colspan="6">No invoices or payments.</td></tr>'}</tbody></table>`
+  : "";
+ reportShell('Case 360° Report',c.number||'Complete case report',`<h2>${esc(c.number||'Case')} — ${esc(c.title||'Untitled case')}</h2><p><strong>Court:</strong> ${esc(c.court||'—')} &nbsp; <strong>Status:</strong> ${esc(c.status||'—')} &nbsp; <strong>Type:</strong> ${esc(c.type||'—')}</p><h3>Clients / Parties</h3><table><thead><tr><th>Name</th><th>Role</th><th>Phone</th><th>Email</th></tr></thead><tbody>${parties.map(p=>`<tr><td>${esc(p.name)}</td><td>${esc(p.role||'Party')}</td><td>${esc(p.phone||'—')}</td><td>${esc(p.email||'—')}</td></tr>`).join('')||'<tr><td colspan="4">No linked clients.</td></tr>'}</tbody></table><h3>Hearings</h3><table><thead><tr><th>Date</th><th>Time</th><th>Stage</th><th>Court</th></tr></thead><tbody>${hearings.map(h=>`<tr><td>${fmtDate(h.date)}</td><td>${esc(h.time||'—')}</td><td>${esc(h.stage||h.purpose||'Hearing')}</td><td>${esc(h.court||c.court||'—')}</td></tr>`).join('')||'<tr><td colspan="4">No hearings.</td></tr>'}</tbody></table><h3>Tasks</h3><table><thead><tr><th>Task</th><th>Due Date</th><th>Priority</th><th>Status</th></tr></thead><tbody>${tasks.map(t=>`<tr><td>${esc(t.title||'Task')}</td><td>${fmtDate(t.due||t.dueDate)}</td><td>${esc(t.priority||'—')}</td><td>${esc(t.status||'—')}</td></tr>`).join('')||'<tr><td colspan="4">No tasks.</td></tr>'}</tbody></table>${financeSection}`);
 }
 function settings(){
  const photo=getAdvocatePhoto();
