@@ -145,7 +145,7 @@ function syncCaseNextHearing(caseRecord, options={}){
 }
 state.hearings=Array.isArray(state.hearings)?state.hearings:[];
 let stateChangedByHearingLinkMigration=false;
-if(auth.role!=="super_admin" && Array.isArray(state.cases)){
+if(auth.role!=="super_admin" && !auth.cloudAuth && Array.isArray(state.cases)){
   state.cases.forEach(c=>{
     if(c && c.next && !state.hearings.some(h=>(h.caseId&&h.caseId===c.id)||(h.caseNumber&&h.caseNumber===c.number)||h.case===c.id||h.case===c.number)){
       if(syncCaseNextHearing(c)) stateChangedByHearingLinkMigration=true;
