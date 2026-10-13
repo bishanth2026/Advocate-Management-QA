@@ -732,7 +732,7 @@ function reports(){
  <button class="quick" onclick="openReport('cases')"><strong>Case Report</strong><small>Active, pending and disposed cases</small></button>
  <button class="quick" onclick="openReport('hearings')"><strong>Hearing Report</strong><small>Upcoming and completed hearings</small></button>
  <button class="quick" onclick="openReport('clients')"><strong>Client Report</strong><small>Client-wise case activity</small></button>
- <button class="quick" onclick="openReport('finance')"><strong>Financial Report</strong><small>Fees, expenses and balances</small></button>
+ ${canViewFinancialReports()?'<button class="quick" onclick="openReport(\'finance\')"><strong>Financial Report</strong><small>Fees, expenses and balances</small></button>':''}
  <button class="quick" onclick="openReport('case360')"><strong>Case 360° Report</strong><small>Complete connected report for a selected case</small></button>
  </div>`;
 }
