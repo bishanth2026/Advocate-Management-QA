@@ -459,7 +459,9 @@ function clientTableFilterLive(value){
   });
   if(!popup)return;
   if(!q){popup.innerHTML="";popup.style.display="none";return;}
-  const clients=Array.isArray(state.clients)?state.clients:[];
+  const clients=auth.role==="accountant"&&Array.isArray(window.ADFinanceClientDirectory)
+    ? window.ADFinanceClientDirectory.map(c=>({id:String(c.client_id||c.id||""),name:String(c.client_name||c.name||""),role:String(c.client_role||c.role||""),phone:String(c.client_phone||c.phone||c.mobile||""),email:String(c.client_email||c.email||"")}))
+    : (Array.isArray(state.clients)?state.clients:[]);
   const matches=clients.filter(c=>[c.name,c.role,c.phone,c.email,c.id].some(v=>String(v??"").toLowerCase().includes(q))).slice(0,8);
   popup.innerHTML=matches.length?matches.map(c=>"<button type='button' onclick='selectClientTableSuggestion("+JSON.stringify(c.id)+")' style='display:block;width:100%;padding:11px 14px;border:0;border-bottom:1px solid #eef2f7;background:#fff;text-align:left;cursor:pointer'><strong style='display:block;color:#172033'>"+esc(c.name)+"</strong><span style='display:block;margin-top:3px;color:#64748b;font-size:12px'>"+esc(c.role||"Party")+" • "+esc(c.phone||"No phone")+" • "+esc(c.id||"")+"</span></button>").join(""):"<div style='padding:12px 14px;color:#64748b'>No matching client or party found.</div>";
   popup.style.display="block";
@@ -928,13 +930,6 @@ function navigate(page,fromHistory){
       b.style.setProperty("display","none","important");
       b.setAttribute("aria-hidden","true");
       b.tabIndex=-1;
-    });
-    ["caseClientTable","clientTable"].forEach(id=>{
-      const table=document.getElementById(id);
-      if(table) table.querySelectorAll("tr").forEach(row=>{
-        const last=row.lastElementChild;
-        if(last) last.style.display="none";
-      });
     });
   }
 
