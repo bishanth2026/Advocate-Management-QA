@@ -789,6 +789,10 @@ window.sendInvoiceWhatsApp=function(index){
 
 function reports(){
  document.body.classList.remove('report-mode');
+ if(String(auth&&auth.role||'').toLowerCase()==='accountant'){
+  content.innerHTML=layout('Reports','Financial reports available to your Accountant account')+`<div class="quick-grid"><button class="quick" onclick="openReport('finance')"><strong>Financial Report</strong><small>Client-wise invoices, payments and outstanding balances</small></button></div>`;
+  return;
+ }
  content.innerHTML=layout("Reports","Practice performance and operational reports")+`<div class="quick-grid">
  <button class="quick" onclick="openReport('cases')"><strong>Case Report</strong><small>Active, pending and disposed cases</small></button>
  <button class="quick" onclick="openReport('hearings')"><strong>Hearing Report</strong><small>Upcoming and completed hearings</small></button>
@@ -802,6 +806,12 @@ function reportShell(title,subtitle,body){
  content.innerHTML=`<div class="report-page"><header class="report-header"><div class="report-brand"><div class="report-logo">⚖</div><div><strong>AdvocateDesk</strong><span>Practice Management</span></div></div><div class="report-heading"><h1>${esc(title)}</h1><p>${esc(subtitle)}</p></div><div class="report-actions"><button class="secondary" onclick="reports()">← Reports</button><button class="primary" onclick="window.print()">🖨 Print / Save PDF</button></div></header><main class="report-content">${body}</main><footer class="report-footer"><span>AdvocateDesk · Confidential Office Report</span><span>Generated on ${new Date().toLocaleDateString('en-IN')}</span></footer></div>`;
 }
 function openReport(type){
+ // Accountant accounts may open only the Financial Report.
+ if(String(auth&&auth.role||'').toLowerCase()==='accountant' && type!=='finance'){
+  reports();
+  if(typeof window.showToast==='function')window.showToast('Access denied: only Financial Report is available to Accountant accounts.');
+  return;
+ }
  // Reports are a UI convenience; sensitive financial data must remain role-restricted.
  // Supabase RLS remains the authoritative data boundary.
  if(type==='finance' && !["admin","accountant"].includes(String(auth.role||"").toLowerCase())){
@@ -904,7 +914,7 @@ function navigate(page,fromHistory){
   // Accountants are restricted to the Finance module. Enforce this at the
   // router as well as in the navigation UI so a manually edited URL/hash
   // cannot open case, client, document, task, hearing or report screens.
-  if(auth.role==="accountant" && page!=="finance" && page!=="case-client"){
+  if(auth.role==="accountant" && page!=="finance" && page!=="case-client" && page!=="reports"){
     page="finance";
     try{if(location.hash!=="#finance")history.replaceState(null,"","#finance")}catch(e){}
   }
@@ -1051,7 +1061,7 @@ if(!["admin","accountant"].includes(String(auth.role||"").toLowerCase())){
 // Accountant may view Finance and read-only Clients & Cases only.
 if(auth.role==="accountant"){
   document.querySelectorAll(".nav-item").forEach(b=>{
-    const allowed=["finance","case-client"].includes(b.dataset.page);
+    const allowed=["finance","case-client","reports"].includes(b.dataset.page);
     b.hidden=!allowed;
     // The app stylesheet sets .nav-item to display:flex, which can override
     // the browser's default [hidden] styling. Force the restricted links off.
