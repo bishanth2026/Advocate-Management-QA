@@ -419,7 +419,7 @@ function caseClient(){
  const displayClients=accountantView?directoryClients.map(c=>({
    id:String(c.client_id||c.id||""),
    name:String(c.client_name||c.name||""),
-   clientNo:String(c.client_no||c.clientNo||""),
+   clientNo:String(c.client_number||c.client_no||c.clientNo||""),
    role:String(c.client_role||c.role||""),
    phone:String(c.client_phone||c.phone||c.mobile||""),
    email:String(c.client_email||c.email||""),
