@@ -463,7 +463,9 @@ function caseDetails(query="", selectedId="") {
   const norm=v=>String(v||"").toLowerCase();
   const linked=c=>{const ids=Array.isArray(c.clientIds)?c.clientIds:(c.clientId?[c.clientId]:[]);return state.clients.filter(x=>ids.includes(x.id)||x.name===c.client||((c.clients||[]).includes(x.name)));};
   const matches=(Array.isArray(state.cases)?state.cases:[]).filter(c=>!q||[c.number,c.title,c.court,c.type,c.status,c.client,...(Array.isArray(c.clients)?c.clients:[])].some(v=>norm(v).includes(q))||linked(c).some(x=>[x.name,x.phone,x.email,x.id,x.role].some(v=>norm(v).includes(q))));
-  const active=state.cases.find(c=>c.id===selectedId)||matches[0];
+  // Prefer a real, numbered case when Case 360 first opens. QA fixture rows without
+  // a case number were appearing first and masking the advocate's actual case.
+  const active=state.cases.find(c=>c.id===selectedId)||matches.find(c=>String(c.number||"").trim() && !/^—$/.test(String(c.number).trim()))||matches[0];
   const details=(label,val)=>`<div><span class="muted">${label}</span><br><strong>${esc(val||"—")}</strong></div>`;
   const caseCard=c=>`<button class="case360-result" onclick="caseDetails(${JSON.stringify(q)},${JSON.stringify(c.id)})"><strong>${esc(c.number||"No case number")}</strong><span>${esc(c.title||"Untitled case")}</span><small>${esc(c.court||"No court")} • ${esc(c.client||"No client")}</small></button>`;
   let workspace=`<div class="empty">Search and select a case to open its complete Case 360 workspace.</div>`;
