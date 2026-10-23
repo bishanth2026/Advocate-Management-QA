@@ -41,11 +41,11 @@
      window.ADCloudInitialState=await resourceSync.load();
 window.ADFinanceClientDirectory=[];window.ADFinanceCaseDirectory=[];
 if(auth.role==='accountant'){
-const rr=await Promise.all([client.rpc('finance_client_directory',{p_workspace_id:auth.workspaceId}),client.rpc('finance_case_directory',{p_workspace_id:auth.workspaceId})]);
+const rr=await Promise.all([client.rpc('finance_client_directory_v2',{p_workspace_id:auth.workspaceId}),client.rpc('finance_case_directory_v2',{p_workspace_id:auth.workspaceId})]);
 if(rr[0].error)throw rr[0].error;if(rr[1].error)throw rr[1].error;
 window.ADFinanceClientDirectory=Array.isArray(rr[0].data)?rr[0].data:[];
 const names=new Map(window.ADFinanceClientDirectory.map(x=>[String(x.client_id),String(x.client_name||'')]));
-window.ADFinanceCaseDirectory=(Array.isArray(rr[1].data)?rr[1].data:[]).map(x=>({id:String(x.case_id||''),number:String(x.case_number||''),title:String(x.case_title||''),clientId:String(x.client_id||''),client:String(x.client_name||names.get(String(x.client_id||''))||'')}));}
+window.ADFinanceCaseDirectory=(Array.isArray(rr[1].data)?rr[1].data:[]).map(x=>({id:String(x.case_id||''),number:String(x.case_number||''),title:String(x.case_title||''),clientId:String(x.client_id||''),client:String(x.client_name||names.get(String(x.client_id||''))||''),court:String(x.court_name||''),next:String(x.next_hearing||''),hearingTime:String(x.hearing_time||''),status:String(x.case_status||'')}));}
 
      window.ADCloudSync=resourceSync;
    }
