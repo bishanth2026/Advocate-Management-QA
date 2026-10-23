@@ -10,13 +10,6 @@ function createUniqueRecordId(prefix){
   return String(prefix) + "-" + uuid;
 }
 
-// Collision-resistant IDs for new records; avoids duplicate resource identities.
-function createUniqueRecordId(prefix){
-  const uuid = (typeof crypto !== "undefined" && crypto && typeof crypto.randomUUID === "function")
-    ? crypto.randomUUID().replace(/-/g, "")
-    : (Date.now().toString(36) + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2));
-  return String(prefix) + "-" + uuid;
-}
 const seed = {
   cases:[
     {id:"CS-2026-001",number:"OS 145/2026",title:"Rahman v. State",client:"Abdul Rahman",court:"District Court, Kozhikode",next:"2026-09-08",status:"Active",type:"Civil"},
