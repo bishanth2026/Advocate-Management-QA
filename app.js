@@ -877,7 +877,7 @@ function navigate(page,fromHistory){
   // Accountants are restricted to the Finance module. Enforce this at the
   // router as well as in the navigation UI so a manually edited URL/hash
   // cannot open case, client, document, task, hearing or report screens.
-  if(auth.role==="accountant" && page!=="finance"){
+  if(auth.role==="accountant" && page!=="finance" && page!=="case-client"){
     page="finance";
     try{if(location.hash!=="#finance")history.replaceState(null,"","#finance")}catch(e){}
   }
@@ -895,6 +895,23 @@ function navigate(page,fromHistory){
   if(page!=="reports") document.body.classList.remove("report-mode");
   document.querySelectorAll(".nav-item").forEach(b=>b.classList.toggle("active",b.dataset.page===page));
   pages[page]();
+
+  // Accountant access to Clients & Cases is strictly read-only.
+  if(auth.role==="accountant" && page==="case-client"){
+    document.querySelectorAll("button[onclick*='openModal'],button[onclick*='openEditModal'],button[onclick*='deleteRecord']").forEach(b=>{
+      b.hidden=true;
+      b.style.setProperty("display","none","important");
+      b.setAttribute("aria-hidden","true");
+      b.tabIndex=-1;
+    });
+    ["caseClientTable","clientTable"].forEach(id=>{
+      const table=document.getElementById(id);
+      if(table) table.querySelectorAll("tr").forEach(row=>{
+        const last=row.lastElementChild;
+        if(last) last.style.display="none";
+      });
+    });
+  }
 
   /* When returning from Calendar (or any other SPA page), rebuild the
      Dashboard calendar immediately without requiring a browser refresh. */
@@ -1011,11 +1028,10 @@ if(!["admin","accountant"].includes(String(auth.role||"").toLowerCase())){
     b.hidden=true;b.style.setProperty("display","none","important");b.setAttribute("aria-hidden","true");b.tabIndex=-1;
   });
 }
-// Keep the Accountant navigation minimal. Finance is the only permitted
-// module; routing and record-action guards above enforce the same boundary.
+// Accountant may view Finance and read-only Clients & Cases only.
 if(auth.role==="accountant"){
   document.querySelectorAll(".nav-item").forEach(b=>{
-    const allowed=b.dataset.page==="finance";
+    const allowed=["finance","case-client"].includes(b.dataset.page);
     b.hidden=!allowed;
     // The app stylesheet sets .nav-item to display:flex, which can override
     // the browser's default [hidden] styling. Force the restricted links off.
@@ -1099,6 +1115,10 @@ function hearingTimeDisplayValue(value){
  return ((h%12)||12)+':'+mins+' '+(h>=12?'PM':'AM');
 }
 function openEditModal(type,index){
+ if(auth.role==="accountant" && type!=="invoice"){
+   alert("Access denied: Accountant accounts can view cases and clients only; editing is not permitted.");
+   return;
+ }
  const key=type==='case'?'cases':type==='client'?'clients':type==='hearing'?'hearings':type==='task'?'tasks':type==='discussion'?'discussions':type==='meeting'?'meetings':'invoices';
  const item=state[key][index];
  if(!item) return;
