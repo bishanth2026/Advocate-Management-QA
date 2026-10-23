@@ -203,7 +203,7 @@
       return state;
     }
 
-    async function persist(snapshot, version, retriedAfterDuplicate) {
+    async function persist(snapshot, version, retryState = {}) {
       const desired = buildDesiredRows(snapshot);
       // Only rows returned by RLS are in baseline. Omitted/unauthorized rows are
       // never inferred as deletions because they were never placed in baseline.
@@ -282,9 +282,32 @@
           // A duplicate identity can mean this session's RLS-visible baseline
           // became stale after another authorized session created the same row.
           // Refresh once and recompute the diff; never upsert or bypass RLS.
-          if (code === "23505" && !retriedAfterDuplicate) {
+          if (code === "23505" && !retryState.duplicate) {
             await load();
-            return persist(snapshot, version, true);
+            return persist(snapshot, version, { ...retryState, duplicate: true });
+          }
+          // A concurrent save can advance updated_at without changing the actual
+          // payload (for example, another tab saved the same data). Refresh the
+          // optimistic-lock baseline and retry only when every affected existing
+          // row still has exactly the same payload and case link. If content or
+          // visibility changed, keep the conflict rather than overwrite newer data.
+          if (code === "40001" && !retryState.version) {
+            const oldBaseline = new Map(
+              Array.from(baseline.entries()).map(([key, row]) => [key, clone(row)])
+            );
+            await load();
+            const unchanged = batch.every((item) => {
+              if (item.op === "insert") return true;
+              const key = recordKey(item.resource_type, item.resource_id);
+              const before = oldBaseline.get(key);
+              const current = baseline.get(key);
+              return Boolean(before && current &&
+                stableStringify(before.payload) === stableStringify(current.payload) &&
+                (before.case_id ?? null) === (current.case_id ?? null));
+            });
+            if (unchanged) {
+              return persist(snapshot, version, { ...retryState, version: true });
+            }
           }
           const failedBatchSummary = batch.map((item) => ({
             op: item.op,
