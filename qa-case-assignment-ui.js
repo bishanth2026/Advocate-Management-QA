@@ -23,8 +23,8 @@ function install() {
     const r = await db.rpc("qa_list_workspace_advocates", {p_workspace_id: a.workspaceId});
     if (r.error) throw r.error;
     const ms = r.data || [];
-    if (!ms.length) throw new Error("ഈ workspace-ൽ Advocate അംഗങ്ങളില്ല, അല്ലെങ്കിൽ പേരുകൾ കാണാനുള്ള അനുമതി ലഭ്യമല്ല.");
-    const choice = window.prompt("കേസ് " + label + " ഏത് Advocate-ന് നൽകണം?\n" + ms.map((m,i)=> (i+1)+". "+(m.full_name || m.email || m.user_id)+" — "+m.role).join("\n") + "\nനമ്പർ നൽകുക:");
+    if (!ms.length) throw new Error("No Advocate members found in this workspace, or permission to view names is missing.");
+    const choice = window.prompt("Which Advocate should be assigned to case " + label + "?\n" + ms.map((m,i)=> (i+1)+". "+(m.full_name || m.email || m.user_id)+" — "+m.role).join("\n") + "\nEnter the number:");
     if (choice === null) return;
     const n = Number(choice)-1;
     if (!Number.isInteger(n) || n<0 || n>=ms.length) throw new Error("ശരിയായ നമ്പർ നൽകുക.");
