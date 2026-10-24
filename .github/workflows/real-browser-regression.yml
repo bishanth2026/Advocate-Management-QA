@@ -18,6 +18,7 @@ on:
       - "client-management.js"
       - "finance.js"
       - "task.js"
+      - "docs/qa-security-definer-review-2026-10-24.md"
 
 permissions:
   contents: read
