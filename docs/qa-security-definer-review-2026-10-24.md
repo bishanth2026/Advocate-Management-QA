@@ -221,3 +221,30 @@ Read-only inspection of `resource-sync.js` confirms that the current app loads a
 A separate projection table would require an explicit, tested synchronization design (ideally derived transactionally from the same write boundary) for every case/client insert, update, and delete, including client-case links and case counts. An independently updated projection risks stale Finance pickers and count mismatches. A broad SELECT RLS change on `practice_resources` is not acceptable because authenticated users already have SELECT privilege on that full-payload table and the policy is the primary data boundary.
 
 **Decision:** do not create a projection table, view, trigger, new RPC, or RLS policy in this step. First identify the atomic sync RPC implementation and its write authorization, then prototype a narrow projection only on QA with automated sync consistency and authorization tests. No app source or database schema was changed during this inspection.
+
+
+## Atomic sync RPC review follow-up — 2026-10-24
+
+### Confirmed from application source
+
+`resource-sync.js` calls `client.rpc("apply_practice_resource_batch", { p_workspace_id, p_changes })` for non-empty batches. The batch encodes only insert/update/delete operations for resource records, with optimistic-version metadata for existing rows. The client refreshes and retries once on duplicate-key or serialization conflicts only under guarded conditions; otherwise it reports a conflict. This establishes the application call contract but does not, by itself, prove the server-side RPC's authorization checks.
+
+### Server-side verification status
+
+The QA migration history includes `atomic_practice_resource_batch_qa` (2026-10-12). A direct attempt to inspect the live function definition through the available SQL connector was blocked by its safety checks, and the expected migration file was not present at the guessed repository path. Therefore the function body, exact EXECUTE grants, RLS bypass behavior, workspace membership validation, and row-level authorization checks have **not been independently re-verified in this step**. No alternative inference is being treated as proof.
+
+### Next safe verification gate
+
+Before designing a transactional Finance directory projection, obtain the authoritative SQL definition for `public.apply_practice_resource_batch` from the QA migration history/source, then verify:
+- authenticated caller is bound to an active workspace member and cannot impersonate another workspace;
+- every insert/update/delete operation is validated against workspace and resource type;
+- update/delete operations use expected version and cannot mutate rows outside caller authorization;
+- no client-supplied workspace ID, resource ID, or payload can bypass authorization;
+- function owner, `SECURITY DEFINER` status, fixed search_path, and EXECUTE grants are explicitly checked;
+- failure rolls back the entire batch atomically and does not leave partial writes.
+
+Until that source is reviewed, do not add projection triggers/tables, modify the batch RPC, broaden RLS, or change the six reviewed functions' security mode.
+
+### Workflow status
+
+GitHub connector results still do not provide a workflow run/status for the previously updated commit. Regression remains unverified; this is not a pass/fail result. Check the Actions tab for the staging branch. QA-only scope remains; production was not accessed or changed.
