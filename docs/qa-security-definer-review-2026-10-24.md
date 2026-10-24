@@ -145,3 +145,24 @@ The two assignment RPCs perform controlled writes to case_assignments and worksp
 ### Next safe remediation option
 
 If the goal is to remove the four Finance warnings, first design and test a narrowly scoped invoker-safe read path (for example, a dedicated RLS policy/view that grants only the same finance.view-authorized case/client directory rows without broadening general case/client visibility). Verify it with Admin, Accountant-with-finance-only, Advocate-without-finance, foreign-workspace, and non-member identities. Only then consider changing the Finance RPC security mode. Keep assignment RPCs separate; do not weaken their checks or make assignment tables broadly readable/writable to silence the Advisor.
+
+## QA search_path hardening applied — 2026-10-24
+
+Applied QA-only migration `qa_security_definer_search_path_hardening_20261024` to project `uqtsksgypncsbcnuanbk`. It changes only the function-level search_path setting for the six public functions to `pg_catalog, public, private, pg_temp`.
+
+Post-migration catalog verification confirmed for all six functions:
+- `SECURITY DEFINER` remains enabled.
+- `search_path=pg_catalog, public, private, pg_temp` is active.
+- `anon EXECUTE=false`, `PUBLIC EXECUTE=false`, and `authenticated EXECUTE=true` remain unchanged.
+- No function bodies, grants, RLS policies, or application rows were changed by this migration.
+- Production was not accessed or changed.
+
+A fresh Security Advisor check at 2026-10-24T07:41:15.829Z still reports six `authenticated_security_definer_function_executable` warnings and one `auth_leaked_password_protection` warning. This is expected: search_path hardening does not remove the Advisor's SECURITY DEFINER warning. The six functions remain guarded but the Advisor findings are not cleared.
+
+### Validation status after migration
+
+The catalog configuration and grants were re-read successfully after migration. The full authenticated browser regression has **not yet been rerun after this database-only change**. The prior real-browser negative-path suite passed before this search_path adjustment. Run the QA real-browser regression workflow before treating this hardening step as fully validated.
+
+### Remaining decision
+
+Do not change the four Finance directory functions to SECURITY INVOKER until an invoker-safe read design has been tested against the current RLS rules. Do not change the two assignment functions' security mode or revoke authenticated execution without a replacement path. The next remediation should be a QA-only design/test of a narrowly scoped Finance directory read path, avoiding a broad case/client RLS policy that would expose full payloads through the generic REST table API.
