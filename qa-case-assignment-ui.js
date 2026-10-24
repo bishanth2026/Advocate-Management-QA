@@ -30,7 +30,7 @@ function install() {
     if (!Number.isInteger(n) || n<0 || n>=ms.length) throw new Error("ശരിയായ നമ്പർ നൽകുക.");
     const result = await db.rpc("assign_case_to_member",{p_workspace_id:a.workspaceId,p_case_id:String(c.id),p_user_id:ms[n].user_id});
     if (result.error) throw result.error;
-    alert("കേസ് അഭിഭാഷകന് നൽകി. അഭിഭാഷകൻ വീണ്ടും പ്രവേശിച്ച് കേസ് കാണുന്നുണ്ടോ എന്ന് പരിശോധിക്കുക.");
+    alert("Case successfully assigned to " + (ms[n].full_name || ms[n].email || "the selected advocate") + ".");
    } catch(e) { console.error(e); alert("Assignment പരാജയപ്പെട്ടു: "+(e.message||"ദയവായി വീണ്ടും ശ്രമിക്കുക")); }
   });
   action.appendChild(b);
