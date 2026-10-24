@@ -46,3 +46,26 @@ The `practice_resources` SELECT RLS policy is resource-type-specific. Case/clien
 ## Decision
 
 **No schema change in this review.** The observed guards and restricted grants provide positive evidence, but catalog inspection alone does not prove every runtime authorization path. Treat the six Advisor findings as **reviewed, not cleared** until negative-path tests are run. The user's separate choice to defer Leaked Password Protection is unchanged.
+
+
+## Additional QA negative-path checks (2026-10-24)
+
+Executed read-only / rollback-scoped SQL checks in the QA database by setting the transaction-local JWT subject claim to existing QA test identities. These checks exercise the function authorization logic, but are **not a substitute for real PostgREST requests with real browser-issued JWTs**.
+
+| Test | Result |
+|---|---|
+| Advocate without `finance.view` calls each of the four finance directory functions in own workspace | PASS — all returned 0 rows |
+| Same advocate requests the other workspace through each finance directory function | PASS — all returned 0 rows |
+| Non-admin advocate attempts case assignment | PASS — rejected with authorization SQLSTATE `42501` |
+| Non-admin advocate attempts case unassignment | PASS — rejected with authorization SQLSTATE `42501` |
+| Workspace A Admin attempts assignment in workspace B | PASS — rejected with authorization SQLSTATE `42501` |
+| Workspace A Admin attempts unassignment in workspace B | PASS — rejected with authorization SQLSTATE `42501` |
+
+The checks ran inside a transaction that was rolled back. No case assignments, audit entries, or other persistent application rows were intentionally created by these checks.
+
+## Remaining before closure
+
+- Repeat these negative paths through the deployed QA application's authenticated PostgREST API / browser session (not only transaction-local SQL claims).
+- Add a real non-member test for each assignment RPC and confirm no audit event is written after a denied request.
+- Run the complete QA browser workflow after any test-code change.
+- Revisit Security Advisor; these findings remain **reviewed, not cleared** until the end-to-end checks and Advisor review are complete.
