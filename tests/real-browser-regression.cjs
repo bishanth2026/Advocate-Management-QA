@@ -137,7 +137,7 @@ async function run() {
           assert.equal(pageErrors.length, 0, actor.role + " raised uncaught browser errors on " + pageName + ": " + pageErrors.join(" | "));
         }
         if (actor.key === "ACCOUNTANT") {
-          assert.deepEqual(visibleNavPages, ["finance"], "Accountant should see only the Finance navigation item.");
+          assert.deepEqual(visibleNavPages.sort(), ["case-client", "finance", "reports"], "Accountant should see only read-only Cases & Clients, Finance, and restricted Reports navigation items.");
         }
         if (actor.key !== "ADMIN" && actor.key !== "ACCOUNTANT") {
           const financeNav = page.locator('.nav-item[data-page="finance"]').first();
