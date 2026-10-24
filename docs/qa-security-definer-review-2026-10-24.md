@@ -210,3 +210,14 @@ Preferred candidate for a proof of concept is a **dedicated, minimal Finance dir
 The available GitHub connector did not return a workflow run associated with commit `1350779199bd9bb4454591cd77cfbe755942d3bf`, and its commit-status endpoint returned no status checks. This is **not proof that GitHub Actions failed or passed**; the run status remains unverified. Open the repository's Actions tab and inspect “Real browser role and module regression” for the commit before treating the browser suite as rerun.
 
 No Finance function body, grant, RLS policy, or application row was changed as part of this design step. QA only; production not accessed or changed.
+
+
+## Data-sync dependency inspection — 2026-10-24
+
+Read-only inspection of `resource-sync.js` confirms that the current app loads authorized records from `practice_resources` and persists resource-level insert/update/delete diffs through the existing atomic RPC (with a direct-write fallback for test doubles). Case and client payloads are therefore maintained by the shared resource sync path, not by a dedicated Finance projection today.
+
+### Consequence for implementation
+
+A separate projection table would require an explicit, tested synchronization design (ideally derived transactionally from the same write boundary) for every case/client insert, update, and delete, including client-case links and case counts. An independently updated projection risks stale Finance pickers and count mismatches. A broad SELECT RLS change on `practice_resources` is not acceptable because authenticated users already have SELECT privilege on that full-payload table and the policy is the primary data boundary.
+
+**Decision:** do not create a projection table, view, trigger, new RPC, or RLS policy in this step. First identify the atomic sync RPC implementation and its write authorization, then prototype a narrow projection only on QA with automated sync consistency and authorization tests. No app source or database schema was changed during this inspection.
