@@ -171,3 +171,42 @@ Do not change the four Finance directory functions to SECURITY INVOKER until an 
 ## Report consistency note — 2026-10-24
 
 This document contains historical review sections written before the search_path hardening migration. Those earlier sections describe the pre-migration state and should not be read as the current catalog state. Current state is recorded in “QA search_path hardening applied” above: all six functions use `pg_catalog, public, private, pg_temp`. The real-browser tests passed before that migration; a post-migration run remains outstanding. No invoker-mode migration has been applied, and no production system was accessed or changed.
+
+
+## Next remediation design — Finance directory least-privilege path (QA only)
+
+### Current function contract verified from live catalog
+
+The four directory functions return a deliberately narrow set of fields rather than the full `practice_resources.payload`:
+
+- Case directory v1: case ID, number, title, linked client ID/name.
+- Case directory v2: those fields plus court, next hearing, hearing time, and case status.
+- Client directory v1: client ID, name, phone.
+- Client directory v2: client ID, name, phone, client number, role, status, and associated case count.
+
+All four filter by the supplied workspace and require `private.has_workspace_permission(p_workspace_id, 'finance.view')`. The case/client base-table SELECT policy instead uses case/client view permissions and assignment/creator visibility. These authorization contracts are not equivalent.
+
+### Safe next design — no migration applied
+
+Do not add a broad `finance.view` branch to the general `practice_resources` SELECT policy: that table contains full JSON payloads and a general REST read could expose more fields than the Finance pickers need.
+
+Preferred candidate for a proof of concept is a **dedicated, minimal Finance directory projection** that exposes only the fields listed above and enforces workspace membership plus `finance.view` at the narrow read boundary. Before choosing its physical implementation (dedicated synchronized projection table versus another supported least-privilege pattern), confirm how case/client changes are written and synced so the projection cannot become stale or leak cross-workspace records. Do not create a view or table yet.
+
+### Required acceptance matrix before rollout
+
+1. Accountant with `finance.view` only: sees permitted directory rows and required picker fields in own workspace.
+2. Advocate without `finance.view`: receives no directory data.
+3. Authenticated non-member: receives no directory data.
+4. User with access only to workspace A requests workspace B: receives no rows.
+5. Admin in workspace A requests workspace B: receives no rows unless separately authorized for B.
+6. Direct REST reads cannot return full case/client payloads through the new path.
+7. Create/update/delete case and client records: directory projection remains synchronized, including linked-client IDs and case counts.
+8. Existing invoice creation, payment, report, cancellation, and Accountant workflows remain green.
+9. Repeat the real-browser RPC negative-path suite and full role/module regression after the change.
+10. Re-query Security Advisor and document any remaining warnings; do not claim the six warnings are cleared unless the advisor confirms it.
+
+### Workflow execution status
+
+The available GitHub connector did not return a workflow run associated with commit `1350779199bd9bb4454591cd77cfbe755942d3bf`, and its commit-status endpoint returned no status checks. This is **not proof that GitHub Actions failed or passed**; the run status remains unverified. Open the repository's Actions tab and inspect “Real browser role and module regression” for the commit before treating the browser suite as rerun.
+
+No Finance function body, grant, RLS policy, or application row was changed as part of this design step. QA only; production not accessed or changed.
