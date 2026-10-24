@@ -7,7 +7,7 @@
 
 ## Summary
 
-Six public functions are flagged by Security Advisor because they use `SECURITY DEFINER`. Catalog inspection confirms that none grants EXECUTE to `anon` or `PUBLIC`; each is executable by `authenticated`, the owner (`postgres`), and `service_role`. All six set a fixed function `search_path` to `public, private, pg_temp`.
+Six public functions are flagged by Security Advisor because they use `SECURITY DEFINER`. Catalog inspection confirms that none grants EXECUTE to `anon` or `PUBLIC`; each is executable by `authenticated`, the owner (`postgres`), and `service_role`. All six now set a fixed function `search_path` to `pg_catalog, public, private, pg_temp` (verified after QA-only hardening migration).
 
 The warning is **not marked resolved**. These functions have different authorization purposes, and removing `SECURITY DEFINER` or revoking authenticated execution without replacement tests could break assignment and finance-directory workflows. No database changes were made.
 
@@ -123,7 +123,7 @@ No function grants or security modes were changed. This is intentional: authenti
 ### What was checked
 
 - Re-read live function definitions, ACLs, and pg_policies for public.practice_resources in QA project uqtsksgypncsbcnuanbk.
-- Reconfirmed all six public functions have search_path = public, private, pg_temp, owner postgres, anon EXECUTE=false, PUBLIC EXECUTE=false, and authenticated EXECUTE=true. The two assignment functions and four finance directory functions also have service_role EXECUTE=true.
+- At the time of the initial invoker-equivalence review, the functions had search_path = public, private, pg_temp. A later QA-only migration changed all six to `pg_catalog, public, private, pg_temp`. Owner remains postgres; anon EXECUTE=false, PUBLIC EXECUTE=false, and authenticated EXECUTE=true. The two assignment functions and four finance directory functions also have service_role EXECUTE=true.
 - Reconfirmed the four finance directory functions explicitly scope results to p_workspace_id and call private.has_workspace_permission(p_workspace_id, 'finance.view').
 - Inspected the live practice_resources_select_authorized RLS policy. For resource_type='case', SELECT is gated by cases.view_all, cases.view_assigned plus case access, or creator visibility. For resource_type='client', SELECT is gated by clients.view_all, clients.view_assigned plus case access, or creator visibility. These are not equivalent to the finance directory functions' finance.view check.
 - Inspected the deployed QA Finance UI source and the QA accountant-directory migration; the directory functions supply case/client choices and expanded directory fields for Finance workflows. The regression suite directly calls all four RPCs over authenticated PostgREST sessions.
@@ -137,7 +137,7 @@ The two assignment RPCs perform controlled writes to case_assignments and worksp
 ### Security review result
 
 - **Authorization checks:** present and workspace-scoped for all six functions; negative-path real-browser RPC tests previously passed.
-- **search_path:** fixed on all six functions, but currently public, private, pg_temp; no change made because changing function settings without a full regression would be an unnecessary live-schema mutation. Consider hardening to pg_catalog, public, private, pg_temp in a separately tested QA migration, after verifying all object references and dependencies.
+- **search_path:** hardened on all six functions to `pg_catalog, public, private, pg_temp` in a QA-only migration. Catalog settings were verified after the migration; full browser regression still needs rerunning after this change.
 - **Grants:** no anon or PUBLIC execution; authenticated execution is intentional for the browser's Finance directory and assignment workflows. Do not blanket-revoke it. The Advisor warnings remain actionable review findings, not evidence of an observed authorization bypass.
 - **Database:** no function definitions, grants, policies, or data changed in this review.
 - **Production:** not accessed or changed.
@@ -166,3 +166,8 @@ The catalog configuration and grants were re-read successfully after migration. 
 ### Remaining decision
 
 Do not change the four Finance directory functions to SECURITY INVOKER until an invoker-safe read design has been tested against the current RLS rules. Do not change the two assignment functions' security mode or revoke authenticated execution without a replacement path. The next remediation should be a QA-only design/test of a narrowly scoped Finance directory read path, avoiding a broad case/client RLS policy that would expose full payloads through the generic REST table API.
+
+
+## Report consistency note — 2026-10-24
+
+This document contains historical review sections written before the search_path hardening migration. Those earlier sections describe the pre-migration state and should not be read as the current catalog state. Current state is recorded in “QA search_path hardening applied” above: all six functions use `pg_catalog, public, private, pg_temp`. The real-browser tests passed before that migration; a post-migration run remains outstanding. No invoker-mode migration has been applied, and no production system was accessed or changed.
