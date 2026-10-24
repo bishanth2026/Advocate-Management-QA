@@ -85,3 +85,35 @@ Further QA transaction tests used existing QA identities and an existing QA case
 The successful Admin test confirms both intended operation paths and audit creation in the transaction, then rolled the transaction back to avoid leaving test changes behind.
 
 **Important limitation:** SQL transaction-local identity claims test function logic but do not fully prove the deployed PostgREST/API behavior with genuine JWTs. The real-browser/API negative-path suite and a fresh Security Advisor review remain open.
+
+
+## Real browser authenticated RPC regression results (2026-10-24)
+
+GitHub Actions workflow: [Real browser role and module regression](https://github.com/bishanth2026/Advocate-Management-QA/actions/runs/40074429736)  
+Commit tested: `76b0bf48d2dd2d9cc9d83848f09354ccfec9573f`  
+Result: **PASS** — workflow and both browser test steps completed successfully using disposable QA role credentials. No production credentials were used.
+
+| Real API test | Result |
+|---|---|
+| `finance_case_directory` called by authenticated Advocate in own workspace | PASS — 0 rows |
+| `finance_case_directory` called by Advocate/Admin in foreign workspace | PASS — 0 rows |
+| `finance_case_directory_v2` called by authenticated Advocate in own/foreign workspace | PASS — 0 rows |
+| `finance_client_directory` called by authenticated Advocate in own/foreign workspace | PASS — 0 rows |
+| `finance_client_directory_v2` called by authenticated Advocate in own/foreign workspace | PASS — 0 rows |
+| `assign_case_to_member` called by non-Admin Advocate | PASS — denied |
+| `unassign_case_from_member` called by non-Admin Advocate | PASS — denied |
+| `assign_case_to_member` called by Admin for foreign workspace | PASS — denied |
+| `unassign_case_from_member` called by Admin for foreign workspace | PASS — denied |
+| Existing browser regression: Admin/Advocate/Accountant pages, non-member login, workspace isolation, atomic rollback, case-hearing-calendar synchronization | PASS |
+
+The new RPC checks used genuine access tokens retrieved from successful browser logins and made authenticated requests against the QA project's PostgREST RPC endpoints. No authorized write RPC was called during this negative-path suite; therefore these API tests created no assignment or audit records.
+
+## Post-run Security Advisor status (2026-10-24)
+
+A fresh Security Advisor query after the regression still reports:
+- 6 authenticated `SECURITY DEFINER` functions (reviewed; not cleared)
+- 1 Leaked Password Protection warning (previously deferred)
+
+No function grants or security modes were changed. This is intentional: authenticated API negative-path tests passed, and the reviewed functions' `search_path`, role/workspace checks, and `finance.view` guards remain in place. Revoking execution or switching to invoker rights without a separate equivalence test of existing app workflows could break legitimate finance or assignment operations.
+
+**QA status:** Real browser authenticated negative-path regression completed successfully. **Security Advisor findings remain open** pending a controlled remediation decision; no production changes made.
