@@ -1,0 +1,44 @@
+(function () {
+"use strict";
+const a = window.ADAuth && window.ADAuth.get();
+if (!a || !a.cloudAuth || a.role !== "admin") return;
+const db = window.ADAuth.client();
+function install() {
+ const root = document.getElementById("content");
+ if (!root || !/all cases|clients\s*&\s*cases/i.test(root.innerText.slice(0,180))) return;
+ root.querySelectorAll("table tbody tr").forEach(row => {
+  if (row.querySelector(".qa-assign-case")) return;
+  const first = row.querySelector("td");
+  if (!first) return;
+  const label = (first.innerText || "").trim().split("\n")[0].trim();
+  const cases = window.appState && window.appState.cases || [];
+  const c = cases.find(x => String(x.number || x.caseNumber || "").trim() === label);
+  if (!c || !c.id) return;
+  const action = row.querySelector("td:last-child");
+  if (!action) return;
+  const b = document.createElement("button");
+  b.type = "button"; b.className = "secondary qa-assign-case"; b.textContent = "Assign Advocate";
+  b.addEventListener("click", async () => {
+   try {
+    const r = await db.from("workspace_members").select("user_id,role").eq("workspace_id", a.workspaceId).in("role", ["advocate","junior_advocate"]);
+    if (r.error) throw r.error;
+    const ms = r.data || [];
+    if (!ms.length) throw new Error("ഈ workspace-ൽ Advocate അംഗങ്ങളില്ല.");
+    const pr = await db.from("profiles").select("user_id,full_name,email").in("user_id", ms.map(m => m.user_id));
+    if (pr.error) throw pr.error;
+    const profiles = new Map((pr.data || []).map(p => [String(p.user_id), p]));
+    const choice = window.prompt("കേസ് " + label + " ഏത് Advocate-ന് നൽകണം?\\n" + ms.map((m,i)=>{ const p=profiles.get(String(m.user_id))||{}; return (i+1)+". "+(p.full_name||p.email||m.user_id)+" — "+m.role; }).join("\\n") + "\\nനമ്പർ നൽകുക:");
+    if (choice === null) return;
+    const n = Number(choice)-1;
+    if (!Number.isInteger(n) || n<0 || n>=ms.length) throw new Error("ശരിയായ നമ്പർ നൽകുക.");
+    const result = await db.rpc("assign_case_to_member",{p_workspace_id:a.workspaceId,p_case_id:String(c.id),p_user_id:ms[n].user_id});
+    if (result.error) throw result.error;
+    alert("കേസ് Advocate-ന് assign ചെയ്തു. Advocate വീണ്ടും login ചെയ്ത് പരിശോധിക്കുക.");
+   } catch(e) { console.error(e); alert("Assignment പരാജയപ്പെട്ടു: "+(e.message||"ദയവായി വീണ്ടും ശ്രമിക്കുക")); }
+  });
+  action.appendChild(b);
+ });
+}
+new MutationObserver(install).observe(document.getElementById("content"),{childList:true,subtree:true});
+install();
+})();

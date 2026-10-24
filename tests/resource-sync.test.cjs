@@ -243,6 +243,6 @@ test("atomic RPC failure reports conflict and does not advance client baseline",
   state.cases[0].title = "Must not partially commit";
   state.clients.push({ id: "CLIENT-NEW", name: "New client" });
   await assert.rejects(sync.save(state), error => error.code === "AD_CLOUD_CONFLICT");
-  assert.equal(rpcCount, 1);
+  assert.equal(rpcCount, 2, "stale-version conflict is retried once before surfacing the conflict");
   assert.equal(JSON.stringify(backingRows), before, "failed atomic RPC must leave all rows unchanged");
 });
