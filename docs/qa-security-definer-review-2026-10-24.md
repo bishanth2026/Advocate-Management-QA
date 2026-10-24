@@ -117,3 +117,31 @@ A fresh Security Advisor query after the regression still reports:
 No function grants or security modes were changed. This is intentional: authenticated API negative-path tests passed, and the reviewed functions' `search_path`, role/workspace checks, and `finance.view` guards remain in place. Revoking execution or switching to invoker rights without a separate equivalence test of existing app workflows could break legitimate finance or assignment operations.
 
 **QA status:** Real browser authenticated negative-path regression completed successfully. **Security Advisor findings remain open** pending a controlled remediation decision; no production changes made.
+
+## Invoker-equivalence review — 2026-10-24 (QA only)
+
+### What was checked
+
+- Re-read live function definitions, ACLs, and pg_policies for public.practice_resources in QA project uqtsksgypncsbcnuanbk.
+- Reconfirmed all six public functions have search_path = public, private, pg_temp, owner postgres, anon EXECUTE=false, PUBLIC EXECUTE=false, and authenticated EXECUTE=true. The two assignment functions and four finance directory functions also have service_role EXECUTE=true.
+- Reconfirmed the four finance directory functions explicitly scope results to p_workspace_id and call private.has_workspace_permission(p_workspace_id, 'finance.view').
+- Inspected the live practice_resources_select_authorized RLS policy. For resource_type='case', SELECT is gated by cases.view_all, cases.view_assigned plus case access, or creator visibility. For resource_type='client', SELECT is gated by clients.view_all, clients.view_assigned plus case access, or creator visibility. These are not equivalent to the finance directory functions' finance.view check.
+- Inspected the deployed QA Finance UI source and the QA accountant-directory migration; the directory functions supply case/client choices and expanded directory fields for Finance workflows. The regression suite directly calls all four RPCs over authenticated PostgREST sessions.
+
+### Decision: do not switch the six functions to SECURITY INVOKER yet
+
+**The Finance functions are not invoker-equivalent under the current RLS policy.** Under invoker rights, PostgreSQL applies the caller's practice_resources SELECT RLS policy as well as the function's finance.view predicate. A legitimate Accountant who has finance.view but does not have the separate case/client view permissions can therefore lose rows or have Finance case/client pickers appear empty. The current policy/function predicates are materially different, so changing these four functions to SECURITY INVOKER now carries a demonstrated policy-level workflow regression risk. This is a reasoned RLS equivalence assessment, not a claim that an actual invoker-mode experiment was run.
+
+The two assignment RPCs perform controlled writes to case_assignments and workspace_audit_log under an explicit active-workspace Admin check. Switching these to invoker rights may additionally make them depend on direct table grants and INSERT/DELETE RLS policies; no evidence currently establishes that those requirements are equivalent. Do not change their security mode or revoke authenticated execution until a replacement path and positive/negative tests are ready.
+
+### Security review result
+
+- **Authorization checks:** present and workspace-scoped for all six functions; negative-path real-browser RPC tests previously passed.
+- **search_path:** fixed on all six functions, but currently public, private, pg_temp; no change made because changing function settings without a full regression would be an unnecessary live-schema mutation. Consider hardening to pg_catalog, public, private, pg_temp in a separately tested QA migration, after verifying all object references and dependencies.
+- **Grants:** no anon or PUBLIC execution; authenticated execution is intentional for the browser's Finance directory and assignment workflows. Do not blanket-revoke it. The Advisor warnings remain actionable review findings, not evidence of an observed authorization bypass.
+- **Database:** no function definitions, grants, policies, or data changed in this review.
+- **Production:** not accessed or changed.
+
+### Next safe remediation option
+
+If the goal is to remove the four Finance warnings, first design and test a narrowly scoped invoker-safe read path (for example, a dedicated RLS policy/view that grants only the same finance.view-authorized case/client directory rows without broadening general case/client visibility). Verify it with Admin, Accountant-with-finance-only, Advocate-without-finance, foreign-workspace, and non-member identities. Only then consider changing the Finance RPC security mode. Keep assignment RPCs separate; do not weaken their checks or make assignment tables broadly readable/writable to silence the Advisor.
