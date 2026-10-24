@@ -69,3 +69,19 @@ The checks ran inside a transaction that was rolled back. No case assignments, a
 - Add a real non-member test for each assignment RPC and confirm no audit event is written after a denied request.
 - Run the complete QA browser workflow after any test-code change.
 - Revisit Security Advisor; these findings remain **reviewed, not cleared** until the end-to-end checks and Advisor review are complete.
+
+
+### Assignment RPC additional transaction tests
+
+Further QA transaction tests used existing QA identities and an existing QA case. All test writes were rolled back.
+
+| Test | Result |
+|---|---|
+| Authenticated identity with no workspace membership attempts assignment | PASS — rejected with authorization SQLSTATE `42501` |
+| Same non-member attempts unassignment | PASS — rejected with authorization SQLSTATE `42501` |
+| Authorized workspace Admin assigns an existing case to an active workspace member | PASS — returned assignment ID and generated the expected `case.assigned` audit event within the test transaction |
+| Same Admin unassigns the case/member pair | PASS — returned success within the test transaction |
+
+The successful Admin test confirms both intended operation paths and audit creation in the transaction, then rolled the transaction back to avoid leaving test changes behind.
+
+**Important limitation:** SQL transaction-local identity claims test function logic but do not fully prove the deployed PostgREST/API behavior with genuine JWTs. The real-browser/API negative-path suite and a fresh Security Advisor review remain open.
