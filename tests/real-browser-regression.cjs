@@ -228,6 +228,69 @@ async function run() {
           log("PASS","accountant invoice: client/case dropdowns populated and Cancel closes the modal.");
         }
         if(actor.key==="ADMIN"){
+          // Real authenticated REST checks against the QA Supabase project. Use the
+          // session created by the genuine browser login; never forge JWT claims.
+          const sessionInfo = await page.evaluate(() => {
+            const auth = JSON.parse(localStorage.getItem("advocateDeskAuth") || "{}");
+            let accessToken = "";
+            for (const key of Object.keys(localStorage)) {
+              if (!key.endsWith("-auth-token")) continue;
+              try {
+                const value = JSON.parse(localStorage.getItem(key) || "{}");
+                if (value && typeof value.access_token === "string") accessToken = value.access_token;
+              } catch (_) {}
+            }
+            return { workspaceId: auth.workspaceId || "", userId: auth.userId || "", accessToken };
+          });
+          assert.ok(sessionInfo.workspaceId && sessionInfo.userId && sessionInfo.accessToken,
+            "Admin QA browser session must expose its real Supabase access token and workspace identity.");
+          const supabaseUrl = "https://uqtsksgypncsbcnuanbk.supabase.co";
+          const publishableKey = "sb_publishable_cK6gEEBcDOOEfpkXlgVEDQ_7EVPt-XW";
+          async function qaRest(path, options = {}) {
+            return fetch(supabaseUrl + path, {
+              ...options,
+              headers: {
+                apikey: publishableKey,
+                Authorization: "Bearer " + sessionInfo.accessToken,
+                "Content-Type": "application/json",
+                ...(options.headers || {})
+              }
+            });
+          }
+          // Workspace B is a known separate QA workspace. An authenticated user
+          // from the disposable test workspace must not read its resource rows.
+          const foreignWorkspaceId = "55097c1f-9ebe-4252-bc4c-a43c3c989361";
+          assert.notEqual(sessionInfo.workspaceId, foreignWorkspaceId,
+            "Cross-workspace test requires the logged-in disposable workspace to differ from Workspace B.");
+          const foreignRead = await qaRest("/rest/v1/practice_resources?select=id,workspace_id&workspace_id=eq." + foreignWorkspaceId);
+          assert.equal(foreignRead.status, 200, "Cross-workspace select should return a normal RLS-filtered response.");
+          const foreignRows = await foreignRead.json();
+          assert.ok(Array.isArray(foreignRows), "Cross-workspace select response should be a row array.");
+          assert.equal(foreignRows.length, 0, "RLS must hide all practice_resources belonging to another workspace.");
+          log("PASS", "live cross-workspace isolation: authenticated admin session cannot read another workspace's practice_resources.");
+
+          // Test PostgreSQL/PostgREST atomicity with a deliberately invalid duplicate
+          // resource identity in one batch. The first insert must be rolled back when
+          // the second change raises an exception. IDs are unique to this run.
+          const rollbackId = "qa-rollback-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8);
+          const rollbackPayload = { id: rollbackId, title: "Disposable atomic rollback verification", createdBy: sessionInfo.userId };
+          const rollbackChanges = [
+            { op: "insert", resource_type: "case", resource_id: rollbackId, payload: rollbackPayload },
+            { op: "insert", resource_type: "case", resource_id: rollbackId, payload: rollbackPayload }
+          ];
+          const rollbackResponse = await qaRest("/rest/v1/rpc/apply_practice_resource_batch", {
+            method: "POST",
+            body: JSON.stringify({ p_workspace_id: sessionInfo.workspaceId, p_changes: rollbackChanges })
+          });
+          assert.ok(rollbackResponse.status >= 400, "Duplicate resource in one batch must fail the RPC.");
+          const rollbackCheck = await qaRest("/rest/v1/practice_resources?select=id&workspace_id=eq." +
+            encodeURIComponent(sessionInfo.workspaceId) + "&resource_type=eq.case&resource_id=eq." + encodeURIComponent(rollbackId));
+          assert.equal(rollbackCheck.status, 200, "Rollback verification query should succeed.");
+          const rollbackRows = await rollbackCheck.json();
+          assert.ok(Array.isArray(rollbackRows), "Rollback verification should return rows.");
+          assert.equal(rollbackRows.length, 0, "A failed batch must leave no partial insert behind.");
+          log("PASS", "real database atomic rollback: duplicate-insert batch failed and the first insert was absent afterward.");
+
           const syncFixture=await page.evaluate(()=>{
             const s=window.appState;
             if(!s||!Array.isArray(s.cases)||!Array.isArray(s.hearings))throw new Error("App state arrays are unavailable for hearing sync test.");
