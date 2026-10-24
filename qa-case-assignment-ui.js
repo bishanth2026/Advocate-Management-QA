@@ -20,14 +20,11 @@ function install() {
   b.type = "button"; b.className = "secondary qa-assign-case"; b.textContent = "Assign Advocate";
   b.addEventListener("click", async () => {
    try {
-    const r = await db.from("workspace_members").select("user_id,role").eq("workspace_id", a.workspaceId).in("role", ["advocate","junior_advocate"]);
+    const r = await db.rpc("qa_list_workspace_advocates", {p_workspace_id: a.workspaceId});
     if (r.error) throw r.error;
     const ms = r.data || [];
-    if (!ms.length) throw new Error("ഈ workspace-ൽ Advocate അംഗങ്ങളില്ല.");
-    const pr = await db.from("profiles").select("user_id,full_name,email").in("user_id", ms.map(m => m.user_id));
-    if (pr.error) throw pr.error;
-    const profiles = new Map((pr.data || []).map(p => [String(p.user_id), p]));
-    const choice = window.prompt("കേസ് " + label + " ഏത് Advocate-ന് നൽകണം?\n" + ms.map((m,i)=>{ const p=profiles.get(String(m.user_id))||{}; return (i+1)+". "+(p.full_name||p.email||m.user_id)+" — "+m.role; }).join("\n") + "\nനമ്പർ നൽകുക:");
+    if (!ms.length) throw new Error("ഈ workspace-ൽ Advocate അംഗങ്ങളില്ല, അല്ലെങ്കിൽ പേരുകൾ കാണാനുള്ള അനുമതി ലഭ്യമല്ല.");
+    const choice = window.prompt("കേസ് " + label + " ഏത് Advocate-ന് നൽകണം?\n" + ms.map((m,i)=> (i+1)+". "+(m.full_name || m.email || m.user_id)+" — "+m.role).join("\n") + "\nനമ്പർ നൽകുക:");
     if (choice === null) return;
     const n = Number(choice)-1;
     if (!Number.isInteger(n) || n<0 || n>=ms.length) throw new Error("ശരിയായ നമ്പർ നൽകുക.");
