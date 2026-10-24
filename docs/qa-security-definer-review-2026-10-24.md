@@ -248,3 +248,20 @@ Until that source is reviewed, do not add projection triggers/tables, modify the
 ### Workflow status
 
 GitHub connector results still do not provide a workflow run/status for the previously updated commit. Regression remains unverified; this is not a pass/fail result. Check the Actions tab for the staging branch. QA-only scope remains; production was not accessed or changed.
+
+
+## QA-only wrapper migration — 2026-10-24
+
+Applied QA migration `qa_private_schema_security_definer_wrappers_20261024`. The six existing permission-checking SECURITY DEFINER implementations were moved into the non-exposed `private` schema without changing their function bodies. The public RPC names and signatures remain available as SECURITY INVOKER wrappers that delegate to those private implementations. Authenticated execution remains granted only as required for the wrappers and delegated calls; anon and PUBLIC execution remain denied. Fixed search_path settings are retained.
+
+### Verification immediately after migration
+
+- Security Advisor no longer reports the six `authenticated_security_definer_function_executable` findings in the exposed public schema.
+- Catalog verification confirms all six public wrappers have `prosecdef=false`, authenticated EXECUTE=true, anon EXECUTE=false, PUBLIC EXECUTE=false.
+- The six private implementation functions remain SECURITY DEFINER with fixed search_path; their permission checks were preserved.
+- Leaked-password protection remains disabled and is still an open Auth dashboard setting.
+- This database change is QA-only. It has not been applied to Production.
+
+### Required next gate
+
+Run the real-browser role/module regression and authenticated RPC negative-path tests against the post-migration QA deployment. Confirm finance directory rows remain available only to permitted finance users, foreign-workspace calls return no data, non-Admin/cross-workspace assignment calls are denied, and case assignment still works for a valid Admin in a disposable QA fixture. Do not release to Production until these checks pass and the Auth password-protection warning is addressed.
