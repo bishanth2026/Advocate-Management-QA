@@ -27,7 +27,7 @@ function install() {
     const pr = await db.from("profiles").select("user_id,full_name,email").in("user_id", ms.map(m => m.user_id));
     if (pr.error) throw pr.error;
     const profiles = new Map((pr.data || []).map(p => [String(p.user_id), p]));
-    const choice = window.prompt("കേസ് " + label + " ഏത് Advocate-ന് നൽകണം?\\n" + ms.map((m,i)=>{ const p=profiles.get(String(m.user_id))||{}; return (i+1)+". "+(p.full_name||p.email||m.user_id)+" — "+m.role; }).join("\\n") + "\\nനമ്പർ നൽകുക:");
+    const choice = window.prompt("കേസ് " + label + " ഏത് Advocate-ന് നൽകണം?\n" + ms.map((m,i)=>{ const p=profiles.get(String(m.user_id))||{}; return (i+1)+". "+(p.full_name||p.email||m.user_id)+" — "+m.role; }).join("\n") + "\nനമ്പർ നൽകുക:");
     if (choice === null) return;
     const n = Number(choice)-1;
     if (!Number.isInteger(n) || n<0 || n>=ms.length) throw new Error("ശരിയായ നമ്പർ നൽകുക.");
