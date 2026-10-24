@@ -265,3 +265,25 @@ Applied QA migration `qa_private_schema_security_definer_wrappers_20261024`. The
 ### Required next gate
 
 Run the real-browser role/module regression and authenticated RPC negative-path tests against the post-migration QA deployment. Confirm finance directory rows remain available only to permitted finance users, foreign-workspace calls return no data, non-Admin/cross-workspace assignment calls are denied, and case assignment still works for a valid Admin in a disposable QA fixture. Do not release to Production until these checks pass and the Auth password-protection warning is addressed.
+
+
+## Final authenticated regression after private-wrapper migration — 2026-10-24
+
+Workflow: [Real browser role and module regression](https://github.com/bishanth2026/Advocate-Management-QA/actions/runs/40076676950)  
+Tested commit: `8cf74323c296e636d720638570678d4c6cdd6fe3`  
+Result: **PASS** — full browser regression and authenticated RPC checks completed successfully against the deployed QA site using disposable QA accounts and genuine browser-issued Supabase access tokens.
+
+Positive-path assignment lifecycle results:
+- Admin assigned an existing same-workspace case to an active same-workspace member: **PASS**.
+- Assignment row was confirmed and a `case.assigned` audit event was verified: **PASS**.
+- Admin unassigned the same case/member pair: **PASS**.
+- Assignment removal and a `case.unassigned` audit event were verified: **PASS**.
+- The test assignment was removed after verification; no persistent test assignment remains from this test.
+
+Negative-path RPC checks, role/module navigation, cross-workspace isolation, non-member rejection, invoice picker/cancel, WhatsApp link, atomic rollback, and case/hearing/calendar/dashboard synchronization also passed in the same workflow. QA validation and QA Pages deployment for the same commit passed: [validation](https://github.com/bishanth2026/Advocate-Management-QA/actions/runs/40076676974), [deployment](https://github.com/bishanth2026/Advocate-Management-QA/actions/runs/40076676984).
+
+### Current Security Advisor status
+
+A fresh Security Advisor check after the wrapper migration reports only `auth_leaked_password_protection` (WARN). The six public authenticated SECURITY DEFINER warnings are no longer reported. Leaked-password protection remains disabled; it must be enabled in the QA Supabase Dashboard under Authentication password/security settings, then rechecked. The available connected Supabase actions do not expose this Auth setting, so this review does not claim it was enabled.
+
+**Current decision:** QA regression gates are green, including the positive Admin assignment lifecycle. The remaining security configuration gate is leaked-password protection. Production has not been accessed or changed; do not release until the setting is enabled and the final Security Advisor check confirms the warning is gone.
