@@ -70,6 +70,17 @@ Latest QA Security Advisor returned two warnings:
 
 These warnings are not marked resolved. Review the function's actual app usage before revoking access or changing its security mode; avoid breaking the QA app while hardening it.
 
+
+## Follow-up QA-only security hardening — 27 October 2026
+
+The QA admin-only case-assignment UI calls qa_list_workspace_advocates(uuid), so simply revoking authenticated EXECUTE would break that workflow. Instead, the function was hardened to require the requesting user to be an admin member of the requested workspace AND for that workspace to be active. PUBLIC and anon EXECUTE privileges are revoked; authenticated and service_role retain EXECUTE for the intended admin workflow.
+
+- Applied QA Supabase migration: harden_qa_advocate_listing_active_admin_workspace_20261027.
+- Added matching repository migration: supabase/migrations/20261027143000_harden_qa_advocate_listing_active_admin_workspace.sql.
+- Security Advisor still reports the SECURITY DEFINER RPC because authenticated callers must invoke it for the admin assignment workflow. Treat this as an intentional, narrowly guarded exception pending runtime tests, not as a cleared warning.
+- Leaked-password protection remains disabled/deferred.
+- Runtime negative tests (non-admin, non-member, inactive workspace) and positive admin test are still required before this can be marked accepted.
+
 ## Release blockers
 
 1. **Field-level data and relationship parity:** compare every resource payload with the intended state contract and verify client/case, case-party, and other relationship semantics.
