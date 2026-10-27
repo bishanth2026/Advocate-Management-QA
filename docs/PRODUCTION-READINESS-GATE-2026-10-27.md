@@ -93,6 +93,18 @@ A source search across the inspected QA application did not find a reference to 
 
 Verification: information_schema.routine_privileges now reports EXECUTE only for postgres and service_role. The latest Supabase Security Advisor no longer reports the authenticated SECURITY DEFINER helper warning. Leaked-password protection remains the sole current Security Advisor warning and remains deferred per user instruction; it is still a production blocker. The app must still undergo authenticated regression to confirm no hidden path depends on the revoked RPC.
 
+
+## Additional QA-only security work — 27 October 2026
+
+### Active workspace checks for advocate directory RPC
+
+A source review confirmed the QA-only case-assignment UI calls public.qa_list_workspace_advocates. Revoking authenticated execution without changing the UI would break case assignment, so that was not done. The RPC was updated in QA Supabase to return Advocate names only when both the target workspace and requesting Admin's workspace are active. Its existing Admin membership check remains in place.
+
+- QA database function definition was re-read after the change and confirms both active-workspace checks.
+- The Security Advisor may continue to flag this SECURITY DEFINER function because it remains callable by authenticated users; the function's admin-only gate is a mitigation, not proof that the warning is fully resolved.
+- Runtime test of the case-assignment UI and inactive-workspace denial remains outstanding.
+- No production changes were made.
+
 ## Release blockers
 
 1. **Field-level data and relationship parity:** compare every resource payload with the intended state contract and verify client/case, case-party, and other relationship semantics.
