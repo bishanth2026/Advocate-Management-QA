@@ -117,6 +117,16 @@ A deeper direct inspection of the current `app.html` and `qa-case-assignment-ui.
 - The latest Security Advisor correctly reports the authenticated SECURITY DEFINER RPC warning again. This is not resolved; the function needs runtime positive/negative tests and a final design review. Do not label the security warning cleared.
 - The source-review statement and previous suggestion to keep this RPC revoked are superseded by this correction. No production changes were made.
 
+
+## Reproducibility and final current-state correction — 27 October 2026
+
+- Added repository migration `supabase/migrations/20261027155000_require_active_workspace_for_qa_advocate_directory.sql` so the active-target-workspace check currently applied in QA can be reproduced from the QA branch.
+- Added repository migration `supabase/migrations/20261027160000_restore_admin_guarded_qa_advocate_directory_execute.sql` to preserve the authenticated Admin UI dependency while keeping PUBLIC and anon execution revoked.
+- The database grant audit confirms EXECUTE for `authenticated`, `postgres`, and `service_role`; no EXECUTE for `PUBLIC` or `anon`.
+- The latest Security Advisor reports two warnings: (1) the authenticated SECURITY DEFINER advocate-directory RPC and (2) disabled leaked-password protection. The first remains an intentional, narrowly guarded app dependency that requires live positive/negative tests; the second remains deferred and blocks production approval.
+- GitHub combined status for the documentation commit returned no status checks. This means no CI success is established for this commit; it is not equivalent to a passing build.
+- No production system was modified.
+
 ## Release blockers
 
 1. **Field-level data and relationship parity:** compare every resource payload with the intended state contract and verify client/case, case-party, and other relationship semantics.
