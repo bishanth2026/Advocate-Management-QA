@@ -87,12 +87,9 @@ The QA admin-only case-assignment UI calls qa_list_workspace_advocates(uuid), so
 Read-only QA inventory confirms permission entries exist for admin, advocate, junior_advocate, accountant, clerk and staff. Highlights observed: accountant has finance.view, finance.edit and reports.finance; advocate/junior_advocate are assigned-case oriented for case/client/hearing/task visibility; clerk has hearings/tasks and document permissions; staff has documents.view only. This is a permission-table snapshot, not proof that every UI route or every database/storage policy enforces the intended matrix. No role-permission rows were modified in this audit.
 
 
-## Follow-up QA security hardening — 27 October 2026
+## Superseded interim finding — advocate directory RPC — 27 October 2026
 
-A source search across the inspected QA application did not find a reference to public RPC qa_list_workspace_advocates(uuid). The function returns advocate profile names/emails and was exposed as SECURITY DEFINER to authenticated users. To reduce unnecessary client exposure, a QA-only migration now revokes EXECUTE from PUBLIC, anon and authenticated, retaining EXECUTE only for postgres and service_role. The migration is recorded at supabase/migrations/20261027143000_revoke_authenticated_qa_advocate_directory_helper.sql on staging/advocatedesk-test.
-
-Verification: information_schema.routine_privileges now reports EXECUTE only for postgres and service_role. The latest Supabase Security Advisor no longer reports the authenticated SECURITY DEFINER helper warning. Leaked-password protection remains the sole current Security Advisor warning and remains deferred per user instruction; it is still a production blocker. The app must still undergo authenticated regression to confirm no hidden path depends on the revoked RPC.
-
+The following interim finding was superseded by direct source inspection: the case-assignment UI does call `qa_list_workspace_advocates(uuid)`, so authenticated EXECUTE cannot simply be revoked without breaking the Admin assignment picker. The earlier claim that the RPC was unused, that authenticated EXECUTE had been revoked, and that the leaked-password warning was the sole remaining Security Advisor warning is stale. Current state is documented in the later corrective follow-up and final current-state correction below: authenticated EXECUTE is retained behind active-workspace Admin checks; PUBLIC and anon are revoked; two Security Advisor warnings remain; runtime positive/negative tests are outstanding. Do not use this interim section as release evidence.
 
 ## Additional QA-only security work — 27 October 2026
 
