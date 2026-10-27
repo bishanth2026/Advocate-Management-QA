@@ -62,6 +62,40 @@ async function restGet(session, table, query) {
     advocate = await login(browser, roles[1]);
     assert.notEqual(admin.session.workspaceId, FOREIGN_WORKSPACE);
     assert.notEqual(advocate.session.workspaceId, FOREIGN_WORKSPACE);
+
+    // Focused regression for the 27-Oct QA-only security changes:
+    // the advocate directory RPC must be usable by a same-workspace Admin only.
+    const adminDirectoryResponse = await rpc(admin.session, "qa_list_workspace_advocates", {
+      p_workspace_id: admin.session.workspaceId
+    });
+    assert.equal(adminDirectoryResponse.status, 200, "Same-workspace Admin should be able to load the assignment directory");
+    const adminDirectory = await adminDirectoryResponse.json();
+    assert.ok(Array.isArray(adminDirectory), "Admin directory RPC must return an array");
+    assert.ok(adminDirectory.every(row => ["advocate", "junior_advocate"].includes(String(row.role || "").toLowerCase())),
+      "Directory must return only Advocate/Junior Advocate roles");
+    results.push("PASS qa_list_workspace_advocates — same-workspace Admin allowed; returned roles restricted");
+
+    for (const [label, session, workspace] of [
+      ["non-Admin Advocate", advocate.session, advocate.session.workspaceId],
+      ["Admin foreign workspace", admin.session, FOREIGN_WORKSPACE]
+    ]) {
+      const response = await rpc(session, "qa_list_workspace_advocates", { p_workspace_id: workspace });
+      assert.equal(response.status, 200, "Directory RPC should fail closed with an empty result for " + label);
+      const rows = await response.json();
+      assert.ok(Array.isArray(rows), "Directory RPC should return an array for " + label);
+      assert.equal(rows.length, 0, "Directory RPC must disclose no advocate names to " + label);
+      results.push("PASS qa_list_workspace_advocates — " + label + " receives 0 rows");
+    }
+
+    // Focused RLS regression: even a valid authenticated Admin must not read
+    // practice_resources belonging to the foreign workspace.
+    const foreignResources = await restGet(
+      admin.session,
+      "practice_resources",
+      "select=resource_id&workspace_id=eq." + encodeURIComponent(FOREIGN_WORKSPACE) + "&limit=5"
+    );
+    assert.equal(foreignResources.length, 0, "practice_resources RLS must hide foreign-workspace rows");
+    results.push("PASS practice_resources SELECT RLS — foreign-workspace Admin read returns 0 rows");
     for (const name of financeRpcs) {
       for (const [label, session, workspace] of [
         ["Advocate own workspace", advocate.session, advocate.session.workspaceId],
