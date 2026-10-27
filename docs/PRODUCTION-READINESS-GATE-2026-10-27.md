@@ -49,6 +49,27 @@ The branch report previously recorded these runs as passing:
 
 These are historical results; they have not been rerun as part of this read-only audit.
 
+
+## New QA-only security work — 27 October 2026
+
+### Creator-visible resource policy hardening
+
+A fresh policy audit found that the practice_resources SELECT policy allowed a matching payload.createdBy value as an alternative to permission checks without independently requiring current active workspace membership. That could preserve creator-based visibility after membership is removed if a row remains accessible under that policy.
+
+- Applied QA Supabase migration: require_active_workspace_membership_for_creator_visible_resources_qa.
+- Added the corresponding repository migration: supabase/migrations/20261027140000_require_active_workspace_membership_for_creator_visible_resources_qa.sql.
+- The policy now requires private.is_workspace_member(workspace_id) before evaluating the existing per-resource visibility branches.
+- This was applied only to QA project uqtsksgypncsbcnuanbk; no production changes were made.
+- NOT YET RUNTIME-VERIFIED: role/session-based tests must still prove active members retain intended access and removed/non-members are denied. Do not treat the policy change alone as complete security acceptance.
+
+### Current Supabase Security Advisor
+
+Latest QA Security Advisor returned two warnings:
+- qa_list_workspace_advocates(uuid) is SECURITY DEFINER and executable by authenticated. Its body checks for an admin membership in the supplied workspace, but it remains an exposed security-definer function that needs an explicit usage/grant and inactive-workspace review.
+- Leaked-password protection remains disabled, deferred per user instruction, and must be revisited before production approval.
+
+These warnings are not marked resolved. Review the function's actual app usage before revoking access or changing its security mode; avoid breaking the QA app while hardening it.
+
 ## Release blockers
 
 1. **Field-level data and relationship parity:** compare every resource payload with the intended state contract and verify client/case, case-party, and other relationship semantics.
