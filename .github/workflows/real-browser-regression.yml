@@ -8,6 +8,7 @@ on:
     paths:
       - "tests/real-browser-regression.cjs"
       - "tests/real-browser-rpc-negative-path.cjs"
+      - "tests/persistence-state-contract.test.cjs"
       - ".github/workflows/real-browser-regression.yml"
       - "app.html"
       - "resource-sync.js"
