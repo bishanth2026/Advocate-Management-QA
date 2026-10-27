@@ -124,14 +124,28 @@ A deeper direct inspection of the current `app.html` and `qa-case-assignment-ui.
 - GitHub combined status for the documentation commit returned no status checks. This means no CI success is established for this commit; it is not equivalent to a passing build.
 - No production system was modified.
 
-## Release blockers
+## Release blockers — deduplicated against existing evidence
 
-1. **Field-level data and relationship parity:** compare every resource payload with the intended state contract and verify client/case, case-party, and other relationship semantics.
-2. **Authenticated role matrix:** separate live sessions for Admin, assigned Advocate, unassigned Advocate, Accountant, non-member, and cross-workspace access.
-3. **Document/Storage acceptance:** verify list, preview/download, delete, and direct cross-workspace denial using the Workspace B Admin's real session. A 401/404 alone is not proof of policy enforcement.
-4. **Persistence and concurrency:** simultaneous edits, conflict handling, refresh/re-login persistence, explicit deletion, and recovery with no unintended data loss.
-5. **Security Advisor:** leaked-password protection remains deferred per user instruction; record as deferred, not resolved, and revisit before production approval.
-6. **Release separation:** verify QA and production repositories, Supabase projects, keys, deployment targets, and protection rules remain separated.
+### Already demonstrated in the historical browser regression (24 October 2026; before the latest 27 October security migrations)
+
+The existing run `40090283610` was inspected from its job logs, not inferred from its green summary alone. It recorded:
+- Admin, assigned Advocate, unassigned Advocate, and Accountant sign-in plus role-scoped fixture visibility/navigation checks.
+- Non-member sign-in rejection.
+- A live cross-workspace read attempt where an authenticated Admin could not read another workspace's `practice_resources`.
+- Authenticated RPC negative-path checks for foreign-workspace directory access and non-Admin assignment/unassignment; same-workspace Admin assignment/unassignment lifecycle checks passed using real browser-issued session tokens.
+- Atomic rollback on a duplicate-insert batch.
+These results should be retained and not repeated wholesale. They predate the latest security migrations, so rerun only the affected checks for the changed RLS policy and advocate-directory RPC.
+
+### Remaining gaps only
+
+1. **Field-level data/relationship parity:** existing row-count and structural audits are not full field-level parity. Verify intended state contract, case/client/case-party relationships and delete semantics only where not already covered.
+2. **Latest-change security regression:** rerun focused positive/negative real-session checks for the updated `practice_resources` membership gate and `qa_list_workspace_advocates` RPC: same-workspace active Admin allowed; Advocate/non-member denied; inactive target workspace denied; PUBLIC/anon not executable. Keep the existing broad role matrix results as prior evidence.
+3. **Document/Storage acceptance:** direct Storage list, preview/download, delete, and cross-workspace denial using a real Workspace B session are not yet evidenced. Do not substitute a 404 or policy inspection for a real authorization test.
+4. **Persistence/concurrency:** existing atomic rollback and transactional save reference-model tests passed, but they do not prove browser-level refresh/re-login persistence, edit conflict handling, simultaneous edits, deletion/recovery, or absence of data loss. Test only those uncovered behaviors.
+5. **Security Advisor:** leaked-password protection remains disabled and must be enabled/reviewed before production approval. The authenticated SECURITY DEFINER RPC warning remains; accept only after focused runtime tests and design review.
+6. **Release separation:** verify QA/production repositories, Supabase projects, keys, deployment targets, and protection rules remain separated before any production release.
+
+The existing successful runs are historical evidence, not evidence that the latest 27 October changes have passed regression.
 
 ## Required sequence
 
