@@ -158,3 +158,16 @@ The existing successful runs are historical evidence, not evidence that the late
 ## Production boundary
 
 No production repository, database, data, credentials, or deployment target was modified during this work. Do not switch or migrate production until all blockers are closed and the release gate is explicitly approved.
+
+
+## Verified follow-up regression — 27 October 2026
+
+After the focused tests were added to `tests/real-browser-rpc-negative-path.cjs`, GitHub Actions run [40503259909](https://github.com/bishanth2026/Advocate-Management-QA/actions/runs/40503259909) completed successfully on commit `15e528752fe8b9f8b4b92ef264832a51df1daef4`. The job logs were inspected and confirm these live checks passed using browser-issued Supabase sessions:
+
+- Same-workspace Admin can call `qa_list_workspace_advocates`; returned rows are restricted to Advocate/Junior Advocate roles.
+- Non-Admin Advocate receives zero rows from the directory RPC.
+- Admin querying a foreign workspace receives zero rows from the directory RPC.
+- Authenticated Admin reading foreign-workspace `practice_resources` receives zero rows.
+- Existing finance RPC negative-path checks, non-Admin assignment denial, cross-workspace assignment denial, and Admin assignment/unassignment lifecycle checks also passed in the same run.
+
+This closes the focused runtime gap for the tested active-workspace Admin/Advocate and foreign-workspace scenarios. It does **not** prove inactive-workspace denial, a separate non-member RPC call, or PUBLIC/anon grants at runtime. The grant audit remains separate evidence. The Storage acceptance, browser persistence/concurrency, leaked-password protection, SECURITY DEFINER design review, field/relationship parity, and release-separation blockers remain open. Production decision remains **NO-GO**. No production changes were made.
