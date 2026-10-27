@@ -42,5 +42,7 @@ jobs:
         run: node tests/qa-fixture-template-contract.test.js
       - name: Run transactional save reference-model tests
         run: node tests/transactional-save-contract.test.js
+      - name: Run persistence state-contract guard
+        run: node tests/persistence-state-contract.test.cjs
       - name: Check static security contracts
         run: node scripts/security-smoke.mjs
