@@ -81,6 +81,11 @@ The QA admin-only case-assignment UI calls qa_list_workspace_advocates(uuid), so
 - Leaked-password protection remains disabled/deferred.
 - Runtime negative tests (non-admin, non-member, inactive workspace) and positive admin test are still required before this can be marked accepted.
 
+
+## Role permission inventory reviewed — 27 October 2026
+
+Read-only QA inventory confirms permission entries exist for admin, advocate, junior_advocate, accountant, clerk and staff. Highlights observed: accountant has finance.view, finance.edit and reports.finance; advocate/junior_advocate are assigned-case oriented for case/client/hearing/task visibility; clerk has hearings/tasks and document permissions; staff has documents.view only. This is a permission-table snapshot, not proof that every UI route or every database/storage policy enforces the intended matrix. No role-permission rows were modified in this audit.
+
 ## Release blockers
 
 1. **Field-level data and relationship parity:** compare every resource payload with the intended state contract and verify client/case, case-party, and other relationship semantics.
