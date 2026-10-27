@@ -105,6 +105,18 @@ A source review confirmed the QA-only case-assignment UI calls public.qa_list_wo
 - Runtime test of the case-assignment UI and inactive-workspace denial remains outstanding.
 - No production changes were made.
 
+
+## Corrective follow-up — authenticated case-assignment dependency — 27 October 2026
+
+A deeper direct inspection of the current `app.html` and `qa-case-assignment-ui.js` found that the Admin case-assignment UI does call `qa_list_workspace_advocates(uuid)`. Therefore, the earlier statement that the application source had no reference to this RPC was incorrect, and revoking authenticated EXECUTE would break the assignment picker.
+
+- QA database function now requires both an active target workspace and the requesting user's active Admin membership in that same workspace.
+- QA grants were corrected: EXECUTE is granted to `authenticated` (needed by the Admin UI) and `service_role`; PUBLIC and `anon` remain revoked.
+- A repository migration was added at `supabase/migrations/20261027160000_restore_admin_guarded_qa_advocate_directory_execute.sql`.
+- Read-only verification confirms the current grants are `authenticated`, `postgres`, and `service_role`; neither `PUBLIC` nor `anon` has EXECUTE.
+- The latest Security Advisor correctly reports the authenticated SECURITY DEFINER RPC warning again. This is not resolved; the function needs runtime positive/negative tests and a final design review. Do not label the security warning cleared.
+- The source-review statement and previous suggestion to keep this RPC revoked are superseded by this correction. No production changes were made.
+
 ## Release blockers
 
 1. **Field-level data and relationship parity:** compare every resource payload with the intended state contract and verify client/case, case-party, and other relationship semantics.
