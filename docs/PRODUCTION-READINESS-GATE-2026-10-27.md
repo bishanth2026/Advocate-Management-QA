@@ -1,45 +1,71 @@
 # AdvocateDesk Production Readiness Gate — 27 October 2026
 
-## Decision
+## Decision: NO-GO
 
-**NO-GO for production release. Continue isolated QA only.**
+Production release is not approved. Continue QA-only work; do not deploy or modify production systems until every blocker below is closed with observed evidence.
 
-The latest QA branch commit `577696e60409f5ca878a9aabb6d2a8a243292f1b` has passing automated validation, browser regression, and QA Pages deployment. The user confirmed the current visible QA version is working and asked to defer the leaked-password warning while continuing the remaining work.
+## Latest source review
 
-Production repository, production Supabase project, and production data have not been accessed or changed by this work.
+Reviewed `app.html` on `staging/advocatedesk-test` (blob `10babad89681375ff3ef729c9c0dd3df2cc984f7`):
 
-## Verified latest automation
+- Loads `resource-sync.js`.
+- Calls `ADResourceSync.create(client, auth, ...)`.
+- Does not load `resource-store.js`.
+- Source contains a comment that this path should not load/save the shared `workspace_state` snapshot.
 
-- QA validation: PASS — https://github.com/bishanth2026/Advocate-Management-QA/actions/runs/40090283569
-- Real browser role/module regression: PASS — https://github.com/bishanth2026/Advocate-Management-QA/actions/runs/40090283610
-- QA Pages deployment: PASS — https://github.com/bishanth2026/Advocate-Management-QA/actions/runs/40090283684
+This corrects any stale wording that says the currently inspected `app.html` is necessarily using the legacy aggregate as its active sync path. However, `workspace_state` is still present in the codebase/database and must not be removed or restricted until runtime and compatibility tests prove that no active paths depend on it.
 
-## Confirmed QA coverage
+## Latest read-only QA database audit
 
-- Admin same-workspace case assignment and unassignment lifecycle; assignment rows and audit events were verified.
-- Non-admin assignment/unassignment denied.
-- Cross-workspace Admin assignment/unassignment denied.
-- Finance directory RPC calls denied/empty for tested no-finance-permission and cross-workspace paths.
-- Browser role/module regression, workspace isolation, rollback behavior, and app navigation checks passed.
-- Latest UI assignment-success wording was refreshed in the QA branch and the resulting validation, browser regression, and deployment workflows passed.
+QA Supabase project: `uqtsksgypncsbcnuanbk`. Queries were read-only.
 
-## Remaining release blockers
+### `practice_resources`
 
-1. **Resource-store cutover is not ready.** The live UI still uses the legacy workspace-wide `practice_records.workspace_state` aggregate; `app.html` does not load `resource-store.js`. The aggregate's workspace-member-wide access can bypass the intended row-level case visibility model. Do not enable resource-store cutover or restrict the legacy aggregate until full parity and authenticated role tests pass.
-2. **Data/relationship parity is incomplete.** Count parity alone does not establish payload equality, client-to-case links, case-party relationships, deletion semantics, or preservation of every module's persisted fields.
-3. **Concurrency and conflict recovery require end-to-end proof.** Validate simultaneous Admin/member edits, refresh/re-login persistence, explicit deletes, and no data loss using separate authenticated QA sessions.
-4. **Storage/documents acceptance tests remain required.** Verify list, preview, delete, and cross-workspace denial with synthetic QA documents and separate role sessions.
-5. **Security Advisor follow-up remains open.** The user explicitly deferred the leaked-password protection warning. Keep it recorded as deferred, not resolved. Revisit before production approval.
-6. **Release separation must be rechecked.** Keep `staging/advocatedesk-test` and its QA Supabase configuration out of production `main`; verify Pages environment/target and production protection before any future cutover.
+- Total: 40 rows.
+- By resource type: 10 cases, 8 clients, 8 hearings, 4 tasks, 5 invoices, 5 payments.
+- Payload not a JSON object: 0.
+- Payload `id` differs from `resource_id`: 0.
+- Empty `resource_id`: 0.
+- Unsupported resource types: 0.
+- Non-case rows whose non-null `case_id` points to no case in the same workspace: 0.
 
-## Next QA-only work
+### `practice_records`
 
-- Add/execute a read-only state-contract and payload/relationship parity check against the isolated QA data.
-- Build the explicit acceptance matrix for Admin, assigned Advocate, unassigned Advocate, Accountant, non-member, and cross-workspace access.
-- Close document/Storage and persistence/concurrency acceptance gaps using synthetic test data only.
-- Re-run browser regression and deployment after every code change.
-- Update this gate only when evidence is available; do not describe a test as passed unless its result was observed.
+- Contains three `record_type='other'` snapshot rows, one per QA workspace.
+- Snapshot payloads have keys for cases, clients, courts, discussions, hearings, invoices, meetings, payments and tasks.
+- Snapshot array counts currently observed:
+  - Workspace A: 1 case, 1 client, 1 hearing, 1 task, 1 invoice, 1 payment; 0 transactions, meetings, discussions, courts, case parties.
+  - Workspace B: 1 case, 1 client, 1 hearing; 0 tasks, invoices, payments, transactions, meetings, discussions, courts, case parties.
+  - Disposable QA workspace: 1 case, 1 client; 0 hearings, tasks, invoices, payments, transactions, meetings, discussions, courts, case parties.
+
+These are structural/count observations only. They do not establish full field-level parity, correct relationship mapping, delete semantics, or that these synthetic snapshots represent the complete intended module data. No data was modified.
+
+## Previously recorded automation
+
+The branch report previously recorded these runs as passing:
+- QA validation: https://github.com/bishanth2026/Advocate-Management-QA/actions/runs/40090283569
+- Browser role/module regression: https://github.com/bishanth2026/Advocate-Management-QA/actions/runs/40090283610
+- QA Pages deployment: https://github.com/bishanth2026/Advocate-Management-QA/actions/runs/40090283684
+
+These are historical results; they have not been rerun as part of this read-only audit.
+
+## Release blockers
+
+1. **Field-level data and relationship parity:** compare every resource payload with the intended state contract and verify client/case, case-party, and other relationship semantics.
+2. **Authenticated role matrix:** separate live sessions for Admin, assigned Advocate, unassigned Advocate, Accountant, non-member, and cross-workspace access.
+3. **Document/Storage acceptance:** verify list, preview/download, delete, and direct cross-workspace denial using the Workspace B Admin's real session. A 401/404 alone is not proof of policy enforcement.
+4. **Persistence and concurrency:** simultaneous edits, conflict handling, refresh/re-login persistence, explicit deletion, and recovery with no unintended data loss.
+5. **Security Advisor:** leaked-password protection remains deferred per user instruction; record as deferred, not resolved, and revisit before production approval.
+6. **Release separation:** verify QA and production repositories, Supabase projects, keys, deployment targets, and protection rules remain separated.
+
+## Required sequence
+
+1. Complete read-only field/relationship parity audit and document exceptions.
+2. Fix only confirmed defects on the QA branch; preserve test evidence.
+3. Run authenticated role, document, persistence, and concurrency acceptance tests with synthetic QA data.
+4. Rerun validation, browser regression, and QA deployment after code changes.
+5. Review all results and security warnings; only then make a separate, explicit production release plan.
 
 ## Production boundary
 
-No production migration, deployment, credential change, or data modification is authorized or performed by this report. Release remains blocked until the remaining data-integrity and authorization gates are verified and reviewed.
+No production repository, database, data, credentials, or deployment target was modified during this work. Do not switch or migrate production until all blockers are closed and the release gate is explicitly approved.
