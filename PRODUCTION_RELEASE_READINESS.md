@@ -16,6 +16,12 @@ Date: 2026-10-28
 - Custom domain file `CNAME` contains `advocate.biznexco.in`.
 - GitHub Actions run 40660002462 completed successfully on 2026-10-28. It checked JavaScript syntax and the production safety smoke assertions. This is not an end-to-end browser test or proof that the live site deployed this commit.
 
+## QA branch divergence — release blocker
+
+A fresh compare of `main` against `production/advocatedesk-final` reports that the branches have diverged: `main` is 23 commits ahead and 41 commits behind the production baseline. The QA `main` branch's `auth.js` points to the QA Supabase project (`uqtsksgypncsbcnuanbk`), and its login page still includes demo-only branding. The production baseline instead points to the production Supabase project and has release smoke assertions protecting against QA configuration.
+
+**Do not merge `main` wholesale into the production branch.** Select and review individual QA fixes, port them through a release candidate, and run automated checks plus authenticated QA tests before considering them for production.
+
 ## Database parity — release blocker
 
 The production Supabase project (`ykxfidrtvmkmmbxameji`, `Advocate_Management`) has 7 recorded migrations. The QA Supabase project (`uqtsksgypncsbcnuanbk`, `AdvocateDesk-Test`) has 41 recorded migrations.
