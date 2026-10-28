@@ -29,5 +29,7 @@ assert.match(provisioning, /listUsers\(\{ page, perPage \}\)/, "Auth pagination 
 assert.match(provisioning, /callerProfile\?\.platform_role !== "super_admin"/, "Provisioning must verify Super Admin role");
 assert.match(provisioning, /action !== "invite_admin"/, "Unsupported provisioning actions must be rejected");
 assert.doesNotMatch(shell, /uqtsksgypncsbcnuanbk|Advocate-Management-QA/i, "Production app shell must not contain QA configuration");
+assert.match(shell, /id="cloudSyncStatus"[^>]*>Cloud: Connecting…<\/span>/, "Cloud status must not claim Synced before the initial workspace read completes");
+assert.match(shell, /auth\.js\?v=20261028-member-session/, "App shell must cache-bust the corrected Production session validation code");
 
 console.log("AdvocateDesk production safety smoke checks: PASS");
