@@ -171,3 +171,25 @@ After the focused tests were added to `tests/real-browser-rpc-negative-path.cjs`
 - Existing finance RPC negative-path checks, non-Admin assignment denial, cross-workspace assignment denial, and Admin assignment/unassignment lifecycle checks also passed in the same run.
 
 This closes the focused runtime gap for the tested active-workspace Admin/Advocate and foreign-workspace scenarios. It does **not** prove inactive-workspace denial, a separate non-member RPC call, or PUBLIC/anon grants at runtime. The grant audit remains separate evidence. The Storage acceptance, browser persistence/concurrency, leaked-password protection, SECURITY DEFINER design review, field/relationship parity, and release-separation blockers remain open. Production decision remains **NO-GO**. No production changes were made.
+
+## Read-only Documents/Storage audit — 28 October 2026
+
+Queried only the isolated QA Supabase project `uqtsksgypncsbcnuanbk` using read-only SQL. No records, policies, buckets, or objects were changed.
+
+- `storage.buckets` confirms `advocatedesk-documents` exists and is private (`public = false`).
+- `public.case_documents` currently has 3 metadata rows; all 3 have non-null `storage_path` and `case_id`.
+- All 3 metadata rows currently join to a matching `practice_resources` row with `resource_type='case'` in the same workspace.
+- All 3 metadata rows currently join to an object in the `advocatedesk-documents` bucket at the exact `storage_path`.
+- The observed Storage object policies target only `authenticated`: SELECT requires a matching metadata row plus `documents.view` and case access; DELETE requires a matching metadata row plus `documents.delete` and case access; INSERT requires workspace membership and `documents.upload`.
+- The observed `case_documents` metadata policies target only `authenticated`: SELECT requires `documents.view` and case access; INSERT requires uploader identity, `documents.upload`, and case access; DELETE requires `documents.delete` and case access.
+
+**Interpretation:** schema and current-row linkage look structurally consistent for these 3 QA records, and the bucket is private. This is not a runtime authorization acceptance test. It does not prove that authorized users can list/preview/download, that unauthorized users cannot delete, or that cross-workspace reads are denied through the Storage API. Those real-session checks remain open.
+
+### Current Security Advisor — 28 October 2026
+
+A fresh QA Security Advisor query still reports exactly these two security warnings:
+1. `public.qa_list_workspace_advocates(uuid)` is callable by `authenticated` as a SECURITY DEFINER function. This is an intentional Admin UI dependency but remains subject to final design review and the focused runtime tests.
+2. Leaked-password protection is disabled. This remains a production blocker and must be enabled/reviewed before production approval.
+
+No production system was changed. Production remains **NO-GO**.
+
