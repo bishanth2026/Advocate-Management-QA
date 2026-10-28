@@ -6,11 +6,18 @@ const auth = read("../auth.js");
 const app = read("../app.js");
 const shell = read("../app.html");
 const reset = read("../reset-password.html");
+const memberLogin = read("../member-login.html");
+const portalSelection = read("../login.html");
 const provisioning = read("../supabase/functions/advocatedesk-provision-user/index.ts");
 
 assert.match(auth, /https:\/\/ykxfidrtvmkmmbxameji\.supabase\.co/, "Production auth must point to the production Supabase project");
 assert.doesNotMatch(auth, /uqtsksgypncsbcnuanbk|Advocate-Management-QA/i, "Production auth must not contain QA Supabase/site configuration");
 assert.match(reset, /https:\/\/ykxfidrtvmkmmbxameji\.supabase\.co/, "Production reset page must point to production Supabase");
+assert.match(auth, /old&&old\.role===\"admin\"\?\"admin\":\"member\"/, "Non-admin sessions must validate through active member access, not the admin-only portal");
+assert.match(portalSelection, /href=\"member-login\.html\"/, "Portal selection must expose Advocate and Staff login");
+assert.match(memberLogin, /signIn\([^;]*,\"member\"\)/, "Member login must use the member access path");
+assert.match(memberLogin, /https:\/\/cdn\.jsdelivr\.net\/npm\/\@supabase\/supabase-js@2/, "Member login must load Supabase client");
+assert.doesNotMatch(memberLogin, /uqtsksgypncsbcnuanbk|Advocate-Management-QA/i, "Member login must not contain QA configuration");
 assert.doesNotMatch(reset, /uqtsksgypncsbcnuanbk|Advocate-Management-QA/i, "Production reset page must not contain QA configuration");
 assert.match(app, /async function validateDocumentFileSignature\(file\)/, "Document signature validation must exist");
 assert.match(app, /head\.includes\("%PDF-"\)/, "PDF signature check must exist");
