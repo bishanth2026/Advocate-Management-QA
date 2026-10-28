@@ -202,3 +202,33 @@ A read-only workspace inventory found:
 
 Therefore, current data can support linkage checks but does not provide a document object inside Workspace B for a realistic cross-workspace Storage authorization test. Do not create/upload/delete test objects until a controlled test identity and cleanup plan are available. Runtime acceptance should use disposable synthetic metadata/object fixtures and real QA sessions from separate workspaces, then verify cleanup. This is a test-data gap, not evidence of a policy bypass.
 
+
+
+## Release-gate follow-up — 28 October 2026
+
+### Document/Storage checks reported complete by the QA operator
+
+The QA operator reports that the following runtime checks have been performed:
+- Authorized user can view and download documents.
+- A user cannot access documents belonging to another workspace without authorization.
+- A user without the required permission cannot delete documents.
+
+These are recorded as **operator-reported results**. The current report update does not include attached browser/API logs, response codes, test identities/roles, or object identifiers that independently substantiate the three outcomes. Before production approval, retain sanitized evidence for each positive and negative case. Do not include access tokens, passwords, signed download URLs, or private document contents in the report.
+
+### Remaining release blockers rechecked
+
+A fresh read-only Security Advisor query on QA project `uqtsksgypncsbcnuanbk` at 2026-10-28 still returns two warnings:
+1. `public.qa_list_workspace_advocates(uuid)` is callable by `authenticated` as a SECURITY DEFINER function. The current function body has a fixed search_path and requires the target workspace and requesting Admin membership to be active, but the warning remains open pending design review and runtime edge-case tests.
+2. Leaked-password protection is disabled. This remains a production blocker; configure and verify it through the supported Supabase Auth settings before release.
+
+A fresh read-only workspace inventory shows the three known QA workspaces are all active. No inactive workspace fixture is currently available for a direct inactive-target RPC test. A true non-member RPC test also remains unproven by the currently inspected browser test, which covers same-workspace Admin, non-Admin Advocate, and foreign-workspace Admin cases.
+
+### Next acceptance work
+
+1. Preserve sanitized evidence for the operator-reported document view/download, cross-workspace denial, and unauthorized-delete denial.
+2. Add or provision a controlled QA-only inactive-workspace test fixture and a real authenticated non-member session, with a cleanup plan, then test the advocate-directory RPC fail-closed behavior.
+3. Verify browser refresh and re-login persistence, edit conflicts/concurrent edits, and deletion/recovery; existing transaction tests do not establish these browser-level behaviors.
+4. Verify QA/production repository, project, keys, deployment targets, and protection rules remain separated.
+5. Re-run the affected validation and browser regression workflows after any code or configuration changes, inspect their logs, and update this gate with actual run IDs and results.
+
+**Decision remains NO-GO.** This update is documentation-only on the QA branch. No QA database records, policies, storage objects, Auth settings, or production systems were changed.
