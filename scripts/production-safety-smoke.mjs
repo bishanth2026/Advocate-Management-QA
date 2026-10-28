@@ -19,6 +19,8 @@ assert.match(memberLogin, /ADAuth\.signIn\([\s\S]*?,\x27member\x27\)/, "Member l
 assert.match(memberLogin, /https:\/\/cdn\.jsdelivr\.net\/npm\/\@supabase\/supabase-js@2/, "Member login must load Supabase client");
 assert.doesNotMatch(memberLogin, /uqtsksgypncsbcnuanbk|Advocate-Management-QA/i, "Member login must not contain QA configuration");
 assert.doesNotMatch(reset, /uqtsksgypncsbcnuanbk|Advocate-Management-QA/i, "Production reset page must not contain QA configuration");
+assert.match(reset, /href="member-login\.html">Advocate &amp; Staff Login/, "Password reset page must provide the member login route");
+assert.match(reset, /reset-page-version" content="20261028-03"/, "Password reset page must advertise the current version");
 assert.match(app, /async function validateDocumentFileSignature\(file\)/, "Document signature validation must exist");
 assert.match(app, /head\.includes\("%PDF-"\)/, "PDF signature check must exist");
 assert.match(app, /starts\(\[0x89,0x50,0x4e,0x47,0x0d,0x0a,0x1a,0x0a\]\)/, "PNG signature check must exist");
