@@ -72,3 +72,11 @@ The current Production `app.html` bootstraps workspace state from `public.practi
 - The main app marks cloud sync as “Synced” in static HTML before bootstrap and again before any save completes. The bootstrap later does set the status, but the initial label is misleading while the request is still pending. The production-compatible port should show a neutral loading state until the first authenticated read succeeds, and only show “Synced” after a confirmed successful read/write.
 - The existing legacy write path uses optimistic concurrency via `id` + `updated_at` and returns a conflict when another session changed the row. Preserve and test this behavior during the compatibility transition; do not silently replace it with last-write-wins.
 - The public anon key embedded in `auth.js` is a Supabase publishable client key, not an admin secret; still, access safety depends on correct RLS, grants, and server-side authorization. Never place a service-role key in browser code.
+
+
+## Follow-up implementation prepared — 2026-10-28
+- Draft Production-targeted PR #35: https://github.com/bishanth2026/Advocate-Management-QA/pull/35
+- Changes are isolated from Production: a member login route was added, session revalidation now distinguishes Admin from non-admin membership flow, and auth.js cache-busting references were updated so clients receive the corrected session logic.
+- Production safety CI passed on the latest PR head `8e098bb20ca5503d920aabb79e41f87ea1a26f6d`: https://github.com/bishanth2026/Advocate-Management-QA/actions/runs/40631648484
+- The initial smoke-test assertion failed because its matcher expected double quotes while the HTML uses single quotes; the assertion was corrected, then the updated check passed. The initial failed run is retained for traceability.
+- These are syntax and repository safety smoke checks, not live end-to-end login tests. Real Production-like account tests still need to verify Admin, Advocate, Accountant, unassigned and inactive membership behavior, refresh/re-login, and session expiry before approval.
