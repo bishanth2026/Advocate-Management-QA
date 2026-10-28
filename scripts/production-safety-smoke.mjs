@@ -8,6 +8,7 @@ const shell = read("../app.html");
 const reset = read("../reset-password.html");
 const memberLogin = read("../member-login.html");
 const portalSelection = read("../login.html");
+assert.doesNotMatch(portalSelection, /Demo Frontend/i, "Production login portal must not carry demo-only branding");
 const provisioning = read("../supabase/functions/advocatedesk-provision-user/index.ts");
 
 assert.match(auth, /https:\/\/ykxfidrtvmkmmbxameji\.supabase\.co/, "Production auth must point to the production Supabase project");
