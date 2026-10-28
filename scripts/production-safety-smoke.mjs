@@ -15,7 +15,7 @@ assert.doesNotMatch(auth, /uqtsksgypncsbcnuanbk|Advocate-Management-QA/i, "Produ
 assert.match(reset, /https:\/\/ykxfidrtvmkmmbxameji\.supabase\.co/, "Production reset page must point to production Supabase");
 assert.match(auth, /old&&old\.role===\"admin\"\?\"admin\":\"member\"/, "Non-admin sessions must validate through active member access, not the admin-only portal");
 assert.match(portalSelection, /href=\"member-login\.html\"/, "Portal selection must expose Advocate and Staff login");
-assert.match(memberLogin, /signIn\([^;]*,\"member\"\)/, "Member login must use the member access path");
+assert.match(memberLogin, /ADAuth\.signIn\([\s\S]*?,\x27member\x27\)/, "Member login must use the member access path");
 assert.match(memberLogin, /https:\/\/cdn\.jsdelivr\.net\/npm\/\@supabase\/supabase-js@2/, "Member login must load Supabase client");
 assert.doesNotMatch(memberLogin, /uqtsksgypncsbcnuanbk|Advocate-Management-QA/i, "Member login must not contain QA configuration");
 assert.doesNotMatch(reset, /uqtsksgypncsbcnuanbk|Advocate-Management-QA/i, "Production reset page must not contain QA configuration");
