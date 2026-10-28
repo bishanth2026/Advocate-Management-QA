@@ -63,6 +63,19 @@ The current Production `app.html` bootstraps workspace state from `public.practi
 - [ ] Rollback rehearsal passes.
 - [ ] Human release approval explicitly recorded.
 
+## Read-only Supabase schema comparison — 2026-10-28
+
+Read-only schema inventory was retrieved for Production project `ykxfidrtvmkmmbxameji` and QA project `uqtsksgypncsbcnuanbk`. No SQL or settings were changed by this comparison.
+
+- Production has the legacy tables `profiles`, `workspaces`, `workspace_members`, `practice_records`, and `case_documents`; QA additionally has `practice_resources`, `role_permissions`, `case_assignments`, and `workspace_audit_log`. This confirms QA schema cannot be assumed to exist in Production.
+- Production `workspace_members.role` currently allows only `admin`, `advocate`, and `staff`. QA additionally allows `junior_advocate`, `clerk`, and `accountant`. Do not release UI/permission code that assumes those extra roles can be stored in Production until a reviewed additive migration and mapping are rehearsed.
+- Production `workspaces.status` allows `active` and `suspended`; QA also permits `inactive`. Any migration or application logic must normalize this difference explicitly and safely.
+- Production `case_documents` has different validation constraints from QA: Production does not show the same required document-name/original-file-name checks, MIME allowlist, or unique storage-path constraint in the inspected column metadata. Confirm the actual indexes, triggers, policies and storage policies before relying on either environment's behavior.
+- Both projects reported RLS enabled for the inspected public tables. This does not by itself prove policies/grants are correct; policy definitions and role-based runtime denials still need separate verification.
+- The table-list tool reported row counts of zero for several tables in both projects despite QA tables visibly listing some non-zero counts. Treat those counts as incomplete metadata, **not** evidence that Production has no user data. Use a verified export/count query in the approved read-only inventory process before migration planning.
+
+These findings make schema compatibility and role mapping concrete release blockers. No migration should be applied to Production based on this inventory alone.
+
 ## Current release decision
 **NO-GO until all gates above are evidenced.** This plan is deliberately documentation-only because the exact Production schema/data model and a disposable Production-like database have not yet been verified. Do not apply QA migrations or merge the QA branch wholesale into Production.
 
