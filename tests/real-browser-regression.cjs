@@ -125,6 +125,16 @@ async function run() {
       try {
         await login(page, actor.email, actor.password);
         await assertFixtureVisibility(page, actor.key);
+        // Live persistence smoke: reload the deployed app in the same authenticated
+        // browser context and verify the Supabase session and workspace fixtures rehydrate.
+        await page.reload({ waitUntil: "domcontentloaded" });
+        await page.waitForURL(/app\\.html(?:#|$)/, { timeout: 25000 });
+        await page.waitForFunction(() => {
+          const node = document.getElementById("cloudSyncStatus");
+          return node && /Cloud: Synced/.test(node.textContent || "");
+        }, undefined, { timeout: 30000 });
+        await assertFixtureVisibility(page, actor.key);
+        log("PASS", actor.role + " browser refresh persistence: authenticated session and role-scoped demo fixtures rehydrated.");
         const visibleNavPages = [];
         for (const pageName of NAV_PAGES) {
           const navItem = page.locator('.nav-item[data-page="' + pageName + '"]').first();
