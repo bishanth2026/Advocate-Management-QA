@@ -1,6 +1,7 @@
 name: AdvocateDesk Production Safety Validation
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - production/advocatedesk-final
