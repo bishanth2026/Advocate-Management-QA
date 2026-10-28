@@ -77,6 +77,16 @@ These are partial-scope results recorded from earlier QA work. They are not a su
 | Advocate/Staff portal | Portal route and static production-safety assertions: PASS | Actual Advocate/Staff account sign-in, role session, and permitted operations not confirmed. |
 | Production safety CI | Workflow `40660002462` passed syntax/static smoke checks: PASS | Not browser E2E, real auth, or deployment verification. |
 
+## Fresh production-vs-QA RLS policy review — 2026-10-28
+
+A read-only comparison of `pg_policies` on the connected production and QA databases found a material authorization gap that must be addressed before release:
+
+- Production `case_documents` SELECT/DELETE policies currently check workspace membership; INSERT checks membership plus uploader identity. They do not call the QA-style `has_workspace_permission(..., 'documents.*')` and `can_access_case(...)` checks. Therefore case-scoped document authorization is not equivalent between production and QA.
+- Production `practice_records` policies generally allow workspace members to select/insert/update/delete records (with creator identity on insert). QA has an additional restrictive `workspace_state` policy, while role-specific `practice_resources` policies enforce resource-type permissions and case scope. These models are not interchangeable.
+- QA-only `case_assignments`, `role_permissions`, `practice_resources`, and `workspace_audit_log` policies depend on schema/helper functions that are not present in the inspected production table inventory. They cannot be copied as isolated policies.
+
+**Required action:** design a minimal, ordered production-compatible migration set for case-scoped document access and required role/assignment infrastructure; inspect helper functions, grants, storage-object policies, and application compatibility; rehearse on an isolated staging database with positive and negative authenticated tests. Do not change production policies until the exact migration and rollback plan are reviewed and staging tests pass.
+
 ## E. Database migration safety
 
 Do not apply QA migrations wholesale. Prepare a new, ordered, reviewed release migration set.
