@@ -113,3 +113,16 @@ The production safety workflow at `.github/workflows/production-safety.yml` curr
 - Release decision: **BLOCKED / NOT APPROVED FOR PRODUCTION**.
 
 Do not merge this documentation-only readiness PR as a substitute for code, database, or live-site validation. No production database schema, data, hosting configuration, or application code was changed by this review.
+
+
+## QA evidence reconciliation — 2026-10-28
+
+Prior QA results have been reconciled with the release test matrix; they should not be treated as untested or needlessly repeated:
+
+- `workspace_state` restrictive RLS check: PASS (limited to that policy).
+- Anonymous Finance RPC EXECUTE denial: PASS (does not prove authenticated role permissions).
+- Accountant Clients & Cases read-only UI and absent Edit/Delete controls: PASS (direct API mutation denial remains unverified).
+- Advocate/Staff portal route and static smoke assertions: PASS (real account sign-in and end-to-end permissions remain unverified).
+- Production safety CI run `40660002462`: PASS for syntax/static smoke checks only.
+
+The release matrix now records these scoped results and focuses remaining execution on real-session login/session revalidation, allowed save-refresh-cloud-sync, denied direct API/cross-workspace/case access, document/finance authorization, migration rehearsal/backup restore, leaked-password protection, and live hosting/deployed SHA verification. The overall release gate remains blocked until these externally dependent checks have evidence. No production code, schema, data, or hosting settings were changed.
