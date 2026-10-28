@@ -16,6 +16,7 @@ This checklist is a QA-only release preparation record. It does not authorize a 
 - Public `public.qa_list_workspace_advocates(uuid)` is now `SECURITY INVOKER`; its narrowly scoped helper lives in the non-exposed `private` schema, has a fixed search path, and requires an Admin of the same active workspace.
 - Verified via catalog query and transaction-scoped authenticated-role simulations: public wrapper is not SECURITY DEFINER; same-workspace Admin returned only Advocate rows; non-Admin Advocate and foreign-workspace Admin received zero rows.
 - Re-ran QA Security Advisor. The public authenticated SECURITY DEFINER warning is resolved. One warning remains: **Leaked Password Protection is disabled**.
+- A read-only Security Advisor check on the Production Supabase project `ykxfidrtvmkmmbxameji` also reports Leaked Password Protection disabled. No Production settings were changed.
 
 ## Production source/schema audit — 2026-10-28
 - The inspected `production/advocatedesk-final` branch still has a legacy `app.html` bootstrap that references `practice_records`; it does not contain `resource-sync.js`.
