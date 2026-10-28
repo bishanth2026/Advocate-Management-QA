@@ -193,3 +193,12 @@ A fresh QA Security Advisor query still reports exactly these two security warni
 
 No production system was changed. Production remains **NO-GO**.
 
+### Runtime Storage test fixture gap discovered — 28 October 2026
+
+A read-only workspace inventory found:
+- Workspace A (`33d996c1-a402-41d0-a639-005f9767b3f8`): 1 document metadata row.
+- Disposable QA workspace (`e183d24d-9f64-4283-af54-571f83ca7e3d`): 2 document metadata rows.
+- Workspace B (`55097c1f-9ebe-4252-bc4c-a43c3c989361`): 0 document metadata rows.
+
+Therefore, current data can support linkage checks but does not provide a document object inside Workspace B for a realistic cross-workspace Storage authorization test. Do not create/upload/delete test objects until a controlled test identity and cleanup plan are available. Runtime acceptance should use disposable synthetic metadata/object fixtures and real QA sessions from separate workspaces, then verify cleanup. This is a test-data gap, not evidence of a policy bypass.
+
