@@ -95,3 +95,21 @@ A direct read-only comparison of the QA `main` branch and `production/advocatede
 Do not copy QA `auth.js`, `app.js`, or `app.html` over production as a bulk operation. Keep production's explicit production Supabase configuration and its safety assertions. Port a specific QA fix only after identifying its exact diff, checking compatibility with production schema and roles, and adding a regression test that fails before the fix and passes after it.
 
 This review is read-only with respect to production application code and database.
+
+
+## Release test matrix — 2026-10-28
+
+Added `RELEASE_TEST_MATRIX.md` on the release-readiness branch. It defines the required build/branch, authentication, workspace/case authorization, finance, cloud-sync, document storage, migration-safety, and live-host checks. Test rows are deliberately marked NOT RUN or BLOCKED until evidence is captured; the matrix is not a claim that those tests passed.
+
+The production safety workflow at `.github/workflows/production-safety.yml` currently runs JavaScript syntax checks and `scripts/production-safety-smoke.mjs`. Its triggers are workflow dispatch, pushes to `production/advocatedesk-final`, and pull requests targeting that branch (or `feature/secure-documents-draft`). The workflow does not itself deploy the site and does not perform real authenticated browser/API tests.
+
+### Current gate after matrix creation
+
+- Static production safety smoke checks: prior run passed on the production baseline; must be rerun on the exact final candidate.
+- Authenticated role/negative-permission tests: NOT RUN.
+- Production-compatible migration set and staging rehearsal: NOT READY.
+- Leaked-password protection: BLOCKED until enabled and verified in Supabase Auth settings.
+- Live hosting branch / deployed SHA: NOT VERIFIED.
+- Release decision: **BLOCKED / NOT APPROVED FOR PRODUCTION**.
+
+Do not merge this documentation-only readiness PR as a substitute for code, database, or live-site validation. No production database schema, data, hosting configuration, or application code was changed by this review.
