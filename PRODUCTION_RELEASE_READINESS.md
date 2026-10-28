@@ -80,3 +80,18 @@ The inventory reports zero rows for several production core tables and zero rows
 6. Run the same release migration set on QA/staging first, capture rollback/restore evidence, and only then schedule production change.
 
 No database changes were made during this inspection.
+
+
+## Frontend source review — 2026-10-28
+
+A direct read-only comparison of the QA `main` branch and `production/advocatedesk-final` confirms the current QA frontend files are not a safe drop-in replacement for production:
+
+- QA `auth.js` SHA: `ed652d54e123fac641234a2c8cf688ecfc3122bd`; it points to the QA Supabase project. Production `auth.js` SHA: `31eea5d6268cbada4f86fb71fea094bf95652361`; it points to the production Supabase project.
+- QA `app.js` SHA: `2fdaf5b1ca07b504f860fc3b436e044e572da5ed` (167,327 characters); production `app.js` SHA: `20b3a0df247f3489313e5b0a2bed16513914aec3` (179,512 characters). QA's application source is materially smaller and must not overwrite the production build without a reviewed feature-by-feature diff and regression suite.
+- The portal selection and member login pages exist on both refs, but their presence alone does not prove the live host is serving them or that sign-in and authorization work end-to-end.
+
+### Source promotion decision
+
+Do not copy QA `auth.js`, `app.js`, or `app.html` over production as a bulk operation. Keep production's explicit production Supabase configuration and its safety assertions. Port a specific QA fix only after identifying its exact diff, checking compatibility with production schema and roles, and adding a regression test that fails before the fix and passes after it.
+
+This review is read-only with respect to production application code and database.
