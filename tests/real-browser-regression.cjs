@@ -47,7 +47,13 @@ async function login(page, email, password) {
     }
   });
   await page.locator("#loginForm button[type=submit]").click();
-  await page.waitForURL(/app\.html(?:#|$)/, { timeout: 25000 });
+  try {
+    await page.waitForURL(/app\.html(?:#|$)/, { timeout: 25000 });
+  } catch (error) {
+    const loginMessage = await page.locator("#error").innerText().catch(() => "");
+    const buttonText = await page.locator("#loginForm button[type=submit]").innerText().catch(() => "");
+    throw new Error("Sign-in did not reach app.html; login message=" + JSON.stringify(loginMessage.trim()) + "; button=" + JSON.stringify(buttonText.trim()) + "; " + error.message);
+  }
   await page.waitForFunction(() => {
     const node = document.getElementById("cloudSyncStatus");
     return node && /Cloud: Synced/.test(node.textContent || "");
