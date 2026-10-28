@@ -65,3 +65,10 @@ The current Production `app.html` bootstraps workspace state from `public.practi
 
 ## Current release decision
 **NO-GO until all gates above are evidenced.** This plan is deliberately documentation-only because the exact Production schema/data model and a disposable Production-like database have not yet been verified. Do not apply QA migrations or merge the QA branch wholesale into Production.
+
+
+## Additional Production-source findings — 2026-10-28
+- `auth.js` currently validates every non-`super_admin` stored session through the `admin` portal path. That path filters workspace memberships to `role === 'admin'`; consequently a non-Admin Advocate/Accountant session may be rejected on refresh/re-login even if sign-in initially allowed it. This must be reproduced with synthetic QA accounts and corrected in a selective-port change before release. Session role must come from trusted database membership, not a client-controlled localStorage value.
+- The main app marks cloud sync as “Synced” in static HTML before bootstrap and again before any save completes. The bootstrap later does set the status, but the initial label is misleading while the request is still pending. The production-compatible port should show a neutral loading state until the first authenticated read succeeds, and only show “Synced” after a confirmed successful read/write.
+- The existing legacy write path uses optimistic concurrency via `id` + `updated_at` and returns a conflict when another session changed the row. Preserve and test this behavior during the compatibility transition; do not silently replace it with last-write-wins.
+- The public anon key embedded in `auth.js` is a Supabase publishable client key, not an admin secret; still, access safety depends on correct RLS, grants, and server-side authorization. Never place a service-role key in browser code.
