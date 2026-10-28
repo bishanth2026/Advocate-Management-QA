@@ -51,3 +51,32 @@ Before release:
 ## Release gate
 
 Release only after database migration parity is deliberately resolved, the Auth security setting is verified, hosting source is confirmed, and authenticated end-to-end checks pass. Do not mark this release as production-ready based only on static smoke checks.
+
+
+## Fresh schema parity inspection — 2026-10-28
+
+A fresh live read-only inventory of the connected Supabase projects confirmed that the gap is functional, not only a migration-count difference.
+
+| Area | Production | QA | Release implication |
+|---|---|---|---|
+| `workspaces.status` allowed values | `active`, `suspended` | `active`, `inactive`, `suspended` | Status-handling assumptions need explicit compatibility tests. |
+| `workspace_members.role` allowed values | `admin`, `advocate`, `staff` | additionally `junior_advocate`, `clerk`, `accountant` | QA roles cannot be assumed to work in production. |
+| `role_permissions` | Not present in inspected public tables | Present, RLS enabled | Permission-management code needs a reviewed schema migration before deployment. |
+| `case_assignments` | Not present in inspected public tables | Present, RLS enabled; 4 rows in QA | Assigned-case access controls are not production-ready until schema and policy behavior are tested. |
+| `practice_resources` | Not present in inspected public tables | Present, RLS enabled; 42 rows in QA | QA resource-sync model is not schema-compatible with production as-is. |
+| `workspace_audit_log` | Not present in inspected public tables | Present, RLS enabled; 32 rows in QA | Assignment audit functionality needs a migration/data-retention review. |
+| `case_documents` | Present, RLS enabled; no rows reported by inventory | Present, RLS enabled; 3 rows | Compare constraints, storage bucket policies, and real file access before release. |
+| Recorded migrations | 7 | 41 | Migration histories are not interchangeable. |
+
+The inventory reports zero rows for several production core tables and zero rows in `profiles` in both environments; this may be normal for the inspected projects, but must be reconciled with expected live-user data before any migration. QA's row counts above are QA-only and must not be copied into production.
+
+### Required migration work order (do not apply automatically)
+
+1. Export/backup production schema and data; confirm actual live record counts and recovery procedure.
+2. Build a migration-by-migration dependency map from the 34 QA-only migration entries against the production baseline; do not simply replay them because the histories diverge.
+3. Port only required schema changes into new, ordered release migrations, preserving existing production constraints and minimizing data-locking.
+4. Recreate and verify RLS policies, grants, helper functions, and storage-object policies with least privilege.
+5. Run positive and negative authenticated tests for admin, advocate, staff, accountant, unassigned case, assigned case, cross-workspace access, finance records, and document downloads.
+6. Run the same release migration set on QA/staging first, capture rollback/restore evidence, and only then schedule production change.
+
+No database changes were made during this inspection.
