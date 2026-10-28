@@ -107,3 +107,77 @@ Acceptance consequence: seed synthetic member identities only in an isolated Pro
 - Production safety CI passed on the latest PR head `8e098bb20ca5503d920aabb79e41f87ea1a26f6d`: https://github.com/bishanth2026/Advocate-Management-QA/actions/runs/40631648484
 - The initial smoke-test assertion failed because its matcher expected double quotes while the HTML uses single quotes; the assertion was corrected, then the updated check passed. The initial failed run is retained for traceability.
 - These are syntax and repository safety smoke checks, not live end-to-end login tests. Real Production-like account tests still need to verify Admin, Advocate, Accountant, unassigned and inactive membership behavior, refresh/re-login, and session expiry before approval.
+
+
+## Operational Backup, Restore, Rollback & Final Release Runbook — 2026-10-28
+
+This section separates work completed through the connected tools from checks that require the Supabase Dashboard or a controlled operator. **No Production write, restore, migration, merge, or deployment was performed while preparing this runbook.**
+
+### A. Release identity and immutable references
+
+- Production application branch: `production/advocatedesk-final`
+- Production baseline commit at review time: `7b8548a9ba2037c5777cd60aae30dd8acd13789d`
+- Production Supabase project: `ykxfidrtvmkmmbxameji`
+- QA Supabase project (test only): `uqtsksgypncsbcnuanbk`
+- Application change under review: PR #35, `fix/production-member-login-session-2026-10-28`; latest reviewed head recorded in the change log as `b34648c22973242aa0ae343c98ba5424e7ca2c47`.
+- Compatibility/runbook change: this document in PR #34, branch `release-prep/production-compatibility-2026-10-28`.
+- Production migration history observed read-only: `20261002003752`, `20261002003819`, `20261002003848`, `20261002004143`, `20261002031851`, `20261008003328`, `20261008063535`.
+- The baseline commit is a reference for source rollback; it does **not** prove which build is currently deployed to hosting. Before release, verify the hosting deployment's commit and project configuration match these values.
+
+### B. Backup and restore — evidence status
+
+**Status: NOT VERIFIED; release gate remains open.** The connected Supabase tools expose migration history and a project-restore action, but do not expose a backup-list/export or restore-rehearsal workflow. Migration history is not a database backup. The restore action was deliberately not called because it can change Production state and no specific verified snapshot/target was supplied.
+
+Before approval, an authorized operator must:
+1. In Supabase Dashboard for the Production project, inspect the plan's available backup/PITR options and record the exact snapshot/restore point, timestamp and retention. Do not assume a Free-plan backup capability that the dashboard does not show.
+2. If a usable backup/export is available, create or select a pre-release recovery point and securely retain its metadata outside the application repository. Never commit client/case payloads, credentials, dumps, or secret keys to GitHub.
+3. Restore that backup into an isolated disposable project/environment—not into Production—and record the restore completion time and result.
+4. Verify schema/migration version, workspace and membership counts, legacy `practice_records`/workspace-state availability, `case_documents` metadata and storage-object references, and representative redacted data integrity.
+5. Run sign-in, read, create/update, refresh/re-login and authorization-denial checks against the restored isolated environment.
+6. Record operator, snapshot identifier/time, target project, checks performed, pass/fail evidence and any data-loss window. If no restorable backup is available on the current plan, stop release and agree an approved export/recovery path before deployment.
+
+### C. Rollback decision tree
+
+**Application-only rollback (no database migration applied):**
+1. Stop further deployment and record the incident time and last known-good deployment.
+2. Redeploy the verified last-known-good Production build corresponding to baseline `7b8548a9ba2037c5777cd60aae30dd8acd13789d` only after confirming that this commit is the correct build for the hosting target.
+3. Keep the Production database, Auth, RLS and Storage unchanged; do not attempt a database restore for a frontend-only regression.
+4. Run the post-rollback smoke suite: all portal login paths, workspace selection, case create/read/update, invoice save/reload, refresh/re-login, document access, and cross-workspace denial.
+5. Verify existing records remain present and cloud status reflects confirmed reads/writes. Capture the deployment URL, commit SHA, time, test result and incident decision.
+
+**Database/schema rollback (only if a future approved migration has been applied):**
+1. Pause rollout and writes if necessary under the incident owner's direction; preserve logs and the pre-change snapshot.
+2. Do not blindly reverse/drop additive tables or transform/delete legacy payloads. Prefer a reviewed forward-fix or an explicitly rehearsed reverse migration.
+3. Restore a snapshot only under the approved recovery procedure after assessing the data-loss window and obtaining explicit operator authorization.
+4. Verify restored data and authorization in isolation first where feasible; then follow the approved recovery procedure and rerun the complete smoke suite.
+5. Record the decision, approver, recovery point, actual data-loss window and reconciliation actions.
+
+### D. Final release checks and evidence ledger
+
+| Gate | Evidence/status as of 2026-10-28 | Decision |
+|---|---|---|
+| Cross-workspace unauthorized-access test | User confirms this was tested earlier; preserve the existing test record/evidence | User-confirmed PASS; no repeat requested |
+| Advocate/Staff login | User-reported QA pass | PASS in user-reported QA |
+| Accountant invoice edit/save + refresh | User-reported QA pass | PASS in user-reported QA |
+| Admin case create/save + refresh/re-login | User-reported QA pass | PASS in user-reported QA |
+| Production Safety workflow | GitHub Actions run 40634357956 returned completed/success for the reviewed PR commit | PASS for repository smoke checks only; not browser E2E |
+| Production schema compatibility | QA/Production schemas and role constraints differ; no Production migration approved | BLOCKED for any schema cutover |
+| Backup existence and restore rehearsal | No verifiable backup or isolated restore evidence available through current connected tools | BLOCKED |
+| Rollback rehearsal | Written application/database rollback decision tree added here; actual restore/rollback rehearsal not run | BLOCKED |
+| Leaked Password Protection | Previously discussed and deferred; current Production Security Advisor still warns it is disabled | OPEN; do not repeatedly treat it as new work |
+| Hosting target/current deployed SHA | Not independently verified by the available connected tools | OPEN |
+| Post-deployment Production smoke test | Not run; no deployment performed | OPEN |
+| Explicit human release approval | Not recorded | OPEN |
+
+### E. Release execution order (do not skip gates)
+
+1. Finish the backup and isolated restore proof above.
+2. Verify hosting target and deployed commit; confirm a deployable release artifact and environment/project IDs.
+3. Review PR #35 changes and latest CI; keep QA-only schema/policies out of Production.
+4. Resolve documented Auth/security gates under the current Supabase plan, or formally record an authorized risk acceptance if policy permits; do not mislabel a disabled setting as enabled.
+5. Approve and deploy only the reviewed application change using the hosting platform's supported deployment process.
+6. Immediately run the controlled Production smoke suite and confirm the pre-existing Production records still load and persist.
+7. If any critical check fails, execute the appropriate rollback path above and stop the release.
+8. Record the final decision, deployed SHA, backup/recovery-point reference, smoke-test evidence and approver.
+
+**Current release decision: NO-GO.** Documentation and evidence tracking are improved, but the actual backup/restore rehearsal, hosting verification, post-deploy Production smoke test, and approval cannot be honestly marked complete from the current connected tools. No Production changes have been made.
