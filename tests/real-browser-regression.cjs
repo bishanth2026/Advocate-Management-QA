@@ -134,7 +134,7 @@ async function run() {
         // Live persistence smoke: reload the deployed app in the same authenticated
         // browser context and verify the Supabase session and workspace fixtures rehydrate.
         await page.reload({ waitUntil: "domcontentloaded" });
-        await page.waitForURL(/app\\.html(?:#|$)/, { timeout: 25000 });
+        await page.waitForURL(/app\.html(?:#|$)/, { timeout: 25000 });
         await page.waitForFunction(() => {
           const node = document.getElementById("cloudSyncStatus");
           return node && /Cloud: Synced/.test(node.textContent || "");
