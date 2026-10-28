@@ -126,3 +126,14 @@ Prior QA results have been reconciled with the release test matrix; they should 
 - Production safety CI run `40660002462`: PASS for syntax/static smoke checks only.
 
 The release matrix now records these scoped results and focuses remaining execution on real-session login/session revalidation, allowed save-refresh-cloud-sync, denied direct API/cross-workspace/case access, document/finance authorization, migration rehearsal/backup restore, leaked-password protection, and live hosting/deployed SHA verification. The overall release gate remains blocked until these externally dependent checks have evidence. No production code, schema, data, or hosting settings were changed.
+
+
+## Fresh read-only RLS policy comparison — 2026-10-28
+
+A live, read-only query of `pg_policies` on production and QA found a material policy mismatch:
+
+- Production `case_documents` policies currently authorize reads/deletes based on workspace membership and inserts based on workspace membership plus uploader identity. They do not enforce the QA policy's case-scoped `can_access_case` check or `documents.view/upload/delete` permission checks.
+- Production `practice_records` access is generally workspace-member-based. QA adds a restrictive admin-only rule for the `workspace_state` record and role/case-scoped rules for `practice_resources`.
+- QA role/assignment/audit tables and their policies depend on QA-only schema and helper functions, so they cannot safely be ported by copying individual policy statements.
+
+This is an additional release blocker, not evidence of an exploitable live incident by itself. Before release, design the smallest production-compatible migration set, review helper functions/grants/storage-object policies and frontend compatibility, and run positive and negative authenticated tests on isolated staging. No production policy, schema, data, or hosting setting was changed by this review.
