@@ -55,6 +55,10 @@ async function login(page, email, password) {
     throw new Error("Sign-in did not reach app.html; login message=" + JSON.stringify(loginMessage.trim()) + "; button=" + JSON.stringify(buttonText.trim()) + "; " + error.message);
   }
   await page.waitForFunction(() => {
+    const state = window.ADCloudInitialState;
+    return state && Array.isArray(state.cases) && Array.isArray(state.tasks);
+  }, undefined, { timeout: 30000 });
+  await page.waitForFunction(() => {
     const node = document.getElementById("cloudSyncStatus");
     return node && /Cloud: Synced/.test(node.textContent || "");
   }, undefined, { timeout: 30000 });
@@ -135,6 +139,10 @@ async function run() {
         // browser context and verify the Supabase session and workspace fixtures rehydrate.
         await page.reload({ waitUntil: "domcontentloaded" });
         await page.waitForURL(/app\.html(?:#|$)/, { timeout: 25000 });
+        await page.waitForFunction(() => {
+          const state = window.ADCloudInitialState;
+          return state && Array.isArray(state.cases) && Array.isArray(state.tasks);
+        }, undefined, { timeout: 30000 });
         await page.waitForFunction(() => {
           const node = document.getElementById("cloudSyncStatus");
           return node && /Cloud: Synced/.test(node.textContent || "");
