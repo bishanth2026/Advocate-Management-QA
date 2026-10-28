@@ -79,6 +79,17 @@ Read-only schema inventory was retrieved for Production project `ykxfidrtvmkmmbx
 - QA's `case_documents` policies use permission checks and `can_access_case`; Production's inspected policies are workspace-membership scoped. Neither policy set should be transplanted blindly. Test cross-workspace and unassigned-case access, and decide the required document authorization model before production migration.
 These findings make schema compatibility and role mapping concrete release blockers. No migration should be applied to Production based on this inventory alone.
 
+## Additional read-only verification — role distribution, uniqueness and RLS flags
+
+A further read-only SQL pass was completed on 2026-10-28.
+
+- Production currently reports 7 `workspace_members` rows, all with role `admin`, and 7 active workspaces. QA reports 7 memberships: 3 admin, 3 advocate, and 1 accountant; its 3 workspaces are active. Therefore the existing Production data does not currently demonstrate a real Advocate or Accountant membership path. Live member-login acceptance cannot be inferred from the existing Production dataset.
+- Production and QA both have RLS enabled on the inspected public tables, but `FORCE ROW LEVEL SECURITY` is false for those tables. Table-level RLS being enabled is not sufficient proof: policies, grants, function ownership/bypass behavior, and actual authenticated sessions still need tests.
+- Both projects have a unique key for `practice_records(workspace_id, record_type, record_key)`, but the index names differ. QA also has a unique `case_documents(storage_path)` index and an explicit `workspace_members(workspace_id)` index that were not present in the inspected Production index list. Migration must check for duplicate storage paths and existing data before creating any new unique index.
+- The read-only inventory found 5 Production legacy workspace-state records versus 3 in QA. Never use QA's record count as a Production target or overwrite Production payloads with QA data.
+
+Acceptance consequence: seed synthetic member identities only in an isolated Production-like test project, verify invitation/activation, login, refresh, save/reload, role-specific navigation and negative authorization cases, and retain redacted evidence. Do not create or modify live Production users merely to run these tests.
+
 ## Current release decision
 **NO-GO until all gates above are evidenced.** This plan is deliberately documentation-only because the exact Production schema/data model and a disposable Production-like database have not yet been verified. Do not apply QA migrations or merge the QA branch wholesale into Production.
 
