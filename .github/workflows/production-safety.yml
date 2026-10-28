@@ -6,6 +6,7 @@ on:
       - production/advocatedesk-final
   pull_request:
     branches:
+      - production/advocatedesk-final
       - feature/secure-documents-draft
 
 permissions:
