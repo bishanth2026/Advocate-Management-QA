@@ -87,3 +87,18 @@ Use synthetic test records where possible. Do not place real client information 
 ## 5. Current decision
 
 **Production release remains BLOCKED / NOT APPROVED.** This is a planning artifact only. No production SQL, policies, schema, data, authentication settings, or hosting configuration were changed when preparing this document.
+
+
+## 6. Additional read-only production findings — 2026-10-29
+
+The production project was inspected with read-only SQL after this draft was created:
+
+- The only matching private helper functions found were `private.is_workspace_member(uuid)` and `private.is_workspace_owner(uuid)`; no production `can_access_case` or `has_workspace_permission` helper was found in the inspected schemas.
+- Both helpers are `SECURITY DEFINER`, owned by `postgres`, and configured with an empty search_path. `is_workspace_member` checks an active workspace and a membership row for `auth.uid()`; `is_workspace_owner` checks `workspaces.owner_id = auth.uid()`. This is a useful hardening baseline, but workspace membership is not case-level authorization.
+- Storage bucket `advocatedesk-documents` has authenticated SELECT, INSERT, and DELETE policies based on the workspace UUID in the first object-path segment and workspace membership. INSERT additionally checks object owner ID equals the authenticated user. These are workspace-scoped rather than case/permission-scoped.
+- The storage policy query did not return a corresponding UPDATE policy for this bucket. Confirm whether update/overwrite is intentionally denied and whether the application depends on it; do not assume the current behavior.
+- `authenticated` has table-level SELECT/INSERT/UPDATE/DELETE grants on `case_documents` and `practice_records`, so the effective authorization depends on the RLS policies. A separate review of column grants, views, RPCs, and service-role paths is still required.
+
+**Impact on design:** the migration design must cover both `public.case_documents` and `storage.objects`; changing only table RLS would leave storage authorization at workspace-member scope. The missing case/permission helpers mean a migration cannot safely reference QA helper names without first designing and testing production-compatible implementations and assignment source-of-truth.
+
+These observations were read-only. No production schema, policy, data, auth setting, or storage object was changed.
