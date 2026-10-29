@@ -115,3 +115,18 @@ To continue preparation without touching production, a narrow QA-only migration 
 - Post-change verification: all three remain `SECURITY DEFINER`; `anon` still has no EXECUTE privilege; `authenticated` retains EXECUTE; the QA document table policies (3) and storage policies (3) remain present.
 
 This is a configuration/static verification PASS only. Real authenticated-session positive/negative tests, cloud-sync tests, and full application regression tests have not yet been run. The QA migration does not resolve production/QA schema drift and has **not** been applied to production. Production release remains blocked.
+
+
+## 8. QA private-function search-path follow-up — 2026-10-29
+
+A second QA-only migration was applied after reviewing the seven function definitions and ACLs:
+- Migration: `qa_harden_remaining_private_definer_search_paths_20261029`
+- Source of record: `supabase/migrations/20261029074800_qa_harden_remaining_private_definer_search_paths.sql` on QA `main`.
+- Seven functions were changed to `search_path = ''`: `assign_case_to_member`, `unassign_case_from_member`, `finance_case_directory`, `finance_case_directory_v2`, `finance_client_directory`, `finance_client_directory_v2`, and `qa_list_workspace_advocates_internal`.
+- Post-change read-only verification confirms all seven remain SECURITY DEFINER and use an empty search_path. Function bodies and ACLs were not modified.
+
+The existing release safety workflow is not triggered by a push to QA `main`; the recorded GitHub workflow lookup returned no run for this QA commit. This change therefore has database configuration verification but still requires the QA assignment/finance regression suite and an explicit syntax/smoke validation on the release candidate. It has not been applied to production.
+
+## 9. Leaked-password protection — latest status
+
+The user reports changing this setting. However, fresh security-advisor scans on 2026-10-29 still show `auth_leaked_password_protection` as WARN in both QA and Production. This may indicate the setting was not saved in one or both projects, or the advisor has not reflected the change yet; do not claim verified until each project's Auth password-security setting and a subsequent scan agree. No Auth setting was modified by this work.
