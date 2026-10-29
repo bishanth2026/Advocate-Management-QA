@@ -275,7 +275,8 @@ This resolves the prior QA function search-path configuration item. It does **no
 - Fresh Security Advisor scans still report `auth_leaked_password_protection` WARN for both QA and Production. The setting is not confirmed fixed.
 
 ### Release gate update
-- [x] Static syntax and production safety smoke checks passed on the exact documentation commit.
+- [x] Static syntax and production safety smoke checks passed on the earlier validated candidate commit `41ea4fd3e49d1e054636bb95c68deebf8a797ec6` (workflow run `40806376444`).
+- [ ] Re-run/confirm CI for the latest release-branch documentation commit before treating that SHA as validated; the GitHub combined status lookup returned no status entries.
 - [x] Read-only Production/QA migration, schema, and key RLS policy comparison refreshed.
 - [ ] Leaked-password protection enabled and verified independently in QA and Production.
 - [ ] Production-compatible schema/dependency plan reviewed; no wholesale QA migration replay.
@@ -293,3 +294,17 @@ This resolves the prior QA function search-path configuration item. It does **no
 The tester explicitly confirmed that the requested sequence is complete: **Save → API response → Refresh → Reopen**. Update DATA-02 from partial to **manual tester-confirmed PASS** for the tested QA record/flow. Do not ask the tester to repeat the same check absent a code change or regression.
 
 Scope boundary: this confirms the reported manual QA flow only; it does not establish every role/resource path or prove production behavior. The independent production release blockers remain unchanged: leaked-password protection still needs advisor verification, Production/QA schema and RLS/Storage differences need a reviewed staging rehearsal, backup/restore and hosting SHA checks remain open. No Production setting or database was changed.
+
+
+### Focused release gate re-check — 2026-10-29
+
+Only the six requested release areas were re-checked; completed Cloud Sync was not repeated.
+
+1. **Leaked-password protection — BLOCKED.** Fresh Security Advisor responses still report `auth_leaked_password_protection` WARN in both `AdvocateDesk-Test` (QA, `uqtsksgypncsbcnuanbk`) and `Advocate_Management` (Production, `ykxfidrtvmkmmbxameji`). The connected tools available in this session expose project inspection and SQL/migration operations, but no Auth password-security settings update action. No SQL workaround is safe or appropriate for this Auth-level setting. It must be enabled in each project's Supabase Auth settings and then rechecked in Advisor.
+2. **RLS/Storage compatibility — BLOCKED, migration not applied.** Read-only policy inspection confirms QA document policies enforce `documents.view/upload/delete` and case access; Production document policies currently permit workspace-member access. QA Storage reads/deletes verify matching `case_documents` metadata and case permissions; Production Storage policies use workspace-folder membership checks. QA also contains `case_assignments`, `role_permissions`, `practice_resources`, and `workspace_audit_log`, absent from inspected Production migration history/schema. A direct policy transplant would reference missing dependencies and risk locking out or exposing records; no migration was applied. Rehearsal must use an isolated disposable/staging database with compatible schema/backfill and positive/negative authenticated tests first.
+3. **Staging/rollback — NOT VERIFIED.** No isolated disposable staging branch is currently listed for Production, and no migration/rollback rehearsal evidence exists. Do not run QA migrations wholesale against Production.
+4. **Backup/restore — NOT VERIFIED.** No restorable backup artifact or successful isolated restore evidence is available through the connected tools. Do not claim a backup/restore pass.
+5. **Hosting/deployed SHA — NOT VERIFIED.** The production PR #35 is merged at `ee166de86b33d5eb54d0c1c2de3ca4da65063729`, but a GitHub merge is not proof of deployment. Direct live-domain verification was unavailable through the current web check; hosting provider/project and deployed SHA remain unconfirmed.
+6. **Role-specific/browser checks — PARTIAL.** Existing user-reported QA passes remain recorded. Production Supabase currently has the `advocatedesk-provision-user` function active with JWT verification enabled. The two password-recovery functions are active with platform JWT verification disabled; source inspection shows generic responses and server-side role/membership checks, but rate-limit/abuse behavior and live browser tests remain unverified. Do not mark the final role/security/mobile suite complete until authenticated tests run against the actual deployed candidate.
+
+**Decision: NO-GO / BLOCKED.** No Production DB schema, RLS, Storage, Auth setting, or hosting configuration was changed. Completed Cloud Sync remains tester-confirmed PASS for the tested QA flow and is not a remaining task.
