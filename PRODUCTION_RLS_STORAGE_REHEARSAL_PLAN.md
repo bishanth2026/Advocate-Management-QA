@@ -65,3 +65,19 @@
 - [ ] Desktop/mobile smoke tests and rollback/forward-recovery plan approved.
 
 **Decision: DO NOT RELEASE TO PRODUCTION yet.** No Production database, Auth setting, Storage object, or hosting configuration was changed during this review.
+
+
+## Additional source-path and candidate-policy review — 2026-10-29
+
+- Production `app.js` confirms object path convention `<workspace UUID>/<document UUID>/<sanitized filename>`.
+- Upload order is Storage object first, metadata row second. Read/preview uses `createSignedUrl(storage_path, 60)`. Delete removes the Storage object before deleting metadata.
+- Added a draft-only candidate `supabase/drafts/production-document-storage-hardening.sql`. It proposes metadata-linked Storage reads/deletes and stricter upload path/owner checks. It has **not** been applied or tested in a disposable project.
+- Added `PRODUCTION_RELEASE_BLOCKERS_2026-10-29.md` with a detailed positive/negative authenticated test matrix and remaining gates.
+- Production `practice_records.payload` stores the current workspace state (cases, clients, hearings, invoices, payments, tasks, etc.) as JSON. The inspected case objects do not expose an existing normalized assignment source. Do not guess or auto-backfill assignments from legacy payload fields.
+- QA's `private.can_access_case` relies on `case_assignments`; QA's `private.has_workspace_permission` relies on `role_permissions`. Neither table exists in Production. The draft Storage policy alone does not solve case-level authorization on `public.case_documents`.
+- CI run #54 on latest documentation/candidate commit `73d2ee98fe88936186476cdf85fd5f7dd24c4f1a` completed successfully for JavaScript syntax and static production safety smoke checks only. It does not validate SQL, RLS, browser E2E, or live hosting.
+- The live host and both login URLs remain inaccessible to the available web checker. Repository source presence is not proof of deployed SHA; hosting source branch/deployed commit remains unverified.
+
+### Updated decision
+
+**Still NO-GO.** Next technical gate is a reviewed assignment/permission design plus a disposable test environment. Do not apply the draft Storage policy or any case-level RLS migration directly to Production without authenticated negative tests. No Production changes were made.
