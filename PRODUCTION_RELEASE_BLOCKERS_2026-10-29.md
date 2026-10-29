@@ -146,3 +146,11 @@ A new comparison of the live QA and Production migration histories and schemas c
 Do **not** replay QA migrations wholesale and do not apply the existing Storage hardening draft to Production. The safe next implementation step requires a disposable project cloned from the current Production schema, plus a reviewed additive migration and app contract changes. The existing linked QA project is not an equivalent Production-schema rehearsal target. No database writes were performed by this comparison.
 
 The latest candidate static workflow #66 passed syntax and production safety smoke checks on `7b657b79de14a38e06a8bc75d5c90fb26ad59548`; it does not substitute for authenticated RLS/Storage tests. Release remains **NO-GO**.
+
+
+## Follow-up candidate validation — 2026-10-29
+
+- Added `scripts/auth-resolution.test.mjs` to exercise five mocked session-resolution scenarios: one active membership, inactive membership filtering, ambiguous active memberships, Admin-portal filtering, and no active membership.
+- Updated `.github/workflows/production-safety.yml` to run the regression test in CI.
+- Workflow #69 for candidate SHA `455913432380afeffc2c2c73848d2e2d014d56ba` passed syntax checks, production safety smoke checks, and the new mocked regression suite. Run: https://github.com/bishanth2026/Advocate-Management-QA/actions/runs/40816507266
+- Scope limitation: these tests use a mocked Supabase client; they do not establish live Supabase behavior, RLS/Storage enforcement, browser/mobile E2E, or hosting SHA. The release remains **NO-GO** until the mandatory blockers above are resolved and evidenced.
