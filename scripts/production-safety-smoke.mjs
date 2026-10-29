@@ -55,4 +55,19 @@ assert.match(workspaceStatePolicy, /using \([\s\S]*\)\s+with check \(/i, "Worksp
 const workspaceStatePolicySql = workspaceStatePolicy.replace(/--.*$/gm, "");
 assert.doesNotMatch(workspaceStatePolicySql, /private\.has_workspace_permission|private\.can_access_case/i, "Production hotfix draft must not depend on QA-only authorization helpers");
 
+
+
+// The Storage hardening candidate must remain draft-only and enforce exact metadata/path
+// matching. These assertions are static guardrails only; they do not execute PostgreSQL RLS.
+const storagePolicy = read("../supabase/drafts/production-document-storage-hardening.sql");
+assert.match(storagePolicy, /DRAFT ONLY — do not apply to Production/i, "Storage hardening SQL must remain draft-only");
+assert.match(storagePolicy, /on storage\.objects[\s\S]*for select[\s\S]*to authenticated/i, "Storage read policy must be authenticated-only");
+assert.match(storagePolicy, /on storage\.objects[\s\S]*for insert[\s\S]*to authenticated/i, "Storage upload policy must be authenticated-only");
+assert.match(storagePolicy, /on storage\.objects[\s\S]*for delete[\s\S]*to authenticated/i, "Storage delete policy must be authenticated-only");
+assert.match(storagePolicy, /d\.storage_path = objects\.name[\s\S]*d\.workspace_id = \(\(storage\.foldername\(objects\.name\)\)\[1\]\)::uuid[\s\S]*d\.id = \(\(storage\.foldername\(objects\.name\)\)\[2\]\)::uuid/i, "Storage read/delete must match exact object path, workspace and document IDs");
+assert.match(storagePolicy, /owner_id = \(select \(auth\.uid\(\)\)::text\)/i, "Storage uploads must bind object ownership to the authenticated user");
+assert.match(storagePolicy, /private\.is_workspace_member\(\(\(storage\.foldername\(name\)\)\[1\]\)::uuid\)/i, "Storage uploads must require active workspace membership helper");
+assert.match(storagePolicy, /case\s+when[\s\S]*then exists[\s\S]*else false\s+end/i, "Malformed Storage path segments must fail closed");
+assert.match(storagePolicy, /Separately solve case-level authorization/i, "Storage draft must explicitly disclose that case-level authorization remains unresolved");
+
 console.log("AdvocateDesk production safety smoke checks: PASS");
