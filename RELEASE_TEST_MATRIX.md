@@ -114,3 +114,24 @@ Release may be approved only when all of these are evidenced:
 - [ ] Rollback owner, window, and recovery steps are agreed.
 
 Until then the status remains **BLOCKED / NOT APPROVED FOR PRODUCTION**.
+
+
+## QA follow-up review — 2026-10-29
+
+A read-only QA Supabase security-advisor review returned:
+- `auth_leaked_password_protection`: WARN; leaked-password protection is disabled. This requires an Auth configuration change and a subsequent verification; it was not changed by this review.
+- `auth_rls_initplan`: WARN on `public.practice_resources_select_authorized`, which may re-evaluate auth/current-setting expressions per row. Treat as a performance optimization, not an authorization failure; benchmark and review the exact policy before changing it.
+- Six unused-index INFO findings were returned. Do not drop indexes based solely on this advisory; confirm workload and query plans first.
+
+A read-only inventory of QA `SECURITY DEFINER` functions found seven private functions still configured with `search_path = pg_catalog, public, private, pg_temp`: `assign_case_to_member`, `unassign_case_from_member`, `finance_case_directory`, `finance_case_directory_v2`, `finance_client_directory`, `finance_client_directory_v2`, and `qa_list_workspace_advocates_internal`. Their bodies use schema-qualified table/function references in the inspected definitions, but this alone is not sufficient to change them safely without verifying every referenced object and execution/grant behavior.
+
+An attempted QA-only migration to set those seven functions' search paths to empty was blocked before execution. **No change to these seven functions is claimed.** Reassess function bodies, privileges, and application callers, then prepare a migration through the approved migration path and verify it after application.
+
+### New status
+- QA security-advisor scan: completed; findings documented above.
+- Remaining seven QA function search paths: OPEN.
+- Leaked-password protection: OPEN.
+- Real authenticated session tests, cross-workspace denial tests, Cloud Sync 403 retest, storage access tests, backup/restore rehearsal, and live hosting SHA verification: OPEN.
+- Production database/hosting changes: NONE.
+
+Release remains **BLOCKED / NOT APPROVED FOR PRODUCTION**.
