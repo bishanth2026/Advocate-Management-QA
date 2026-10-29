@@ -1,8 +1,9 @@
-assert.match(auth, /members\.length!==1/, "Ambiguous active workspace memberships must fail closed");\nimport assert from "node:assert/strict";
+import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 const read = (path) => readFileSync(new URL(path, import.meta.url), "utf8");
 const auth = read("../auth.js");
+assert.match(auth, /members\.length!==1/, "Ambiguous active workspace memberships must fail closed");
 const app = read("../app.js");
 const shell = read("../app.html");
 const reset = read("../reset-password.html");
@@ -33,6 +34,6 @@ assert.match(provisioning, /callerProfile\?\.platform_role !== "super_admin"/, "
 assert.match(provisioning, /action !== "invite_admin"/, "Unsupported provisioning actions must be rejected");
 assert.doesNotMatch(shell, /uqtsksgypncsbcnuanbk|Advocate-Management-QA/i, "Production app shell must not contain QA configuration");
 assert.match(shell, /id="cloudSyncStatus"[^>]*>Cloud: Connecting…<\/span>/, "Cloud status must not claim Synced before the initial workspace read completes");
-assert.match(shell, /auth\.js\?v=20261028-member-session/, "App shell must cache-bust the corrected Production session validation code");
+assert.match(shell, /auth\.js\?v=20261029-fail-closed-workspace/, "App shell must cache-bust the corrected Production session validation code");
 
 console.log("AdvocateDesk production safety smoke checks: PASS");
