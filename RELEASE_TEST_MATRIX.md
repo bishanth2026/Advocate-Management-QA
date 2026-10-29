@@ -240,3 +240,20 @@ The tester has now confirmed the Cloud Sync case/client save-and-reopen check wa
 - **Evidence limitation:** The screenshot itself is a dashboard view; it does not show the changed field before/after save or an HTTP response. Therefore record this as **manual tester-confirmed PASS, with screenshot corroboration**, not independently verified API-level proof.
 - **Remaining release evidence:** If not already captured, retain a redacted Network trace or explicit save result showing no 403 for the same record, and repeat the save/refresh/reopen check for relevant roles/resources (case, client, practice record).
 - **Production status:** No production database, Auth setting, RLS policy, or hosting configuration was changed by this retest. Production release remains blocked pending the remaining release gates.
+
+
+### Supabase post-migration verification — QA only (2026-10-29)
+
+After applying `qa_harden_remaining_private_definer_search_paths_20261029`, a fresh read-only query against QA project `uqtsksgypncsbcnuanbk` confirmed all seven target functions remain `SECURITY DEFINER` and each now has an empty `search_path`:
+`assign_case_to_member`, `unassign_case_from_member`, `finance_case_directory`, `finance_case_directory_v2`, `finance_client_directory`, `finance_client_directory_v2`, and `qa_list_workspace_advocates_internal`.
+
+This resolves the prior QA function search-path configuration item. It does **not** verify runtime behavior; run the QA assignment and finance directory regression flows before considering promotion. No equivalent change was applied to Production.
+
+### Release gate reconciliation
+
+- Cloud Sync 403/RLS: **manual tester-confirmed PASS** for the save/reopen check; screenshot corroborates synced dashboard/list. API-level response evidence remains a recommended retained artifact.
+- QA private SECURITY DEFINER search paths: **configuration PASS** after migration and read-only post-check; role/assignment/finance regression tests still required.
+- Leaked-password protection: user reports the setting was changed, but fresh advisor scans still return WARN for QA and Production. **Not verified**; check/save the Auth setting in each project and rerun advisor.
+- Production-vs-QA RLS and Storage policy mismatch: **OPEN — design/rehearsal required**; no Production migration applied.
+- Live hosting source/deployed SHA: **OPEN**.
+- Release decision: **BLOCKED / NOT APPROVED FOR PRODUCTION** until the independent gates above are evidenced.
