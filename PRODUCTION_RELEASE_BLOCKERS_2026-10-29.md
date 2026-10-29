@@ -213,3 +213,9 @@ The read-only inventory SQL was subsequently executed against Production success
 - Workflow #89 passed on commit `d28e285c07639837adcad2edd55b98a8ee3c6a1b`: https://github.com/bishanth2026/Advocate-Management-QA/actions/runs/40819665268
 - This is static/regex validation only. It does not execute the SQL against PostgreSQL, test real authenticated Storage sessions, verify rollback, or establish browser/mobile behavior.
 - No Production or QA policy was applied. No billable disposable Supabase branch was created. The release decision remains **DRAFT / NO-GO**.
+
+## Storage policy defense-in-depth review — 2026-10-29
+
+The draft Storage migration now pairs each operation's matching permissive policy with a matching `AS RESTRICTIVE` guard for SELECT, INSERT, and DELETE. PostgreSQL restrictive policies are ANDed with the applicable permissive policies, reducing the risk that an unrelated legacy permissive policy bypasses the intended path/metadata/owner checks. CI static assertions check that all three restrictive guards remain present.
+
+**Important limitation:** this is a source-level guardrail only. It does not replace a full Production policy inventory, SQL execution in an isolated Production-schema clone, or authenticated Storage tests. The migration remains draft-only and has not been applied to QA or Production. Case-level authorization is still unresolved, and release remains NO-GO.
