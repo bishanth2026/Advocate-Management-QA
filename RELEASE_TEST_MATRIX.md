@@ -147,3 +147,27 @@ Important limits:
 - Storage policies were inspected, but authenticated document upload/preview/download/delete and guessed-path denial were not evidenced as real-session tests.
 - Per-resource sync PR / GitHub Actions checks passed, but the previous Cloud Sync 403/RLS error still needs post-fix authenticated save + refresh/persistence verification for relevant roles.
 - Production release remains blocked by the production-vs-QA authorization design gap, leaked-password protection, unverified hosting SHA, and outstanding release checks.
+
+
+## Latest tester-reported manual results — 2026-10-29
+
+The tester supplied screenshots and reported the following actions on the QA site:
+- Admin dashboard and Clients & Cases / Case 360 pages opened.
+- Accountant role and Finance page opened.
+- Assigned Advocate dashboard and Documents page opened.
+- The Documents list showed the `identity` image and two other files; the count increased from 2 to 3 after upload.
+- The tester confirmed Preview / Download opened the `identity` image.
+- The tester refreshed the page, then logged out, logged in again, and refreshed; the document list remained present.
+- The tester stated Staff login and cross-workspace access denial were checked and were OK.
+
+These are recorded as tester-reported manual PASS results for the visible flows. They are **not** treated as independent API/security verification because the evidence supplied does not include request/response traces, identity/workspace IDs, or a Staff-specific screenshot. The document list surviving re-login proves visible document metadata persistence for this session, not that the historical case/client 403/RLS write path works for every role.
+
+| ID | Latest result | Remaining proof |
+|---|---|---|
+| AUTH-04 Staff | Tester-reported PASS | Capture a Staff-specific session/role view and verify restricted actions through API/RLS. |
+| SEC-02 Cross-workspace | Tester-reported PASS | Authenticated negative API test against a known different workspace; confirm zero rows/403 without leaking data. |
+| DOC-01 Upload | Manual PASS reported; screenshot shows 3 files | Verify allowed type/size and storage metadata with API evidence. |
+| DOC-03 Preview/download | Tester-reported PASS; image opened in browser tab | Verify Storage API response and authorization on a distinct account. |
+| DATA-02 Cloud Sync | Partial manual PASS for document list across refresh/re-login | Still must test a case/client/practice-record save → refresh → reopen after the historical 403/RLS issue, using each relevant role and capturing API response. |
+
+No additional automated/browser session was run by the assistant in this update. The above results were transcribed from the tester's screenshots and statements. Production database, authentication settings, storage objects, and live hosting remain unchanged. Release status remains **BLOCKED / NOT APPROVED FOR PRODUCTION**.
