@@ -28,8 +28,12 @@
     if(portal==="admin")members=members.filter(function(x){return x.role==="admin"&&x.workspaces&&x.workspaces.status==="active"});
     else members=members.filter(function(x){return x.workspaces&&x.workspaces.status==="active"});
     if(!members.length)throw new Error(portal==="admin"?"No active Admin workspace is assigned to this account.":"No active workspace is assigned to this account.");
-    // Resolve the workspace strictly from the authenticated user's active memberships.
-    // Never hardcode a workspace ID in production authentication logic.
+    // Fail closed when more than one active workspace is available. Silently
+    // selecting members[0] can bind the session to the wrong tenant. A deliberate
+    // workspace picker is required before multi-workspace accounts can proceed.
+    if(members.length!==1){
+      throw new Error("This account has access to multiple active workspaces. Please contact the administrator to select the correct workspace before signing in.");
+    }
     var chosen=members[0];
     return cache(p.data,chosen,chosen.workspaces);
   }
