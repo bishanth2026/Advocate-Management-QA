@@ -308,3 +308,33 @@ Only the six requested release areas were re-checked; completed Cloud Sync was n
 6. **Role-specific/browser checks — PARTIAL.** Existing user-reported QA passes remain recorded. Production Supabase currently has the `advocatedesk-provision-user` function active with JWT verification enabled. The two password-recovery functions are active with platform JWT verification disabled; source inspection shows generic responses and server-side role/membership checks, but rate-limit/abuse behavior and live browser tests remain unverified. Do not mark the final role/security/mobile suite complete until authenticated tests run against the actual deployed candidate.
 
 **Decision: NO-GO / BLOCKED.** No Production DB schema, RLS, Storage, Auth setting, or hosting configuration was changed. Completed Cloud Sync remains tester-confirmed PASS for the tested QA flow and is not a remaining task.
+
+
+## User-confirmed QA functional test reconciliation — 2026-10-29
+
+The user confirms that the following functional checks have already been executed and passed on the tested QA app. These are recorded as **user-confirmed manual PASS** and should not be repeated unless the tested code changes or a regression is suspected:
+
+| Area | User-confirmed result | Scope note |
+|---|---|---|
+| Login | Super Admin, Admin, Advocate, Staff, Accountant | Manual QA pass reported by user. |
+| Data Save | Client, Case, Documents, Finance | Manual QA pass reported by user. |
+| Data Persistence | Data remains after refresh and logout/login | Manual QA pass reported by user. |
+| Cloud Sync | Saved data successfully stored server-side | Manual QA pass reported by user; the previously confirmed Save → API response → Refresh → Reopen flow is not to be repeated without regression. |
+| Permissions | Each role sees/changes only permitted information | Manual QA pass reported by user. |
+| Document Storage | Upload, preview, download, delete according to permissions | Manual QA pass reported by user. |
+| Error Handling | Invalid input, network failure, unauthorized access | Manual QA pass reported by user. |
+| Desktop/Mobile | Login, navigation, save on both form factors | Manual QA pass reported by user. |
+
+These results supersede earlier matrix rows that marked the same general functional flows as wholly unrun, but they do not constitute independent network/API traces or prove that the live Production deployment is running the same candidate SHA. Keep them as user-confirmed QA results and avoid asking for the same checks again absent a code change.
+
+## Release-scope decisions — 2026-10-29
+
+- **Backup/restore rehearsal:** deferred by explicit user decision because all current data is demo/test data and the user does not require a restore exercise for this stage. This is not recorded as a completed restore test. Before storing real customer data, establish a backup and verified recovery process.
+- **Leaked-password protection:** user explicitly decided not to address QA or Production leaked-password protection during the current scope. Record this as an accepted exception for this work, not as fixed or enabled. No setting change is claimed.
+- **No Production changes:** no Production schema, RLS/Storage policies, Auth settings, or hosting configuration were changed by this reconciliation.
+
+## Current release decision
+
+The user-confirmed QA functional tests above are treated as passed and should not be repeated unnecessarily. Static/syntax smoke workflow run `40807138835` on release candidate `d2d26c008cee149bbd7c39b2290c94e7e04d8b51` completed successfully. This workflow is not a browser E2E or deployment proof.
+
+**Production release remains BLOCKED / NOT APPROVED** until the material Production-vs-QA RLS/Storage/schema compatibility gap is resolved safely and rehearsed, and the live hosting source/deployed SHA is verified. Do not merge draft PR #36 as a deployment action and do not replay QA migrations wholesale into Production.
