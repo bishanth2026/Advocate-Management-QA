@@ -129,3 +129,20 @@ This evidence is recorded as a release blocker. No Production SQL/DDL, RLS polic
 6. Verification of the actual live host's source branch and deployed commit SHA.
 
 Static CI is green, but it does not cover any of these database or live-session requirements. The release remains **NO-GO**.
+
+
+## QA-to-Production compatibility check — 2026-10-29 (read-only)
+
+A new comparison of the live QA and Production migration histories and schemas confirms that this is not a simple migration replay:
+
+- QA has **45 recorded migrations** in the current linked project; Production has **7**. The histories diverged early and the QA series includes role-permission, case-assignment, resource-backfill, finance-directory, legacy-state restriction, and multiple later security hardening migrations.
+- QA currently has the expected authorization tables: `case_assignments` (4 rows), `role_permissions` (0 rows), `practice_resources` (46 rows), and `workspace_audit_log` (32 rows). Production does not have those tables in its public schema.
+- QA's inspected `private.can_access_case(workspace_id, case_id)` allows active workspace admins and otherwise checks explicit `case_assignments` for the authenticated user. QA's `private.has_workspace_permission(workspace_id, permission_key)` grants active workspace admins or checks an allowed `role_permissions` row. These helpers depend on tables absent from Production; copying policies/functions alone would be incomplete and could fail or mis-authorize.
+- QA's `practice_resources` is a separate case-linked resource model; Production's cloud-sync source remains the monolithic `practice_records.payload` JSONB row. The QA data model and current Production app contract are therefore not interchangeable.
+- QA's current `role_permissions` table has zero rows in the inspected environment. Its existence does not itself prove a complete least-privilege role matrix has been populated and tested.
+
+### Decision from this check
+
+Do **not** replay QA migrations wholesale and do not apply the existing Storage hardening draft to Production. The safe next implementation step requires a disposable project cloned from the current Production schema, plus a reviewed additive migration and app contract changes. The existing linked QA project is not an equivalent Production-schema rehearsal target. No database writes were performed by this comparison.
+
+The latest candidate static workflow #66 passed syntax and production safety smoke checks on `7b657b79de14a38e06a8bc75d5c90fb26ad59548`; it does not substitute for authenticated RLS/Storage tests. Release remains **NO-GO**.
