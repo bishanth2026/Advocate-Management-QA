@@ -102,3 +102,16 @@ The production project was inspected with read-only SQL after this draft was cre
 **Impact on design:** the migration design must cover both `public.case_documents` and `storage.objects`; changing only table RLS would leave storage authorization at workspace-member scope. The missing case/permission helpers mean a migration cannot safely reference QA helper names without first designing and testing production-compatible implementations and assignment source-of-truth.
 
 These observations were read-only. No production schema, policy, data, auth setting, or storage object was changed.
+
+
+## 7. QA-only hardening completed — 2026-10-29
+
+To continue preparation without touching production, a narrow QA-only migration was applied to project `uqtsksgypncsbcnuanbk`:
+
+- Migration: `20261029011135_qa_harden_case_authorization_search_path_20261029`
+- Source committed to QA `main`: `supabase/migrations/20261029011135_qa_harden_case_authorization_search_path_20261029.sql`
+- Functions updated: `private.can_access_case`, `private.has_workspace_permission`, `private.is_case_creator`.
+- Change: set `search_path = ''` while preserving function logic and grants. All referenced tables and auth functions are schema-qualified.
+- Post-change verification: all three remain `SECURITY DEFINER`; `anon` still has no EXECUTE privilege; `authenticated` retains EXECUTE; the QA document table policies (3) and storage policies (3) remain present.
+
+This is a configuration/static verification PASS only. Real authenticated-session positive/negative tests, cloud-sync tests, and full application regression tests have not yet been run. The QA migration does not resolve production/QA schema drift and has **not** been applied to production. Production release remains blocked.
