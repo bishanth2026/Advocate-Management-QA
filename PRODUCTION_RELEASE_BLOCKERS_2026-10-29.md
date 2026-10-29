@@ -163,3 +163,11 @@ The latest candidate static workflow #66 passed syntax and production safety smo
 - This is an interim containment measure, **not** the final feature implementation. Advocate/Staff app access is intentionally unavailable until normalized case-scoped data and server-enforced assignment/permission checks are implemented and verified.
 - Workspace Admin access is still scoped by existing workspace membership/RLS and is not proof of case-level isolation among non-admin users.
 - The guard is on the release candidate branch only. It has not been deployed to the live host or applied to Production hosting.
+
+
+## Cloud Sync status accuracy improvement — 2026-10-29
+
+- The app shell previously displayed **Cloud: Synced** immediately after reading the workspace even when no `workspace_state` row existed. That could mislead a first-time user into believing the default/empty state had already been persisted.
+- The release candidate now shows **Cloud: Ready — not saved yet** when no row exists; it shows **Cloud: Synced** only when a persisted row was read. A successful save still changes the status to Synced.
+- Added a smoke-test assertion to prevent this false-success status from regressing. Workflow #76 passed the application change; Workflow #77 includes the new assertion and its test steps have passed so far. [Workflow #76](https://github.com/bishanth2026/Advocate-Management-QA/actions/runs/40818016960) · [Workflow #77](https://github.com/bishanth2026/Advocate-Management-QA/actions/runs/40818037270).
+- This is a UI status-accuracy fix only; it does not prove the live Supabase save path works end-to-end.
