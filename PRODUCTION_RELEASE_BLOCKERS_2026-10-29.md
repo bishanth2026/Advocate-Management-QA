@@ -189,3 +189,16 @@ A fresh read-only query against Production project `ykxfidrtvmkmmbxameji` enumer
 **This SQL has NOT been applied to Production or QA and has NOT been executed in a disposable clone.** It is draft-only. Before any application, confirm the exact legacy row key, rehearse policy creation and rollback, and test real authenticated Admin/Advocate/Staff sessions against direct REST/API access. It intentionally blocks non-Admin workspace-state sync and is not a replacement for normalized case-level data access.
 
 A static CI assertion now checks the shape and scope of this draft; static assertions do not prove PostgreSQL policy behavior. The release decision remains **NO-GO**.
+
+
+## Read-only legacy payload inventory — 2026-10-29
+
+The Production `workspace_state` rows were inspected without returning case/client names or financial/document contents. The query found **5 workspace-state rows**. Aggregate array counts observed across those rows: cases 9, clients 8, hearings 9, tasks 4, invoices 2, payments 2, meetings 1, discussions 1, communications 8, courts 0. Some workspaces omit the `communications` key entirely, and top-level key counts differ (9 or 10), so a migration must not assume identical payload keys across workspaces.
+
+A reusable read-only query has been added at `supabase/drafts/production-workspace-state-inventory.sql`. It reports workspace ID prefixes, top-level keys, collection counts, and missing/duplicate case-ID counts only. It is an inventory tool, not a migration. Run it in a reviewed preflight and reconcile all anomalies before any data conversion.
+
+## Latest CI status
+
+- Workflow #84 passed on candidate commit `6e36153a98b885452c15b34421a5b937080e8eb4`: [Workflow #84](https://github.com/bishanth2026/Advocate-Management-QA/actions/runs/40818940208).
+- The workflow checks JavaScript syntax, safety assertions, and mocked workspace-resolution tests. It also statically checks the draft containment SQL structure.
+- This pass does not execute the SQL against PostgreSQL or prove RLS behavior. The latest inventory SQL is read-only and draft-only; it has not yet been executed in a disposable clone.
