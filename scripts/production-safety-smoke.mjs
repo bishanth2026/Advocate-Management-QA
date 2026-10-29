@@ -1,4 +1,4 @@
-import assert from "node:assert/strict";
+assert.match(auth, /members\.length!==1/, "Ambiguous active workspace memberships must fail closed");\nimport assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 const read = (path) => readFileSync(new URL(path, import.meta.url), "utf8");
