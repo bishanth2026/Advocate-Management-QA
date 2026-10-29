@@ -100,3 +100,30 @@ Still required:
 - [ ] Final release approval.
 
 **Do not release to Production while any mandatory gate above remains open.**
+
+
+## Fresh live Production policy verification — 2026-10-29
+
+A further read-only query of the live Production project's `pg_policies`, public table definitions, migration history, and Supabase security advisor confirmed these release blockers:
+
+- `public.practice_records` SELECT/INSERT/UPDATE/DELETE policies authorize by `private.is_workspace_member(workspace_id)`; they do not inspect case assignments inside `payload`. The application's `workspace_state` JSON therefore cannot provide database-enforced per-case row isolation.
+- `public.case_documents` SELECT and DELETE policies authorize workspace members; INSERT checks workspace membership and `uploaded_by = auth.uid()`. They do not verify the caller's permission for the referenced case.
+- Storage object SELECT/DELETE policies for `advocatedesk-documents` authorize by workspace membership based on the first folder UUID. INSERT additionally checks uploader ownership. They do not require a matching `case_documents.storage_path` metadata row or case-level authorization.
+- The Production `case_documents.case_id` column is text and has no declared foreign key to a normalized case table. The existing Storage object path uses workspace UUID/document UUID/file name. A safe case-scoped migration must explicitly define how metadata, case IDs, and object paths relate before applying policy changes.
+- Production still records 7 migrations and has no `case_assignments`, `role_permissions`, `practice_resources`, or `workspace_audit_log` tables in the inspected public schema. QA migrations cannot be replayed wholesale.
+- The current Supabase security advisor reports leaked-password protection disabled. This remains the user's explicitly accepted exception for this work scope; it is not reported as fixed.
+
+### Action taken
+
+This evidence is recorded as a release blocker. No Production SQL/DDL, RLS policy, Storage policy/object, Auth setting, or application deployment was changed by this inspection. The draft Storage hardening SQL remains unapplied because it is not a substitute for the missing case-level authorization model and has not passed isolated authenticated tests.
+
+### Required pass evidence before changing the decision
+
+1. A reviewed migration that introduces a normalized case identity and assignment/permission model without inventing assignments from legacy JSON.
+2. A coordinated application migration away from relying on a single workspace-wide `workspace_state` JSON row for protected case data, or an equally strong server-enforced case-filtered API/RPC contract.
+3. A metadata-to-case and metadata-to-Storage-object relationship with least-privilege policies.
+4. Positive and negative authenticated tests for assigned/unassigned cases, cross-workspace users, finance permissions, document read/upload/delete, and failed upload/metadata compensation.
+5. Migration/rollback rehearsal and browser E2E on the exact release candidate.
+6. Verification of the actual live host's source branch and deployed commit SHA.
+
+Static CI is green, but it does not cover any of these database or live-session requirements. The release remains **NO-GO**.
