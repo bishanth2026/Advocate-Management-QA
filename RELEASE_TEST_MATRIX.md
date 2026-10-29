@@ -171,3 +171,15 @@ These are recorded as tester-reported manual PASS results for the visible flows.
 | DATA-02 Cloud Sync | Partial manual PASS for document list across refresh/re-login | Still must test a case/client/practice-record save → refresh → reopen after the historical 403/RLS issue, using each relevant role and capturing API response. |
 
 No additional automated/browser session was run by the assistant in this update. The above results were transcribed from the tester's screenshots and statements. Production database, authentication settings, storage objects, and live hosting remain unchanged. Release status remains **BLOCKED / NOT APPROVED FOR PRODUCTION**.
+
+
+## Cloud Sync case/client persistence retest — 2026-10-29
+
+The tester reported that the Cloud Sync case/client save-and-reopen check was performed. The supplied screenshot corroborates that the QA app displayed **“Cloud: Synced”** and that the All Cases list rendered multiple case records, including the test case. This is useful manual evidence that the app currently displays synced case-list data.
+
+| ID | Latest result | Evidence boundary / remaining proof |
+|---|---|---|
+| DATA-01 Case/client persistence | **Tester-reported manual check; screenshot corroborates synced case list (PARTIAL PASS)** | Screenshot does not show the edited field/value before and after save, nor the exact record reopened after a hard refresh. Keep as tester-reported rather than independently verified. Capture a harmless QA-only field change, save, hard refresh, reopen the same record and confirm the changed value persists. |
+| DATA-02 Cloud Sync 403/RLS | **PARTIAL PASS — visible Cloud: Synced state and case list shown** | A green sync indicator and rendered records do not alone prove the historical 403/RLS write path is fixed. Confirm the save response succeeds (no 403), then hard refresh and reopen the exact case/client/practice record; repeat for relevant roles and retain redacted network evidence. |
+
+No production data or settings were changed. This screenshot does not independently establish API-level authorization or prove that all role-specific write paths are fixed. Release remains **BLOCKED / NOT APPROVED FOR PRODUCTION**.
