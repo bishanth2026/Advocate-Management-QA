@@ -68,9 +68,9 @@ assert.match(storagePolicy, /d\.storage_path = objects\.name[\s\S]*d\.workspace_
 assert.match(storagePolicy, /owner_id = \(select \(auth\.uid\(\)\)::text\)/i, "Storage uploads must bind object ownership to the authenticated user");
 assert.match(storagePolicy, /private\.is_workspace_member\(\(\(storage\.foldername\(name\)\)\[1\]\)::uuid\)/i, "Storage uploads must require active workspace membership helper");
 assert.match(storagePolicy, /case\s+when[\s\S]*then exists[\s\S]*else false\s+end/i, "Malformed Storage path segments must fail closed");
-assert.match(storagePolicy, /on storage\.objects\s+as restrictive\s+for select\\s+to authenticated/i, "Storage read must have a restrictive guard that cannot be bypassed by another permissive policy");
-assert.match(storagePolicy, /on storage\.objects\s+as restrictive\s+for insert\\s+to authenticated/i, "Storage upload must have a restrictive guard that cannot be bypassed by another permissive policy");
-assert.match(storagePolicy, /on storage\.objects\s+as restrictive\s+for delete\\s+to authenticated/i, "Storage delete must have a restrictive guard that cannot be bypassed by another permissive policy");
+assert.ok(storagePolicy.includes("on storage.objects\nas restrictive\nfor select\nto authenticated"), "Storage read must have a restrictive guard that cannot be bypassed by another permissive policy");
+assert.ok(storagePolicy.includes("on storage.objects\nas restrictive\nfor insert\nto authenticated"), "Storage upload must have a restrictive guard that cannot be bypassed by another permissive policy");
+assert.ok(storagePolicy.includes("on storage.objects\nas restrictive\nfor delete\nto authenticated"), "Storage delete must have a restrictive guard that cannot be bypassed by another permissive policy");
 assert.match(storagePolicy, /Defense in depth: each operation has both a permissive grant and a matching/i, "Storage draft must document defense-in-depth policy semantics");
 assert.match(storagePolicy, /Separately solve case-level authorization/i, "Storage draft must explicitly disclose that case-level authorization remains unresolved");
 
