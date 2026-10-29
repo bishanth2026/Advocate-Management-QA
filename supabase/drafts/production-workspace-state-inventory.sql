@@ -47,7 +47,8 @@ select
   left(workspace_id::text, 8) as workspace_id_prefix,
   count(*) as case_rows,
   count(*) filter (where nullif(btrim(case_payload->>'id'), '') is null) as cases_missing_id,
-  count(*) - count(distinct nullif(btrim(case_payload->>'id'), '')) filter (where nullif(btrim(case_payload->>'id'), '') is not null) as duplicate_case_id_rows
+  count(*) filter (where nullif(btrim(case_payload->>'id'), '') is not null)
+    - count(distinct nullif(btrim(case_payload->>'id'), '')) as duplicate_case_id_rows
 from cases
 group by workspace_id
 order by workspace_id_prefix;
