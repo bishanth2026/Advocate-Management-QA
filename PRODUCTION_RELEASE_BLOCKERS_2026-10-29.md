@@ -115,6 +115,8 @@ A further read-only query of the live Production project's `pg_policies`, public
 
 ### Action taken
 
+A fresh read-only reconciliation returned 1 document metadata row, 1 row with a storage path, 1 object in the private bucket, 1 exact metadata/object path match, 0 metadata rows without objects, and 0 objects without metadata. This is a very small sample and does not prove authorization correctness or broad path integrity.
+
 This evidence is recorded as a release blocker. No Production SQL/DDL, RLS policy, Storage policy/object, Auth setting, or application deployment was changed by this inspection. The draft Storage hardening SQL remains unapplied because it is not a substitute for the missing case-level authorization model and has not passed isolated authenticated tests.
 
 ### Required pass evidence before changing the decision
