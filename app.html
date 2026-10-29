@@ -44,7 +44,7 @@
      syncStatus.textContent=label;syncStatus.style.color=color;
      syncStatus.setAttribute('aria-label','Cloud sync status: '+label);
    }
-   setSyncStatus('Cloud: Synced','#15803d');
+   setSyncStatus(result.data?'Cloud: Synced':'Cloud: Ready — not saved yet',result.data?'#15803b':'#a16207');
    window.ADCloudSync={
      save:function(state){
        const snapshot=JSON.parse(JSON.stringify(state)),version=++saveVersion;
