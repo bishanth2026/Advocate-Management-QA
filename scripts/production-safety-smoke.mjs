@@ -52,6 +52,7 @@ assert.match(workspaceStatePolicy, /on public\.practice_records\s+as restrictive
 assert.match(workspaceStatePolicy, /record_type is distinct from 'other'[\s\S]*record_key is distinct from 'workspace_state'/i, "Containment policy must target only the monolithic workspace_state record");
 assert.match(workspaceStatePolicy, /wm\.user_id = \(select auth\.uid\(\)\)[\s\S]*wm\.role = 'admin'[\s\S]*w\.status = 'active'/i, "Workspace-state policy must require the caller's active Admin membership");
 assert.match(workspaceStatePolicy, /using \([\s\S]*\)\s+with check \(/i, "Workspace-state policy must guard both reads/mutations and inserted/updated rows");
-assert.doesNotMatch(workspaceStatePolicy, /private\.has_workspace_permission|private\.can_access_case/i, "Production hotfix draft must not depend on QA-only authorization helpers");
+const workspaceStatePolicySql = workspaceStatePolicy.replace(/--.*$/gm, "");
+assert.doesNotMatch(workspaceStatePolicySql, /private\.has_workspace_permission|private\.can_access_case/i, "Production hotfix draft must not depend on QA-only authorization helpers");
 
 console.log("AdvocateDesk production safety smoke checks: PASS");
