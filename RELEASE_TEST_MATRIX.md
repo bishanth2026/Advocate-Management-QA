@@ -257,3 +257,32 @@ This resolves the prior QA function search-path configuration item. It does **no
 - Production-vs-QA RLS and Storage policy mismatch: **OPEN — design/rehearsal required**; no Production migration applied.
 - Live hosting source/deployed SHA: **OPEN**.
 - Release decision: **BLOCKED / NOT APPROVED FOR PRODUCTION** until the independent gates above are evidenced.
+
+
+## Release continuation — 2026-10-29 (fresh tool verification)
+
+### Automated candidate checks
+- Workflow `AdvocateDesk Production Safety Validation`, run `40806376444`: **SUCCESS** on commit `41ea4fd3e49d1e054636bb95c68deebf8a797ec6`.
+- Job `Production safety and syntax checks`: successful steps included authentication syntax, application syntax, and production safety smoke checks.
+- Scope limit: this is static/smoke validation only. It does not establish browser E2E, authenticated role/session behavior, real Storage authorization, or live deployment.
+
+### Fresh Supabase comparison
+- QA migration history contains role permissions, case assignments, practice resources, finance directory, and additional hardening migrations that are not present in Production migration history.
+- Production migration history currently ends with the case-document/storage baseline and index optimization; QA-only migration history must not be replayed wholesale.
+- QA `case_documents` SELECT/INSERT/DELETE policies enforce document permissions and case access; QA Storage read/delete policies join object paths to `case_documents` metadata and enforce document permission plus case access.
+- Production `case_documents` and `storage.objects` policies still use workspace membership/path-based checks rather than the full QA case-scoped permission model. This is a material authorization difference.
+- QA has `case_assignments`, `role_permissions`, `practice_resources`, and `workspace_audit_log`; the inspected Production schema does not have these tables. A compatible migration/backfill and application compatibility review is required before promoting dependent authorization rules.
+- Fresh Security Advisor scans still report `auth_leaked_password_protection` WARN for both QA and Production. The setting is not confirmed fixed.
+
+### Release gate update
+- [x] Static syntax and production safety smoke checks passed on the exact documentation commit.
+- [x] Read-only Production/QA migration, schema, and key RLS policy comparison refreshed.
+- [ ] Leaked-password protection enabled and verified independently in QA and Production.
+- [ ] Production-compatible schema/dependency plan reviewed; no wholesale QA migration replay.
+- [ ] RLS/Storage migration rehearsed on isolated staging with authenticated positive and negative tests.
+- [ ] Admin, Advocate, Staff, Accountant real-session regression and Cloud Sync API response/persistence tests evidenced on the candidate SHA.
+- [ ] Production backup/restore rehearsal completed.
+- [ ] Live hosting repository/branch/deployed SHA verified.
+- [ ] Desktop/mobile smoke tests and rollback plan approved.
+
+**Current decision remains BLOCKED / NOT APPROVED FOR PRODUCTION.** No Production database, Auth setting, Storage policy/object, or hosting configuration was changed during this continuation.
