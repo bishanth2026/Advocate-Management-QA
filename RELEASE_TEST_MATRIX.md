@@ -11,6 +11,8 @@ This is an execution record for tests required before production approval. Stati
 
 Current decision: **BLOCKED — do not deploy yet.** No production database or hosting configuration is changed by this file.
 
+Latest containment change: release candidate `app.html` blocks non-Admin workspace roles before reading the monolithic `practice_records.workspace_state`; the production smoke suite checks that ordering. Workflow #73 passed for code/test SHA `9fd17a55f4e59f1ef58b265f1b900c6885ab4c83` and Workflow #74 passed for the latest documentation SHA `ec794a4e838655de08a98a9a360a86f0c8e4daa8`. [Workflow #73](https://github.com/bishanth2026/Advocate-Management-QA/actions/runs/40817124029) · [Workflow #74](https://github.com/bishanth2026/Advocate-Management-QA/actions/runs/40817137985). The guard intentionally limits Advocate/Staff access; it is not a substitute for normalized case-scoped authorization, live RLS/Storage tests, or deployed-SHA verification.
+
 Latest candidate evidence (2026-10-29): Workflow #69 passed for code/test SHA `455913432380afeffc2c2c73848d2e2d014d56ba`, including syntax checks, production safety smoke checks, and mocked auth workspace-resolution tests (5 scenarios). [Run #69](https://github.com/bishanth2026/Advocate-Management-QA/actions/runs/40816507266). This does **not** count as live authenticated E2E, Supabase RLS/Storage, or hosting verification.
 
 ## A. Branch and build integrity
