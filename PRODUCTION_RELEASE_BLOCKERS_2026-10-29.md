@@ -171,3 +171,21 @@ The latest candidate static workflow #66 passed syntax and production safety smo
 - The release candidate now shows **Cloud: Ready — not saved yet** when no row exists; it shows **Cloud: Synced** only when a persisted row was read. A successful save still changes the status to Synced.
 - Added a smoke-test assertion to prevent this false-success status from regressing. Workflow #76 passed the application change; Workflow #77 includes the new assertion and its test steps have passed so far. [Workflow #76](https://github.com/bishanth2026/Advocate-Management-QA/actions/runs/40818016960) · [Workflow #77](https://github.com/bishanth2026/Advocate-Management-QA/actions/runs/40818037270).
 - This is a UI status-accuracy fix only; it does not prove the live Supabase save path works end-to-end.
+
+
+## Newly confirmed database-level containment gap — 2026-10-29
+
+A fresh read-only query against Production project `ykxfidrtvmkmmbxameji` enumerated the active RLS policies for `public.practice_records`, `public.case_documents`, and `storage.objects`.
+
+- Production `practice_records` has permissive workspace-member policies for SELECT/INSERT/UPDATE/DELETE. No restrictive `workspace_state`-specific policy was present in the inspected policy set.
+- QA has a restrictive policy named `practice_records_workspace_state_admin_only` that limits the monolithic `record_type='other', record_key='workspace_state'` row via `private.has_workspace_permission(..., 'users.manage')`. Production does not currently have that helper/model.
+- The candidate's browser-side guard is useful containment but is not a database authorization boundary; direct authenticated API requests must be tested independently.
+- Production also has workspace-member policies for `case_documents` and `storage.objects`; case-level checks are not yet enforced end-to-end in Production.
+
+### Draft containment candidate added
+
+`supabase/drafts/production-workspace-state-admin-only-hotfix.sql` adds a restrictive policy design that relies only on Production-existing `workspace_members` and `workspaces` columns, requiring the caller's own active Admin membership for the monolithic workspace-state row. The existing non-workspace-state rows are outside the policy's restrictive predicate.
+
+**This SQL has NOT been applied to Production or QA and has NOT been executed in a disposable clone.** It is draft-only. Before any application, confirm the exact legacy row key, rehearse policy creation and rollback, and test real authenticated Admin/Advocate/Staff sessions against direct REST/API access. It intentionally blocks non-Admin workspace-state sync and is not a replacement for normalized case-level data access.
+
+A static CI assertion now checks the shape and scope of this draft; static assertions do not prove PostgreSQL policy behavior. The release decision remains **NO-GO**.
