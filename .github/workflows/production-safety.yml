@@ -30,3 +30,5 @@ jobs:
         run: node --check app.js
       - name: Run production safety smoke checks
         run: node scripts/production-safety-smoke.mjs
+      - name: Run authentication workspace-resolution regression tests
+        run: node scripts/auth-resolution.test.mjs
