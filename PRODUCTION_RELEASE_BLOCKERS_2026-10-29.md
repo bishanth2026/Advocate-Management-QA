@@ -202,3 +202,6 @@ A reusable read-only query has been added at `supabase/drafts/production-workspa
 - Workflow #84 passed on candidate commit `6e36153a98b885452c15b34421a5b937080e8eb4`: [Workflow #84](https://github.com/bishanth2026/Advocate-Management-QA/actions/runs/40818940208).
 - The workflow checks JavaScript syntax, safety assertions, and mocked workspace-resolution tests. It also statically checks the draft containment SQL structure.
 - This pass does not execute the SQL against PostgreSQL or prove RLS behavior. The latest inventory SQL is read-only and draft-only; it has not yet been executed in a disposable clone.
+
+
+The read-only inventory SQL was subsequently executed against Production successfully. It confirmed 5 workspace-state rows, 9 case entries, and **0 missing case IDs / 0 duplicate case-ID rows** in those 9 entries. This does not validate foreign-key references from hearings/tasks/documents, prove case assignment correctness, or authorize a migration; those checks remain required.
