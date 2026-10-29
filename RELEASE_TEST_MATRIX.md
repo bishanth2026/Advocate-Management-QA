@@ -27,9 +27,9 @@ Use dedicated, non-production test accounts. Never include passwords or access t
 | ID | Test | Expected result | Status |
 |---|---|---|---|
 | AUTH-01 | Super Admin sign-in | Correct privileged portal only; session profile validated | NOT RUN — real-session verification still required |
-| AUTH-02 | Workspace Admin sign-in | Active workspace membership required; no accidental Super Admin access | NOT RUN — real-session verification still required |
-| AUTH-03 | Advocate sign-in | Member route works; permissions are role-scoped | Portal route/static smoke assertion PASS; real sign-in NOT VERIFIED |
-| AUTH-04 | Staff / Accountant sign-in | Only permitted modules and records are visible | Portal route/static smoke assertion PASS; real sign-in NOT VERIFIED |
+| AUTH-02 | Workspace Admin sign-in | Active workspace membership required; no accidental Super Admin access | PARTIAL PASS: prior real-browser regression recorded Admin login/navigation; repeat only if release candidate/auth code changed. |
+| AUTH-03 | Advocate sign-in | Member route works; permissions are role-scoped | PARTIAL PASS: prior real-browser regression recorded Advocate login/navigation; latest candidate/session coverage still needs confirmation. |
+| AUTH-04 | Staff / Accountant sign-in | Only permitted modules and records are visible | Accountant: prior real-browser regression recorded login/navigation (PARTIAL PASS). Staff: NOT VERIFIED; prior QA fixture did not include a Staff membership/account. |
 | AUTH-05 | Invalid password / unknown account | Generic safe error; no sensitive account enumeration | NOT RUN |
 | AUTH-06 | Password recovery and redirect | Recovery link returns to the approved domain and safely resets password | NOT RUN |
 | AUTH-07 | Expired/revoked session | Protected pages and APIs deny access; user can reauthenticate | NOT RUN |
@@ -42,11 +42,11 @@ For every test, run both the allowed action and the negative action with distinc
 | ID | Test | Expected result | Status |
 |---|---|---|---|
 | SEC-01 | Active workspace member reads own workspace | Only authorized workspace records returned | NOT RUN |
-| SEC-02 | User attempts another workspace's records | Denied by server-side RLS/API, not just hidden in UI | NOT RUN |
-| SEC-03 | Assigned advocate opens assigned case | Access allowed within granted role | NOT RUN |
-| SEC-04 | Assigned-only advocate opens unassigned case | Denied unless an explicit workspace-wide permission exists | NOT RUN |
+| SEC-02 | User attempts another workspace's records | Denied by server-side RLS/API, not just hidden in UI | PARTIAL PASS: prior browser regression recorded cross-workspace isolation and non-member denial; direct alternate-workspace authenticated-session coverage and current-candidate retest remain to be confirmed. |
+| SEC-03 | Assigned advocate opens assigned case | Access allowed within granted role | PARTIAL PASS: prior browser regression recorded Advocate assignment flow; confirm case-scoped read behavior on current candidate. |
+| SEC-04 | Assigned-only advocate opens unassigned case | Denied unless an explicit workspace-wide permission exists | PARTIAL PASS: earlier assignment/case-scope work exists; exact negative access case must be evidenced on the current candidate. |
 | SEC-05 | Staff attempts admin-only action | Denied by server-side permission check | NOT RUN |
-| SEC-06 | Client attempts direct table/RPC access outside policy | Denied | PARTIAL PASS: anonymous Finance RPC EXECUTE denied; direct authenticated table/RPC negative tests NOT RUN |
+| SEC-06 | Client attempts direct table/RPC access outside policy | Denied | PARTIAL PASS: anonymous Finance RPC EXECUTE denied; prior authenticated Finance RPC/browser regression recorded. Direct authenticated table/RLS negative tests remain incomplete. |
 | SEC-07 | Workspace membership suspended/revoked during session | Subsequent protected requests denied or revalidated | NOT RUN |
 | SEC-08 | Assignment/unassignment audit | Correct actor, workspace, case, and target are logged without leaking unrelated data | NOT RUN |
 
@@ -55,12 +55,12 @@ For every test, run both the allowed action and the negative action with distinc
 | ID | Test | Expected result | Status |
 |---|---|---|---|
 | DATA-01 | Create/update case and client in QA | Save, refresh, and re-open preserve data | NOT RUN |
-| DATA-02 | Cloud sync under each role | No 403/RLS error for allowed writes; denied writes remain denied | NOT RUN — prior QA Cloud Sync 403/RLS error requires real-session retest after policy fix |
+| DATA-02 | Cloud sync under each role | No 403/RLS error for allowed writes; denied writes remain denied | PARTIAL / OPEN: prior per-resource sync PR and GitHub Actions tests passed, but the historical 403/RLS error needs post-fix real-session save + refresh/persistence verification across roles. Do not repeat already-passed static/action tests absent regression. |
 | DATA-03 | Invoice/payment records | Authorized accountant/admin can use allowed actions; other roles follow policy | NOT RUN |
-| DOC-01 | Upload valid PDF/DOCX/PNG/JPEG within size limit | Upload succeeds and metadata matches stored object | NOT RUN |
+| DOC-01 | Upload valid PDF/DOCX/PNG/JPEG within size limit | Upload succeeds and metadata matches stored object | NOT VERIFIED: policies reviewed, but real-session upload evidence is absent. |
 | DOC-02 | Upload invalid type, spoofed MIME, or oversized file | Rejected server-side | NOT RUN |
-| DOC-03 | User downloads document from assigned case | Authorized download only | NOT RUN |
-| DOC-04 | User guesses another workspace's storage path | Download denied by storage policies | NOT RUN |
+| DOC-03 | User downloads document from assigned case | Authorized download only | NOT VERIFIED: storage policy review completed; real-session preview/download evidence is absent. |
+| DOC-04 | User guesses another workspace's storage path | Download denied by storage policies | PARTIAL: storage policies inspected; real authenticated negative access test remains absent. |
 | DOC-05 | Delete/revoke access and retry old URL | Access revoked or URL expires according to the approved policy | NOT RUN |
 | UI-01 | Desktop and mobile portal navigation | No missing portal, blank screen, or unusable layout | NOT RUN |
 
@@ -74,7 +74,7 @@ These are partial-scope results recorded from earlier QA work. They are not a su
 | Workspace state policy | `workspace_state` restrictive RLS check: PASS | Does not establish every table's policy or cross-workspace isolation. |
 | Finance RPC | Anonymous EXECUTE denied: PASS | Authenticated role grants and direct API/table access still need negative tests. |
 | Accountant Clients & Cases UI | Read-only UI accepted; Edit/Delete controls absent: PASS | Direct API mutation denial and refresh/cloud-sync behavior not confirmed. |
-| Advocate/Staff portal | Portal route and static production-safety assertions: PASS | Actual Advocate/Staff account sign-in, role session, and permitted operations not confirmed. |
+| Advocate/Staff portal | Portal route/static assertions PASS; earlier browser regression recorded Admin, Advocate, and Accountant login/navigation | Staff real-session evidence absent; verify role permissions and exact current release candidate rather than rerunning passed portal/static checks. |
 | Production safety CI | Workflow `40660002462` passed syntax/static smoke checks: PASS | Not browser E2E, real auth, or deployment verification. |
 
 ## Fresh production-vs-QA RLS policy review — 2026-10-28
@@ -135,3 +135,15 @@ An attempted QA-only migration to set those seven functions' search paths to emp
 - Production database/hosting changes: NONE.
 
 Release remains **BLOCKED / NOT APPROVED FOR PRODUCTION**.
+
+
+## Historical browser regression evidence reconciliation — 2026-10-29
+
+The previous matrix understated some work already completed. Based on earlier recorded QA results, the following are **partial passes**, not wholly unrun: real-browser Admin, Advocate, and Accountant login/navigation; non-member denial; cross-workspace isolation; authenticated Finance RPC checks; Advocate assignment/unassignment and denial of cross-workspace Admin assignment. These earlier browser regression results were recorded on 2026-10-24. Do not rerun those same checks solely because this matrix was updated; rerun only if the tested code/candidate changed or the evidence does not identify the exact tested SHA.
+
+Important limits:
+- Staff real-session access was not evidenced; the earlier QA fixture did not have a Staff membership/account.
+- The earlier cross-workspace result does not prove every direct alternate-workspace API/table path is denied on the current release candidate.
+- Storage policies were inspected, but authenticated document upload/preview/download/delete and guessed-path denial were not evidenced as real-session tests.
+- Per-resource sync PR / GitHub Actions checks passed, but the previous Cloud Sync 403/RLS error still needs post-fix authenticated save + refresh/persistence verification for relevant roles.
+- Production release remains blocked by the production-vs-QA authorization design gap, leaked-password protection, unverified hosting SHA, and outstanding release checks.
