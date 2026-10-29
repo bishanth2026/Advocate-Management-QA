@@ -9,6 +9,10 @@
 -- * The existing metadata table policies still authorize workspace members.
 -- * Apply only after disposable-project testing and a reviewed release plan.
 --
+-- Defense in depth: each operation has both a permissive grant and a matching
+-- restrictive guard. Restrictive policies are ANDed with every permissive policy,
+-- so an unrelated/legacy permissive policy cannot bypass these conditions.
+-- Review the complete live policy inventory before applying; this draft has not run.
 -- Intended protections:
 -- * read/delete only when an exact case_documents.storage_path metadata row exists
 --   and its workspace_id and id match the first two path segments;
@@ -47,6 +51,28 @@ using (
   end
 );
 
+create policy "AdvocateDesk document files restrictive metadata guard for read"
+on storage.objects
+as restrictive
+for select
+to authenticated
+using (
+  bucket_id = 'advocatedesk-documents'
+  and case
+    when
+      (storage.foldername(name))[1] ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+      and (storage.foldername(name))[2] ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+    then exists (
+      select 1
+      from public.case_documents d
+      where d.storage_path = objects.name
+        and d.workspace_id = ((storage.foldername(objects.name))[1])::uuid
+        and d.id = ((storage.foldername(objects.name))[2])::uuid
+    )
+    else false
+  end
+);
+
 create policy "AdvocateDesk document files require member owner and valid path for upload"
 on storage.objects
 for insert
@@ -63,8 +89,47 @@ with check (
   end
 );
 
+create policy "AdvocateDesk document files restrictive owner and path guard for upload"
+on storage.objects
+as restrictive
+for insert
+to authenticated
+with check (
+  bucket_id = 'advocatedesk-documents'
+  and owner_id = (select (auth.uid())::text)
+  and case
+    when
+      (storage.foldername(name))[1] ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+      and (storage.foldername(name))[2] ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+    then private.is_workspace_member(((storage.foldername(name))[1])::uuid)
+    else false
+  end
+);
+
 create policy "AdvocateDesk document files require metadata match for delete"
 on storage.objects
+for delete
+to authenticated
+using (
+  bucket_id = 'advocatedesk-documents'
+  and case
+    when
+      (storage.foldername(name))[1] ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+      and (storage.foldername(name))[2] ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+    then exists (
+      select 1
+      from public.case_documents d
+      where d.storage_path = objects.name
+        and d.workspace_id = ((storage.foldername(objects.name))[1])::uuid
+        and d.id = ((storage.foldername(objects.name))[2])::uuid
+    )
+    else false
+  end
+);
+
+create policy "AdvocateDesk document files restrictive metadata guard for delete"
+on storage.objects
+as restrictive
 for delete
 to authenticated
 using (
