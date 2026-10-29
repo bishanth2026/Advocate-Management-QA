@@ -338,3 +338,34 @@ These results supersede earlier matrix rows that marked the same general functio
 The user-confirmed QA functional tests above are treated as passed and should not be repeated unnecessarily. Static/syntax smoke workflow run `40807138835` on release candidate `d2d26c008cee149bbd7c39b2290c94e7e04d8b51` completed successfully. This workflow is not a browser E2E or deployment proof.
 
 **Production release remains BLOCKED / NOT APPROVED** until the material Production-vs-QA RLS/Storage/schema compatibility gap is resolved safely and rehearsed, and the live hosting source/deployed SHA is verified. Do not merge draft PR #36 as a deployment action and do not replay QA migrations wholesale into Production.
+
+
+## Fresh Production RLS/Storage and deployment verification — 2026-10-29
+
+### Verified current state (read-only)
+
+- Production Supabase project `ykxfidrtvmkmmbxameji` is `ACTIVE_HEALTHY` in `ap-southeast-1`; QA project `uqtsksgypncsbcnuanbk` is `ACTIVE_HEALTHY` in `ap-south-1`.
+- Production migration history contains 7 migrations; QA migration history contains 41. Do not replay QA migrations wholesale.
+- Production `public.case_documents` has only workspace-membership SELECT/DELETE checks and workspace-member + uploader INSERT checks. These do not enforce the QA permission/case-scope model.
+- Production `storage.objects` policies for `advocatedesk-documents` allow workspace-member access based on the first object-path folder; they do not require a matching `case_documents.storage_path` row and case-scoped permission.
+- QA document metadata policies use `private.has_workspace_permission(..., 'documents.view/upload/delete')` plus `private.can_access_case(...)`; QA Storage SELECT/DELETE policies require matching metadata and case access. These helpers and the role/assignment tables are not all present in Production.
+- Production bucket `advocatedesk-documents` is private, capped at 20 MiB, and permits PDF, DOCX, JPEG, PNG. This configuration is retained; it does not compensate for the policy mismatch.
+- Production branch `production/advocatedesk-final` is currently at SHA `cbad19fad0a1bdfa7f68caddccbf38aeb190420b`. Its repository contains `CNAME` set to `advocate.biznexco.in`, and its `login.html` contains Super Admin, Admin, and Advocate & Staff portal links. The `member-login.html` file exists in that branch.
+- The live domain could not be fetched with the available web checker, and the GitHub Pages publishing configuration/deployed SHA could not be queried through the available connector. Therefore the CNAME and branch contents are **not proof** that the live host serves this SHA.
+- Latest release documentation SHA `9a2c75367ab59488e3ce07d30750a61ea24b226e` has workflow run `40807935978` (run #49) completed successfully. Its job passed authentication syntax, application syntax, and production safety smoke checks only. It does not test browser E2E, database policies, or live deployment.
+
+### Required safe RLS/Storage remediation
+
+Do not apply the current `supabase/drafts/secure-documents-storage.sql` policy design as a Production fix: it is explicitly draft-only and only checks workspace membership. The correct change needs to reconcile Production schema with the QA authorization model, including case assignment, role permission definitions, helper functions, document metadata and storage-object paths. Implement this as a small, ordered, Production-compatible migration after reviewing all dependencies and existing records. Preserve private bucket settings and add positive and negative tests for workspace and case access, guessed object paths, upload, preview/download and delete.
+
+An isolated Production-schema staging branch is not currently present in the connected Supabase project. Creating one previously returned a confirmed estimate of **US$0.01344/hour**. No branch was created because explicit cost approval has not yet been given. Until the user approves this cost or an equivalent isolated Production-schema test environment is supplied, the migration cannot be safely rehearsed. No Production SQL, RLS/Storage policy, Auth setting, or data has been changed.
+
+### Scope decisions retained
+
+- Backup/restore rehearsal is deferred by the user's explicit decision because current data is demo/test data. This is not a restore pass.
+- Leaked-password protection remains an accepted exception by the user's explicit decision for this scope. The advisor still reports it disabled; no change is claimed.
+- The user-confirmed manual QA functional checks are recorded as PASS and should not be repeated unless code changes or a regression is suspected.
+
+### Final gate
+
+**NO-GO / NOT APPROVED FOR PRODUCTION** until the Production-compatible RLS/Storage migration is rehearsed in an isolated Production-schema environment with authenticated positive/negative tests, and the actual live hosting source/deployed SHA is verified. Do not merge draft PR #36 as a deployment trigger. No Production application, database, Auth, Storage or hosting changes were made in this verification.
