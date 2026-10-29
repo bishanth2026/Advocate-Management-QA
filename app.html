@@ -15,6 +15,15 @@
  try{
    const auth=await ADAuth.validateAppSession();
    if(!auth){fail('Your session is missing or expired.');return;}
+   // SECURITY HOLD: workspace_state is a monolithic JSON payload containing multiple cases.
+   // Until server-enforced case-level authorization is implemented and verified, do not
+   // expose that payload to Advocate/Staff or any non-Admin workspace role.
+   if(String(auth.workspaceRole||'').toLowerCase()!=='admin'){
+     gate.textContent='Access temporarily restricted for security. Advocate/Staff access will be restored after case-level permissions are deployed and verified. Please contact your workspace administrator.';
+     gate.style.display='block';
+     gate.setAttribute('role','alert');
+     return;
+   }
    const client=ADAuth.client();
    window.ADPlatformAccounts=[];
    if(auth.role==="super_admin"){
