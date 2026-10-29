@@ -180,7 +180,7 @@ The tester reported that the Cloud Sync case/client save-and-reopen check was pe
 | ID | Latest result | Evidence boundary / remaining proof |
 |---|---|---|
 | DATA-01 Case/client persistence | **Tester-reported manual check; screenshot corroborates synced case list (PARTIAL PASS)** | Screenshot does not show the edited field/value before and after save, nor the exact record reopened after a hard refresh. Keep as tester-reported rather than independently verified. Capture a harmless QA-only field change, save, hard refresh, reopen the same record and confirm the changed value persists. |
-| DATA-02 Cloud Sync 403/RLS | **PARTIAL PASS — visible Cloud: Synced state and case list shown** | A green sync indicator and rendered records do not alone prove the historical 403/RLS write path is fixed. Confirm the save response succeeds (no 403), then hard refresh and reopen the exact case/client/practice record; repeat for relevant roles and retain redacted network evidence. |
+| DATA-02 Cloud Sync 403/RLS | **MANUAL PASS — tester confirms Save → successful API response → Refresh → Reopen completed** | User-confirmed completed flow. The previous screenshot corroborates the synced QA state. Keep any redacted API/Network evidence with QA release records if available; do not repeat this exact test unless the candidate code changes or a regression appears. This does not independently certify every role/resource or production behavior. |
 
 No production data or settings were changed. This screenshot does not independently establish API-level authorization or prove that all role-specific write paths are fixed. Release remains **BLOCKED / NOT APPROVED FOR PRODUCTION**.
 
@@ -286,3 +286,10 @@ This resolves the prior QA function search-path configuration item. It does **no
 - [ ] Desktop/mobile smoke tests and rollback plan approved.
 
 **Current decision remains BLOCKED / NOT APPROVED FOR PRODUCTION.** No Production database, Auth setting, Storage policy/object, or hosting configuration was changed during this continuation.
+
+
+### Cloud Sync sequence completion update — 2026-10-29
+
+The tester explicitly confirmed that the requested sequence is complete: **Save → API response → Refresh → Reopen**. Update DATA-02 from partial to **manual tester-confirmed PASS** for the tested QA record/flow. Do not ask the tester to repeat the same check absent a code change or regression.
+
+Scope boundary: this confirms the reported manual QA flow only; it does not establish every role/resource path or prove production behavior. The independent production release blockers remain unchanged: leaked-password protection still needs advisor verification, Production/QA schema and RLS/Storage differences need a reviewed staging rehearsal, backup/restore and hosting SHA checks remain open. No Production setting or database was changed.
