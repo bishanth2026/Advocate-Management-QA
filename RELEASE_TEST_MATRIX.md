@@ -11,11 +11,13 @@ This is an execution record for tests required before production approval. Stati
 
 Current decision: **BLOCKED — do not deploy yet.** No production database or hosting configuration is changed by this file.
 
+Latest candidate evidence (2026-10-29): Workflow #69 passed for code/test SHA `455913432380afeffc2c2c73848d2e2d014d56ba`, including syntax checks, production safety smoke checks, and mocked auth workspace-resolution tests (5 scenarios). [Run #69](https://github.com/bishanth2026/Advocate-Management-QA/actions/runs/40816507266). This does **not** count as live authenticated E2E, Supabase RLS/Storage, or hosting verification.
+
 ## A. Branch and build integrity
 
 | ID | Test | Expected result | Evidence/status |
 |---|---|---|---|
-| BR-01 | Verify production branch SHA and workflow result | Tested commit matches intended release commit; workflow green | Existing static run passed; new release SHA not validated |
+| BR-01 | Verify production branch SHA and workflow result | Tested commit matches intended release commit; workflow green | PARTIAL: release candidate SHA `455913432380afeffc2c2c73848d2e2d014d56ba` passed Workflow #69; production branch/deployed SHA equivalence is still unverified |
 | BR-02 | Confirm production `auth.js`, `reset-password.html`, and `member-login.html` use production Supabase project | No QA project URL or QA branding in production bundle | Static smoke test previously passed; re-run on final candidate |
 | BR-03 | Compare QA vs production application files | Every promoted change has a reviewed diff and regression test | BLOCKED: branches diverged; no bulk merge |
 | BR-04 | Confirm hosting repository and publishing branch for `advocate.biznexco.in` | Live host serves the approved commit | BLOCKED: publishing source not verified |
