@@ -1,58 +1,67 @@
 # Production RLS and Storage Migration Rehearsal Plan
 
-**Status: BLOCKED — planning/review only; no Production changes applied.**  
+**Status: BLOCKED — read-only inspection and draft diagnostics only; no Production changes applied.**  
 **Reviewed:** 2026-10-29  
 **QA project:** `uqtsksgypncsbcnuanbk`  
-**Production project:** `ykxfidrtvmkmmbxameji`
+**Production project:** `ykxfidrtvmkmmbxameji`  
+**Read-only preflight commit:** `a5142013421cec6dec41d889414ab939eba3daea`
 
-## Read-only inventory findings
+## Confirmed Production findings
 
-A fresh read-only comparison of `pg_policies` and `information_schema.tables` confirms that QA and Production do not share the same authorization model.
+1. **RLS is weaker than QA for documents.**
+   - `public.case_documents` SELECT/DELETE policies currently check active workspace membership; INSERT checks workspace membership and uploader identity.
+   - Production `storage.objects` policies for `advocatedesk-documents` check workspace membership based on the first folder in the object path. They do not enforce a matching `case_documents.storage_path` metadata row or case-scoped permission.
+   - QA uses role/permission and case-scope dependencies that are not all available in Production. Do not copy QA policies verbatim.
 
-### Material differences
+2. **Production schema is not a drop-in match for QA.**
+   - Production has `public.practice_records`, `case_documents`, `workspace_members`, and `workspaces`.
+   - QA-only dependencies include `case_assignments`, `role_permissions`, `practice_resources`, and `workspace_audit_log`; these were not found in the Production table inventory.
+   - Production helper `private.is_workspace_member(uuid)` checks membership and active workspace status. It does not provide case-level authorization.
 
-1. **Case documents**
-   - Production policies on `public.case_documents` authorize SELECT/DELETE using workspace membership; INSERT checks membership and uploader identity.
-   - QA policies additionally require the corresponding `documents.view`, `documents.upload`, or `documents.delete` workspace permission and `private.can_access_case(workspace_id, case_id)`.
-   - QA storage-object policies for bucket `advocatedesk-documents` authorize reads/deletes through matching `case_documents` metadata and the document permission plus case-scope checks. Upload checks bucket ID, UUID workspace folder, active membership, and upload permission.
-   - These are not equivalent. Do not copy only the QA policies into Production without adding/validating their dependencies and verifying existing data/path conventions.
+3. **Bucket configuration and current metadata reconciliation.**
+   - `advocatedesk-documents` is private (`public=false`), has a 20 MiB limit, and permits PDF, DOCX, JPEG, and PNG.
+   - Read-only counts returned 1 `case_documents` metadata row, 1 object in the bucket, and 1 exact `storage_path = storage.objects.name` match at the time checked. This small count is not proof of general path compatibility or authorization safety.
+   - Keep the bucket private; do not change existing object paths until the application path convention is confirmed.
 
-2. **Practice data model**
-   - Production contains `public.practice_records` with member-based SELECT/INSERT/UPDATE/DELETE policies.
-   - QA additionally contains `public.practice_resources`, `public.case_assignments`, `public.role_permissions`, and `public.workspace_audit_log`; these tables are absent from the Production table inventory inspected on 2026-10-29.
-   - QA has a restrictive workspace-state policy and resource-type/case-scoped permission checks. Production's existing `practice_records` model is not a drop-in equivalent.
-   - Do not deploy policies referencing QA-only tables or helper functions before an explicitly reviewed schema/backfill/compatibility plan exists.
+4. **No Production changes were made.**
+   - No Production SQL migration, RLS/Storage policy, Auth setting, object, or hosting configuration was changed during this work.
+   - Staging branch creation was attempted only after the user approved the previously quoted estimate, but Supabase returned: `Branching is supported only on the Pro plan or above`. The branch was not created; no hourly branch charge was started by a successful creation.
 
-3. **SECURITY DEFINER functions**
-   - QA's inspected private functions currently use an empty `search_path`, including assignment, permission, case-scope, and finance-directory helpers.
-   - Production's inspected SECURITY DEFINER inventory contains `private.is_workspace_member`, `private.is_workspace_owner`, and `public.handle_new_advocatedesk_user`, also with an empty `search_path`.
-   - This inventory is not a complete function-body/ACL review. Do not port QA functions or grants by name alone.
+## Work completed on the no-staging-cost path
 
-4. **Auth setting**
-   - Fresh Supabase Security Advisor scans still return `auth_leaked_password_protection: WARN` for both QA and Production.
-   - This is an Auth configuration item, not a SQL migration. The setting must be enabled/verified separately in each project's Auth password-security settings, followed by a fresh Advisor scan. No Auth setting was changed during this review.
+- Added `supabase/drafts/production-rls-storage-preflight.sql` on `release/advocatedesk-production-readiness`. It contains SELECT-only diagnostics for bucket configuration, current policies, metadata/object path reconciliation, path layout, schema dependencies, and helper definitions.
+- Executed read-only checks against Production. Bucket privacy/limits and current metadata/object counts were confirmed.
+- Did not apply the existing `secure-documents-storage.sql` draft: it only checks workspace membership and does not safely enforce case-scoped authorization.
+- Did not apply QA migrations wholesale or create missing QA tables in Production.
 
-## Required staged migration sequence
+## Required next steps before any Production write
 
-1. Export/backup Production schema and required data; document and rehearse restore/forward-recovery before any write.
-2. Inspect Production columns, constraints, indexes, bucket configuration, storage object naming, helper function bodies, function ownership/ACLs, and current grants.
-3. Define the intended role/permission model and decide whether Production needs a phased migration/backfill for assignment and resource tables. Avoid introducing QA-only tables unless the app release explicitly requires them.
-4. Draft a minimal, ordered migration for case-scoped document access, including matching Storage object policies. Preserve the current application path/metadata format or include a tested compatibility migration.
-5. Rehearse against an isolated staging copy with authenticated positive and negative tests for Admin, Advocate, Staff, and Accountant, including cross-workspace reads/writes, unassigned case access, document upload/read/delete, guessed storage paths, and existing-record compatibility.
-6. Run assignment, finance-directory, Cloud Sync save → successful HTTP response → hard refresh → reopen, and regression tests on the exact candidate SHA.
-7. Review rollback/forward-recovery steps and confirm backup restore before scheduling Production deployment.
-8. Verify the live hosting source branch and deployed commit SHA; run desktop/mobile smoke tests after staging approval.
+1. Confirm how the live app constructs `storage_path` and whether case visibility is narrower than workspace membership.
+2. Decide and document a Production-compatible authorization model. Since Production currently lacks QA's case assignment and role-permission tables/helpers, either implement a separately reviewed phased schema/backfill or define an explicitly supported equivalent using existing Production structures. Do not silently weaken case access to workspace access.
+3. Build a minimal migration only after schema, function ACLs, grants, object paths, and app behavior are reviewed. Include matching metadata checks for Storage read/upload/delete and malformed-path denial without breaking current legitimate objects.
+4. Test positive and negative behavior with authenticated sessions for each relevant role: same-workspace assigned case, same-workspace unassigned case, cross-workspace case, guessed object path, upload, preview/download, delete, and metadata/object mismatch. SQL-only inspection is not a substitute for real authenticated API tests.
+5. Run Cloud Sync save → successful response → hard refresh → reopen, document CRUD, finance, assignment, and role regression tests on the exact candidate SHA.
+6. Confirm live hosting source branch and deployed commit SHA, then perform desktop/mobile smoke tests.
+7. Backup/restore rehearsal is **deferred by user** because current data is demo/test data. It remains a mandatory precondition before storing real customer data or production cutover; it is not marked as passed.
 
-## Current release gate
+## Accepted scope exceptions
 
-- [x] QA-only SECURITY DEFINER search-path configuration verified after migration.
+- Leaked Password Protection is intentionally excluded from this scope per user direction. It has not been changed or verified as enabled; treat it as an accepted exception, not a fix.
+- Backup/restore rehearsal is deferred as noted above; it remains outstanding for real customer data.
+
+## Release gate
+
 - [x] Read-only QA-vs-Production RLS/table inventory completed.
-- [ ] Leaked-password protection enabled and verified in both projects.
+- [x] Production bucket remains private and its current limits were verified.
+- [x] Read-only metadata/object path count check completed (small current sample only).
+- [x] Read-only preflight SQL committed to the release branch.
+- [x] Leaked Password Protection exception recorded per user direction.
+- [x] Backup/restore deferral recorded per user direction.
 - [ ] Production-compatible RLS/Storage migration designed and reviewed.
-- [ ] Isolated staging rehearsal and authenticated negative tests pass.
-- [ ] Backup/restore rehearsal passes.
+- [ ] Authenticated positive/negative RLS and Storage tests pass in a safe test environment.
 - [ ] Exact candidate CI and role/session regression checks pass.
 - [ ] Live hosting branch and deployed SHA verified.
-- [ ] Desktop/mobile smoke tests and rollback plan approved.
+- [ ] Before real customer data: backup/restore rehearsal passes.
+- [ ] Desktop/mobile smoke tests and rollback/forward-recovery plan approved.
 
-**Decision: DO NOT RELEASE TO PRODUCTION.** No Production database, Auth setting, Storage object, or hosting configuration was changed during this review.
+**Decision: DO NOT RELEASE TO PRODUCTION yet.** No Production database, Auth setting, Storage object, or hosting configuration was changed during this review.
