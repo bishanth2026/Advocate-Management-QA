@@ -373,3 +373,6 @@ An isolated Production-schema staging branch is not currently present in the con
 ### Final gate
 
 **NO-GO / NOT APPROVED FOR PRODUCTION** until the Production-compatible RLS/Storage migration is rehearsed in an isolated Production-schema environment with authenticated positive/negative tests, and the actual live hosting source/deployed SHA is verified. Do not merge draft PR #36 as a deployment trigger. No Production application, database, Auth, Storage or hosting changes were made in this verification.
+
+
+Latest sync-status fix: the candidate now distinguishes a previously persisted workspace (`Cloud: Synced`) from a new workspace with no stored row (`Cloud: Ready — not saved yet`). Smoke assertion added. Workflow #76 passed the app change; Workflow #77 passed the regression test suite; Workflow #78 passed for the latest blockers-report/PR-evidence commit. [Workflow #76](https://github.com/bishanth2026/Advocate-Management-QA/actions/runs/40818016960) · [Workflow #77](https://github.com/bishanth2026/Advocate-Management-QA/actions/runs/40818037270) · [Workflow #78](https://github.com/bishanth2026/Advocate-Management-QA/actions/runs/40818076826). The current decision remains **BLOCKED / NO-GO** because live authenticated E2E, RLS/Storage enforcement, migration rehearsal, rollback rehearsal and live deployment verification remain outstanding.
