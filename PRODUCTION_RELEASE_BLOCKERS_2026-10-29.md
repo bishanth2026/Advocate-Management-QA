@@ -205,3 +205,11 @@ A reusable read-only query has been added at `supabase/drafts/production-workspa
 
 
 The read-only inventory SQL was subsequently executed against Production successfully. It confirmed 5 workspace-state rows, 9 case entries, and **0 missing case IDs / 0 duplicate case-ID rows** in those 9 entries. This does not validate foreign-key references from hearings/tasks/documents, prove case assignment correctness, or authorize a migration; those checks remain required.
+
+
+## Latest Storage-policy static guardrails — 2026-10-29
+
+- Extended `scripts/production-safety-smoke.mjs` to assert that the Storage hardening candidate remains draft-only, requires authenticated sessions, matches exact object path/workspace/document identifiers to metadata, binds upload ownership to `auth.uid()`, requires workspace membership for uploads, fails closed for malformed path segments, and explicitly discloses the unresolved case-level authorization gap.
+- Workflow #89 passed on commit `d28e285c07639837adcad2edd55b98a8ee3c6a1b`: https://github.com/bishanth2026/Advocate-Management-QA/actions/runs/40819665268
+- This is static/regex validation only. It does not execute the SQL against PostgreSQL, test real authenticated Storage sessions, verify rollback, or establish browser/mobile behavior.
+- No Production or QA policy was applied. No billable disposable Supabase branch was created. The release decision remains **DRAFT / NO-GO**.
