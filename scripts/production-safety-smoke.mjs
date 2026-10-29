@@ -36,4 +36,12 @@ assert.doesNotMatch(shell, /uqtsksgypncsbcnuanbk|Advocate-Management-QA/i, "Prod
 assert.match(shell, /id="cloudSyncStatus"[^>]*>Cloud: Connecting…<\/span>/, "Cloud status must not claim Synced before the initial workspace read completes");
 assert.match(shell, /auth\.js\?v=20261029-fail-closed-workspace/, "App shell must cache-bust the corrected Production session validation code");
 
+// The monolithic workspace_state contains multiple cases. Until case-scoped RLS is verified,
+// non-Admin roles must be blocked before the client fetches that payload.
+const roleGuard = shell.indexOf("String(auth.workspaceRole||'').toLowerCase()!=='admin'");
+const workspaceRead = shell.indexOf("from('practice_records').select('id,payload,updated_at')");
+assert.ok(roleGuard >= 0, "Non-Admin workspace-state guard must exist");
+assert.ok(workspaceRead > roleGuard, "Non-Admin guard must run before workspace-state read");
+assert.match(shell, /Advocate\/Staff access will be restored after case-level permissions are deployed and verified/, "Blocked members must receive a clear security explanation");
+
 console.log("AdvocateDesk production safety smoke checks: PASS");
