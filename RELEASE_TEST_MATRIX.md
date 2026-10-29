@@ -33,7 +33,7 @@ Use dedicated, non-production test accounts. Never include passwords or access t
 | AUTH-05 | Invalid password / unknown account | Generic safe error; no sensitive account enumeration | NOT RUN |
 | AUTH-06 | Password recovery and redirect | Recovery link returns to the approved domain and safely resets password | NOT RUN |
 | AUTH-07 | Expired/revoked session | Protected pages and APIs deny access; user can reauthenticate | NOT RUN |
-| AUTH-08 | Leaked-password protection | Supabase Auth setting is enabled and verified; compromised test password is rejected | BLOCKED: setting previously reported disabled; must enable and verify in Supabase Auth |
+| AUTH-08 | Leaked-password protection | Supabase Auth setting is enabled and verified; compromised test password is rejected | USER REPORTS SETTING WAS CHANGED; latest security-advisor scans on 2026-10-29 still report disabled in BOTH QA and Production. Treat as NOT VERIFIED until the exact Auth setting is rechecked/saved in each project and advisor re-scan clears. |
 
 ## C. Workspace and case authorization
 
@@ -212,3 +212,20 @@ Read-only comparison of `app.js` on QA `main` and production `production/advocat
 - Next required proof remains: authenticated case/client/practice-record write → successful network response (no 403) → hard refresh → reopen same record; direct negative authorization checks; Auth leaked-password protection enabled; migration rehearsal; and live hosting branch/deployed SHA confirmation.
 
 No production application code, database schema/data, Auth setting, storage object, or hosting configuration was changed during this review. Release remains **BLOCKED / NOT APPROVED FOR PRODUCTION**.
+
+
+## Follow-up security work — 2026-10-29
+
+### Leaked-password protection status reconciliation
+The tester reports that leaked-password protection was changed. However, fresh Supabase security-advisor scans run on 2026-10-29 still returned `auth_leaked_password_protection: WARN` for both QA project `uqtsksgypncsbcnuanbk` and Production project `ykxfidrtvmkmmbxameji`. The setting is therefore **not verified as enabled**. Recheck/save the Auth password-security setting separately in each project, then rerun the advisor. No Auth configuration was changed by this check.
+
+### Additional QA-only SECURITY DEFINER hardening
+Applied migration to QA project `uqtsksgypncsbcnuanbk`:
+- Migration: `qa_harden_remaining_private_definer_search_paths_20261029`
+- Repository source on QA `main`: `supabase/migrations/20261029074800_qa_harden_remaining_private_definer_search_paths.sql`
+- Functions: `private.assign_case_to_member`, `private.unassign_case_from_member`, `private.finance_case_directory`, `private.finance_case_directory_v2`, `private.finance_client_directory`, `private.finance_client_directory_v2`, `private.qa_list_workspace_advocates_internal`.
+- Change: each function's `search_path` set to empty; function bodies and ACLs were not changed.
+- Post-migration read-only verification: all seven remain `SECURITY DEFINER` and report empty `search_path`.
+- Scope: QA only. No production function, policy, data, Auth setting, or hosting configuration was changed.
+
+This is a targeted configuration hardening step, not proof that all authorization logic or app flows pass. Run the existing QA assignment, finance directory, and role access regression checks before promoting any equivalent change. Do not copy this migration into production without checking production function inventory and dependencies.
