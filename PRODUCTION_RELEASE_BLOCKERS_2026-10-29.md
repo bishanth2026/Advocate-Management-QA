@@ -154,3 +154,12 @@ The latest candidate static workflow #66 passed syntax and production safety smo
 - Updated `.github/workflows/production-safety.yml` to run the regression test in CI.
 - Workflow #69 for candidate SHA `455913432380afeffc2c2c73848d2e2d014d56ba` passed syntax checks, production safety smoke checks, and the new mocked regression suite. Run: https://github.com/bishanth2026/Advocate-Management-QA/actions/runs/40816507266
 - Scope limitation: these tests use a mocked Supabase client; they do not establish live Supabase behavior, RLS/Storage enforcement, browser/mobile E2E, or hosting SHA. The release remains **NO-GO** until the mandatory blockers above are resolved and evidenced.
+
+
+## Interim fail-closed guard added to release candidate — 2026-10-29
+
+- In `app.html`, the candidate now blocks any workspace role other than `admin` before reading the monolithic `practice_records.workspace_state` payload. The gate displays a clear security message instead of exposing all cases to Advocate/Staff accounts.
+- Added a production safety smoke assertion that checks the role guard exists and runs before the workspace-state query.
+- This is an interim containment measure, **not** the final feature implementation. Advocate/Staff app access is intentionally unavailable until normalized case-scoped data and server-enforced assignment/permission checks are implemented and verified.
+- Workspace Admin access is still scoped by existing workspace membership/RLS and is not proof of case-level isolation among non-admin users.
+- The guard is on the release candidate branch only. It has not been deployed to the live host or applied to Production hosting.
