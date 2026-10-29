@@ -229,3 +229,14 @@ Applied migration to QA project `uqtsksgypncsbcnuanbk`:
 - Scope: QA only. No production function, policy, data, Auth setting, or hosting configuration was changed.
 
 This is a targeted configuration hardening step, not proof that all authorization logic or app flows pass. Run the existing QA assignment, finance directory, and role access regression checks before promoting any equivalent change. Do not copy this migration into production without checking production function inventory and dependencies.
+
+
+### Cloud Sync 403/RLS retest — tester confirmation (2026-10-29)
+
+The tester has now confirmed the Cloud Sync case/client save-and-reopen check was completed and is considered successful. The latest supplied dashboard screenshot also shows **Cloud: Synced** and the active QA Assigned Advocate workspace.
+
+- **Tester-reported result:** PASS for the manual save/reopen check.
+- **Screenshot corroboration:** Cloud sync status is green and dashboard loads with workspace data.
+- **Evidence limitation:** The screenshot itself is a dashboard view; it does not show the changed field before/after save or an HTTP response. Therefore record this as **manual tester-confirmed PASS, with screenshot corroboration**, not independently verified API-level proof.
+- **Remaining release evidence:** If not already captured, retain a redacted Network trace or explicit save result showing no 403 for the same record, and repeat the save/refresh/reopen check for relevant roles/resources (case, client, practice record).
+- **Production status:** No production database, Auth setting, RLS policy, or hosting configuration was changed by this retest. Production release remains blocked pending the remaining release gates.
