@@ -280,7 +280,7 @@ This resolves the prior QA function search-path configuration item. It does **no
 - [ ] Leaked-password protection enabled and verified independently in QA and Production.
 - [ ] Production-compatible schema/dependency plan reviewed; no wholesale QA migration replay.
 - [ ] RLS/Storage migration rehearsed on isolated staging with authenticated positive and negative tests.
-- [ ] Admin, Advocate, Staff, Accountant real-session regression and Cloud Sync API response/persistence tests evidenced on the candidate SHA.
+- [ ] Admin, Advocate, Staff, Accountant role-specific regression on the candidate SHA; Cloud Sync Save → API response → Refresh → Reopen is already tester-confirmed PASS for the tested QA flow, so do not repeat it unless code changes/regression occur. Verify only any still-untested role/resource paths.
 - [ ] Production backup/restore rehearsal completed.
 - [ ] Live hosting repository/branch/deployed SHA verified.
 - [ ] Desktop/mobile smoke tests and rollback plan approved.
