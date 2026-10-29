@@ -57,6 +57,16 @@ Do not invent assignments by guessing fields from legacy JSON. Before case-level
 4. Update policies and app code in a candidate branch; ensure app supports assignment maintenance and understands denied API responses.
 5. Test positive/negative sessions in staging before applying any Production migration.
 
+### Additional blocker confirmed: monolithic workspace state
+
+A follow-up review of the current Production schema and `auth.js` confirms that the main cloud-sync contract stores the entire workspace state (cases, clients, hearings, tasks, meetings, payments, and invoices) in one JSON payload row. Row-level security cannot safely filter individual cases inside that one row. Enabling assigned-only access for document metadata while leaving this payload accessible would give a false sense of security and could expose unassigned case data.
+
+The current sign-in resolver also chooses `members[0]` when an account has multiple active workspace memberships, without an explicit user-selected workspace. This is not a reason to mutate Production immediately; the multi-workspace contract must be designed and tested fail-closed.
+
+A design-only implementation plan has been added: `CASE_LEVEL_AUTHORIZATION_IMPLEMENTATION_DESIGN_DRAFT.md`. It describes the required normalized case model, explicit assignment/permission workflow, migration phases, and authenticated negative/positive test matrix. This is not executable migration SQL and has not changed Production.
+
+**Consequence:** case-level authorization cannot be completed safely by merely adding QA tables or applying the Storage draft. The app data contract must be changed alongside the schema, then verified in a disposable environment. No Production migration was applied.
+
 ## Live hosting verification
 
 Repository source includes `CNAME=advocate.biznexco.in` on the release branch and the production baseline has portal files, but repository contents do not prove the live host serves that commit. A web check of `https://advocate.biznexco.in` was inaccessible and the search returned no indexed result. The available GitHub connector does not expose the configured Pages/hosting source settings.
@@ -79,7 +89,7 @@ Still required:
 - [x] Read-only preflight SQL added to the release branch.
 - [x] Draft Storage hardening candidate added to the release branch.
 - [ ] Disposable-project migration rehearsal and rollback test.
-- [ ] Case-assignment/role-permission design and migration approved.
+- [x] Case-assignment/role-permission implementation design documented (design-only; not approved/applied).\n- [ ] Normalized case data contract and Admin assignment/workspace-selection workflow implemented and reviewed.
 - [ ] Real authenticated positive/negative authorization tests pass.
 - [ ] Exact candidate CI completes successfully.
 - [ ] Live hosting source and deployed SHA verified.
