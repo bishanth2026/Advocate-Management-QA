@@ -183,3 +183,32 @@ The tester reported that the Cloud Sync case/client save-and-reopen check was pe
 | DATA-02 Cloud Sync 403/RLS | **PARTIAL PASS — visible Cloud: Synced state and case list shown** | A green sync indicator and rendered records do not alone prove the historical 403/RLS write path is fixed. Confirm the save response succeeds (no 403), then hard refresh and reopen the exact case/client/practice record; repeat for relevant roles and retain redacted network evidence. |
 
 No production data or settings were changed. This screenshot does not independently establish API-level authorization or prove that all role-specific write paths are fixed. Release remains **BLOCKED / NOT APPROVED FOR PRODUCTION**.
+
+
+## Follow-up engineering review — 2026-10-29
+
+### Latest static validation
+
+- Release-readiness commit: `2cff81e5da56fd0b1b896b16b7e158b11af31312`.
+- GitHub Actions workflow run `40803918611`: completed successfully.
+- Scope: production safety/static validation only; it is not authenticated browser E2E, RLS negative testing, or proof of the deployed live SHA.
+
+### Fresh Supabase security-advisor recheck
+
+Read-only advisor calls were run against both connected projects:
+- QA `uqtsksgypncsbcnuanbk`: `auth_leaked_password_protection` WARN; disabled.
+- Production `ykxfidrtvmkmmbxameji`: `auth_leaked_password_protection` WARN; disabled.
+
+This setting is an Auth configuration item, not a SQL/RLS migration. It has not been changed by this review because the available Supabase actions do not expose a verified Auth-settings update operation. It remains a release blocker and must be enabled in Supabase Auth settings, then rechecked with the advisor.
+
+### Cloud-save source review
+
+Read-only comparison of `app.js` on QA `main` and production `production/advocatedesk-final` found that both save handlers invoke `window.ADCloudSync.save(state)` asynchronously and surface a failure through a catch handler. This does not by itself prove the reported 403 defect, but it means a rendered list or sync indicator must not be treated as proof that a particular mutation persisted. The sync implementation and its role-specific table writes need to be traced before a code patch is selected; no speculative change was made to either application bundle.
+
+### Current action decision
+
+- Do not merge PR #36: it is a draft readiness/documentation PR, not a tested production code release.
+- Do not apply QA-only schema or policies to Production.
+- Next required proof remains: authenticated case/client/practice-record write → successful network response (no 403) → hard refresh → reopen same record; direct negative authorization checks; Auth leaked-password protection enabled; migration rehearsal; and live hosting branch/deployed SHA confirmation.
+
+No production application code, database schema/data, Auth setting, storage object, or hosting configuration was changed during this review. Release remains **BLOCKED / NOT APPROVED FOR PRODUCTION**.
