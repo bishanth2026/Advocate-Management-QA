@@ -63,7 +63,7 @@ A follow-up review of the current Production schema and `auth.js` confirms that 
 
 The current sign-in resolver also chooses `members[0]` when an account has multiple active workspace memberships, without an explicit user-selected workspace. This is not a reason to mutate Production immediately; the multi-workspace contract must be designed and tested fail-closed.
 
-A release-branch code change now fails closed if an account has anything other than exactly one active workspace membership, instead of silently selecting `members[0]`. The app shell and login pages have cache-busting versions updated so clients should request the candidate auth script. A static smoke assertion was added for the fail-closed guard. This prevents ambiguous tenant selection but does **not** implement a workspace picker and is not live-verified. Multi-workspace users will be denied until a proper selector is implemented.
+A release-branch code change now fails closed if an account has anything other than exactly one active workspace membership, instead of silently selecting `members[0]`. The app shell and login pages have cache-busting versions updated so clients should request the candidate auth script. The static smoke assertion for the fail-closed guard and the candidate syntax/static CI passed in workflow run #62. This prevents ambiguous tenant selection but does **not** implement a workspace picker and is not live-verified. Multi-workspace users will be denied until a proper selector is implemented.
 
 A design-only implementation plan has been added: `CASE_LEVEL_AUTHORIZATION_IMPLEMENTATION_DESIGN_DRAFT.md`. It describes the required normalized case model, explicit assignment/permission workflow, migration phases, and authenticated negative/positive test matrix. This is not executable migration SQL and has not changed Production.
 
@@ -93,7 +93,7 @@ Still required:
 - [ ] Disposable-project migration rehearsal and rollback test.
 - [x] Case-assignment/role-permission implementation design documented (design-only; not approved/applied).\n- [ ] Normalized case data contract and Admin assignment/workspace-selection workflow implemented and reviewed.
 - [ ] Real authenticated positive/negative authorization tests pass.
-- [ ] Exact candidate CI completes successfully (new fail-closed workspace guard is in the candidate and CI is rerunning).
+- [x] Candidate syntax/static smoke CI passed on code commit `17b225fc056e4ab6b582d40052c02b20ec52f199` (workflow run #62); this does not replace authenticated end-to-end or live-host testing.
 - [ ] Live hosting source and deployed SHA verified.
 - [ ] Exact candidate desktop/mobile end-to-end checks pass.
 - [ ] Backup/restore passes before production customer data.
