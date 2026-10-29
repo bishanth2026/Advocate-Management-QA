@@ -34,6 +34,7 @@ assert.match(provisioning, /callerProfile\?\.platform_role !== "super_admin"/, "
 assert.match(provisioning, /action !== "invite_admin"/, "Unsupported provisioning actions must be rejected");
 assert.doesNotMatch(shell, /uqtsksgypncsbcnuanbk|Advocate-Management-QA/i, "Production app shell must not contain QA configuration");
 assert.match(shell, /id="cloudSyncStatus"[^>]*>Cloud: Connecting…<\/span>/, "Cloud status must not claim Synced before the initial workspace read completes");
+assert.match(shell, /setSyncStatus\(result\.data\?'Cloud: Synced':'Cloud: Ready — not saved yet'/, "An empty, never-saved workspace must not be labeled Synced");
 assert.match(shell, /auth\.js\?v=20261029-fail-closed-workspace/, "App shell must cache-bust the corrected Production session validation code");
 
 // The monolithic workspace_state contains multiple cases. Until case-scoped RLS is verified,
