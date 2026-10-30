@@ -1617,6 +1617,14 @@ function caseDetails360LiveSearch(value){
   const linked=c=>{const ids=Array.isArray(c.clientIds)?c.clientIds:(c.clientId?[c.clientId]:[]);return clients.filter(x=>ids.includes(x.id)||x.name===c.client||((c.clients||[]).includes(x.name)));};
   const matches=casesList.filter(c=>!q||[c.number,c.title,c.court,c.type,c.status,c.client,c.cnr,...(Array.isArray(c.clients)?c.clients:[])].some(v=>norm(v).includes(q))||linked(c).some(x=>[x.name,x.phone,x.email,x.id,x.role].some(v=>norm(v).includes(q))));
   host.innerHTML=`<h3>Matching Cases (${matches.length})</h3>`+(matches.map(c=>`<button class="case360-result" data-case-id="${escv(c.id)}"><strong>${escv(c.number||"No case number")}</strong><span>${escv(c.title||"Untitled case")}</span><small>${escv(c.court||"No court")} • ${escv(c.client||"No client")}</small></button>`).join("")||`<div class="empty">No matching cases.</div>`);
+  // Never leave a previously selected case visible while the live query points elsewhere.
+  const layout=host.closest(".case360-layout");
+  const workspace=layout&&layout.children.length>1?layout.children[1]:null;
+  if(workspace){
+    workspace.innerHTML=`<div class="panel empty">${q?(matches.length?"Select a matching case to open its Case 360 workspace.":"No case matches this search. Clear the search or try a different case number, client, phone or title."):"Select a case from the results to open its Case 360 workspace."}</div>`;
+  }
+  window.case360ActiveCaseId=null;
+  try{sessionStorage.removeItem("advocateDeskCase360SelectedId")}catch(e){}
 }
 
 document.addEventListener("click",function(e){const card=e.target.closest&&e.target.closest(".case360-result");if(!card)return;const input=document.getElementById("caseDetailsSearch");caseDetails360Enhanced(input?input.value:"",card.getAttribute("data-case-id")||"");});
