@@ -1086,7 +1086,31 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape") setMobileMenu(false
 document.getElementById("modalClose").onclick=()=>document.getElementById("modal").classList.add("hidden");
 document.getElementById("globalSearch").addEventListener("keydown",e=>{if(e.key==="Enter"){navigate("cases");document.getElementById("caseFilter").value=e.target.value;filterTable("caseTable",e.target.value)}});
 
-function filterTable(id,q){q=q.toLowerCase();document.querySelectorAll(`#${id} tbody tr`).forEach(r=>r.style.display=r.innerText.toLowerCase().includes(q)?"":"none")}
+function filterTable(id,q){
+  const table=document.getElementById(id);
+  if(!table)return;
+  const normalize=value=>String(value??"").normalize("NFKC").toLocaleLowerCase().replace(/\\s+/g," ").trim();
+  const query=normalize(q);
+  const rows=Array.from(table.querySelectorAll("tbody tr"));
+  let visible=0;
+  rows.forEach(row=>{
+    const text=normalize(row.innerText||row.textContent||"");
+    const show=!query||text.includes(query);
+    row.style.display=show?"":"none";
+    row.setAttribute("aria-hidden",show?"false":"true");
+    if(show)visible++;
+  });
+  const emptyRow=table.querySelector("tbody tr[data-search-empty]");
+  if(emptyRow)emptyRow.remove();
+  if(query&&rows.length>0&&visible===0){
+    const body=table.querySelector("tbody");
+    const colCount=Math.max(1,table.querySelectorAll("thead th").length||1);
+    const empty=document.createElement("tr");
+    empty.dataset.searchEmpty="true";
+    empty.innerHTML='<td colspan="'+colCount+'" class="muted">No matching records found.</td>';
+    body.appendChild(empty);
+  }
+}
 function openModal(type){
  // Accountants may manage invoices and payments only; they cannot create
  // practice records through quick actions or direct JavaScript calls.
