@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 
 const read = (path) => readFileSync(new URL(path, import.meta.url), "utf8");
 const auth = read("../auth.js");
+assert.match(auth, /members\.length!==1/, "Ambiguous active workspace memberships must fail closed");
 const app = read("../app.js");
 const shell = read("../app.html");
 const reset = read("../reset-password.html");
@@ -33,6 +34,44 @@ assert.match(provisioning, /callerProfile\?\.platform_role !== "super_admin"/, "
 assert.match(provisioning, /action !== "invite_admin"/, "Unsupported provisioning actions must be rejected");
 assert.doesNotMatch(shell, /uqtsksgypncsbcnuanbk|Advocate-Management-QA/i, "Production app shell must not contain QA configuration");
 assert.match(shell, /id="cloudSyncStatus"[^>]*>Cloud: Connecting…<\/span>/, "Cloud status must not claim Synced before the initial workspace read completes");
-assert.match(shell, /auth\.js\?v=20261028-member-session/, "App shell must cache-bust the corrected Production session validation code");
+assert.match(shell, /setSyncStatus\(result\.data\?'Cloud: Synced':'Cloud: Ready — not saved yet'/, "An empty, never-saved workspace must not be labeled Synced");
+assert.match(shell, /auth\.js\?v=20261029-fail-closed-workspace/, "App shell must cache-bust the corrected Production session validation code");
+
+// The monolithic workspace_state contains multiple cases. Until case-scoped RLS is verified,
+// non-Admin roles must be blocked before the client fetches that payload.
+const roleGuard = shell.indexOf("String(auth.workspaceRole||'').toLowerCase()!=='admin'");
+const workspaceRead = shell.indexOf("from('practice_records').select('id,payload,updated_at')");
+assert.ok(roleGuard >= 0, "Non-Admin workspace-state guard must exist");
+assert.ok(workspaceRead > roleGuard, "Non-Admin guard must run before workspace-state read");
+assert.match(shell, /Advocate\/Staff access will be restored after case-level permissions are deployed and verified/, "Blocked members must receive a clear security explanation");
+
+
+const workspaceStatePolicy = read("../supabase/drafts/production-workspace-state-admin-only-hotfix.sql");
+assert.match(workspaceStatePolicy, /DRAFT ONLY — NOT APPLIED/i, "Workspace-state containment SQL must remain draft-only");
+assert.match(workspaceStatePolicy, /on public\.practice_records\s+as restrictive\s+for all\s+to authenticated/i, "Workspace-state policy must be restrictive for all authenticated operations");
+assert.match(workspaceStatePolicy, /record_type is distinct from 'other'[\s\S]*record_key is distinct from 'workspace_state'/i, "Containment policy must target only the monolithic workspace_state record");
+assert.match(workspaceStatePolicy, /wm\.user_id = \(select auth\.uid\(\)\)[\s\S]*wm\.role = 'admin'[\s\S]*w\.status = 'active'/i, "Workspace-state policy must require the caller's active Admin membership");
+assert.match(workspaceStatePolicy, /using \([\s\S]*\)\s+with check \(/i, "Workspace-state policy must guard both reads/mutations and inserted/updated rows");
+const workspaceStatePolicySql = workspaceStatePolicy.replace(/--.*$/gm, "");
+assert.doesNotMatch(workspaceStatePolicySql, /private\.has_workspace_permission|private\.can_access_case/i, "Production hotfix draft must not depend on QA-only authorization helpers");
+
+
+
+// The Storage hardening candidate must remain draft-only and enforce exact metadata/path
+// matching. These assertions are static guardrails only; they do not execute PostgreSQL RLS.
+const storagePolicy = read("../supabase/drafts/production-document-storage-hardening.sql");
+assert.match(storagePolicy, /DRAFT ONLY — do not apply to Production/i, "Storage hardening SQL must remain draft-only");
+assert.match(storagePolicy, /on storage\.objects[\s\S]*for select[\s\S]*to authenticated/i, "Storage read policy must be authenticated-only");
+assert.match(storagePolicy, /on storage\.objects[\s\S]*for insert[\s\S]*to authenticated/i, "Storage upload policy must be authenticated-only");
+assert.match(storagePolicy, /on storage\.objects[\s\S]*for delete[\s\S]*to authenticated/i, "Storage delete policy must be authenticated-only");
+assert.match(storagePolicy, /d\.storage_path = objects\.name[\s\S]*d\.workspace_id = \(\(storage\.foldername\(objects\.name\)\)\[1\]\)::uuid[\s\S]*d\.id = \(\(storage\.foldername\(objects\.name\)\)\[2\]\)::uuid/i, "Storage read/delete must match exact object path, workspace and document IDs");
+assert.match(storagePolicy, /owner_id = \(select \(auth\.uid\(\)\)::text\)/i, "Storage uploads must bind object ownership to the authenticated user");
+assert.match(storagePolicy, /private\.is_workspace_member\(\(\(storage\.foldername\(name\)\)\[1\]\)::uuid\)/i, "Storage uploads must require active workspace membership helper");
+assert.match(storagePolicy, /case\s+when[\s\S]*then exists[\s\S]*else false\s+end/i, "Malformed Storage path segments must fail closed");
+assert.ok(storagePolicy.includes("on storage.objects\nas restrictive\nfor select\nto authenticated"), "Storage read must have a restrictive guard that cannot be bypassed by another permissive policy");
+assert.ok(storagePolicy.includes("on storage.objects\nas restrictive\nfor insert\nto authenticated"), "Storage upload must have a restrictive guard that cannot be bypassed by another permissive policy");
+assert.ok(storagePolicy.includes("on storage.objects\nas restrictive\nfor delete\nto authenticated"), "Storage delete must have a restrictive guard that cannot be bypassed by another permissive policy");
+assert.match(storagePolicy, /Defense in depth: each operation has both a permissive grant and a matching/i, "Storage draft must document defense-in-depth policy semantics");
+assert.match(storagePolicy, /Separately solve case-level authorization/i, "Storage draft must explicitly disclose that case-level authorization remains unresolved");
 
 console.log("AdvocateDesk production safety smoke checks: PASS");
